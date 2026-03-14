@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Asiento Contable - Software de Contabilidad</title>
+<!-- Tailwind CSS CDN with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1e3b8a',
+          },
+          borderRadius: {
+            'custom': '4px', // ROUND_FOUR implementation
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-styling">
+    body {
+      background-color: #f8fafc;
+    }
+    .form-input-focus:focus {
+      border-color: #1e3b8a;
+      ring-color: #1e3b8a;
+    }
+    /* Chrome, Safari, Edge, Opera - hide arrows for number inputs */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    /* Firefox - hide arrows for number inputs */
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-900 antialiased">
+<!-- BEGIN: MainContainer -->
+<main class="max-w-6xl mx-auto p-6 lg:p-10">
+<!-- BEGIN: HeaderSection -->
+<header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div data-purpose="page-title">
+<h1 class="text-2xl font-bold text-slate-800">Nuevo Asiento Contable</h1>
+<p class="text-slate-500 text-sm">Crear un ajuste contable manual</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 font-medium rounded-custom transition-colors" type="button">
+          Cancelar
+        </button>
+<button class="px-6 py-2 bg-primary text-white hover:bg-blue-900 font-medium rounded-custom shadow-sm transition-colors" type="submit">
+          Registrar Asiento
+        </button>
+</div>
+</header>
+<!-- END: HeaderSection -->
+<!-- BEGIN: JournalForm -->
+<section class="bg-white border border-slate-200 shadow-sm rounded-custom overflow-hidden">
+<!-- BEGIN: FormTopHeader -->
+<div class="p-6 border-b border-slate-100 bg-slate-50/50">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div data-purpose="field-date">
+<label class="block text-sm font-semibold text-slate-700 mb-1" for="entry_date">Fecha</label>
+<input class="w-full border-slate-300 rounded-custom text-sm focus:ring-primary focus:border-primary" id="entry_date" type="date" value="2023-10-27"/>
+</div>
+<div data-purpose="field-reference">
+<label class="block text-sm font-semibold text-slate-700 mb-1" for="reference">Nº de Referencia</label>
+<input class="w-full border-slate-300 rounded-custom text-sm focus:ring-primary focus:border-primary" id="reference" placeholder="JE-2023-001" type="text"/>
+</div>
+<div class="md:col-span-3" data-purpose="field-description">
+<label class="block text-sm font-semibold text-slate-700 mb-1" for="main_desc">Descripción General</label>
+<textarea class="w-full border-slate-300 rounded-custom text-sm focus:ring-primary focus:border-primary" id="main_desc" placeholder="Describa el propósito de este asiento..." rows="2"></textarea>
+</div>
+</div>
+</div>
+<!-- END: FormTopHeader -->
+<!-- BEGIN: LineItemsTable -->
+<div class="overflow-x-auto">
+<table class="w-full border-collapse text-left" id="journal-table">
+<thead class="bg-slate-50 border-b border-slate-200">
+<tr>
+<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-32">Código de Cuenta</th>
+<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre de la Cuenta</th>
+<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Descripción</th>
+<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-40 text-right">Débito</th>
+<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-40 text-right">Crédito</th>
+<th class="px-4 py-3 w-12"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<!-- Line Item 1 -->
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4">
+<input class="w-full border-none p-0 focus:ring-0 text-sm font-medium text-slate-700 placeholder-slate-300" placeholder="0000" type="text" value="1100"/>
+</td>
+<td class="px-6 py-4">
+<input class="w-full border-none p-0 focus:ring-0 text-sm text-slate-600 placeholder-slate-300" placeholder="Buscar cuenta..." type="text" value="Caja y Equivalentes"/>
+</td>
+<td class="px-6 py-4">
+<input class="w-full border-none p-0 focus:ring-0 text-sm text-slate-600 placeholder-slate-300" placeholder="Nota..." type="text"/>
+</td>
+<td class="px-6 py-4">
+<input class="w-full border-none p-0 focus:ring-0 text-sm text-right text-slate-900 font-semibold placeholder-slate-300" placeholder="0.00" step="0.01" type="number" value="1500.00"/>
+</td>
+<td class="px-6 py-4">
+<input class="w-full border-none p-0 focus:ring-0 text-sm text-right text-slate-900 font-semibold placeholder-slate-300" placeholder="0.00" step="0.01" type="number"/>
+</td>
+<td class="px-4 py-4 text-center">
+<button class="text-slate-400 hover:text-red-500"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+</td>
+</tr>
+<!-- Line Item 2 -->
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4">
+<input class="w-full border-none p-0 focus:ring-0 text-sm font-medium text-slate-700 placeholder-slate-300" placeholder="0000" type="text" value="4000"/>
+</td>
+<td class="px-6 py-4">
+<input class="w-full border-none p-0 focus:ring-0 text-sm text-slate-600 placeholder-slate-300" placeholder="Buscar cuenta..." type="text" value="Ingresos por Ventas"/>
+</td>
+<td class="px-6 py-4">
+<input class="w-full border-none p-0 focus:ring-0 text-sm text-slate-600 placeholder-slate-300" placeholder="Nota..." type="text"/>
+</td>
+<td class="px-6 py-4">
+<input class="w-full border-none p-0 focus:ring-0 text-sm text-right text-slate-900 font-semibold placeholder-slate-300" placeholder="0.00" step="0.01" type="number"/>
+</td>
+<td class="px-6 py-4">
+<input class="w-full border-none p-0 focus:ring-0 text-sm text-right text-slate-900 font-semibold placeholder-slate-300" placeholder="0.00" step="0.01" type="number" value="1500.00"/>
+</td>
+<td class="px-4 py-4 text-center">
+<button class="text-slate-400 hover:text-red-500"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Add Line Button -->
+<div class="p-4 border-t border-slate-100">
+<button class="flex items-center gap-2 text-primary hover:text-blue-800 text-sm font-semibold transition-colors" type="button">
+<svg class="h-5 w-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" fill-rule="evenodd"></path>
+</svg>
+          Añadir Línea
+        </button>
+</div>
+<!-- END: LineItemsTable -->
+<!-- BEGIN: FooterBalanceSection -->
+<div class="bg-slate-50 border-t-2 border-slate-200 p-6">
+<div class="flex flex-col md:flex-row md:items-start justify-end gap-8">
+<!-- Column Totals -->
+<div class="flex flex-col gap-2 min-w-[320px]">
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-500 font-medium">Total Débito</span>
+<span class="text-slate-900 font-bold">$ 1,500.00</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-500 font-medium">Total Crédito</span>
+<span class="text-slate-900 font-bold">$ 1,500.00</span>
+</div>
+<hr class="my-2 border-slate-200"/>
+<!-- Mandatory Balance Indicator -->
+<div class="flex justify-between items-center py-2 px-4 bg-green-50 border border-green-200 rounded-custom" data-purpose="balance-indicator">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+<span class="text-xs font-bold text-green-700 uppercase tracking-wider">Cuadrado</span>
+</div>
+<span class="text-lg font-bold text-green-700">$ 0.00</span>
+</div>
+<p class="text-[10px] text-slate-400 text-right mt-1">* El asiento debe estar cuadrado (diferencia cero) antes de registrarlo</p>
+</div>
+</div>
+</div>
+<!-- END: FooterBalanceSection -->
+</section>
+<!-- END: JournalForm -->
+</main>
+<!-- END: MainContainer -->
+<script data-purpose="interactivity">
+    // Este script podría manejar la adición dinámica de filas y el cálculo del balance
+    console.log("UI de Asiento Contable inicializada");
+  </script>
+</body></html>

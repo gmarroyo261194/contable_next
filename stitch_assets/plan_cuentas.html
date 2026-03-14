@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gestión del Plan de Cuentas</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1e3b8a', // Custom color from theme
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            'custom': '4px', // ROUND_FOUR
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="base-typography">
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+    }
+  </style>
+<style data-purpose="layout-styles">
+    /* Custom scrollbar for the tree view */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+<!-- BEGIN: MainContainer -->
+<main class="max-w-7xl mx-auto p-6 md:p-8">
+<!-- BEGIN: HeaderSection -->
+<header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4" data-purpose="page-header">
+<div>
+<h1 class="text-2xl font-bold text-slate-900">Plan de Cuentas</h1>
+<p class="text-sm text-slate-500">Administra y organiza la jerarquía de tus cuentas financieras.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="bg-primary text-white px-4 py-2 rounded-custom hover:opacity-90 transition-opacity flex items-center gap-2 text-sm font-medium shadow-sm" data-purpose="add-root-account">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Nueva Cuenta Raíz
+        </button>
+<button class="border border-slate-300 bg-white text-slate-700 px-4 py-2 rounded-custom hover:bg-slate-50 transition-colors text-sm font-medium" data-purpose="export-accounts">
+          Exportar CSV
+        </button>
+</div>
+</header>
+<!-- END: HeaderSection -->
+<!-- BEGIN: SearchAndFilters -->
+<section class="bg-white p-4 rounded-custom shadow-sm mb-6 border border-slate-200" data-purpose="search-container">
+<div class="relative max-w-md">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<input class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-custom text-sm focus:ring-primary focus:border-primary placeholder-slate-400" id="account-search" placeholder="Buscar por nombre o código de cuenta..." type="text"/>
+</div>
+</section>
+<!-- END: SearchAndFilters -->
+<!-- BEGIN: TreeViewContainer -->
+<section class="bg-white border border-slate-200 rounded-custom shadow-sm overflow-hidden" data-purpose="account-list">
+<!-- Table Headers (Simulated) -->
+<div class="grid grid-cols-12 bg-slate-50 border-b border-slate-200 px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+<div class="col-span-6 lg:col-span-7">Nombre y Código de Cuenta</div>
+<div class="col-span-3 lg:col-span-2 text-center">Tipo</div>
+<div class="col-span-3 lg:col-span-3 text-right">Acciones</div>
+</div>
+<!-- Tree Items -->
+<div class="custom-scrollbar overflow-y-auto max-h-[calc(100vh-320px)]" data-purpose="tree-structure">
+<!-- BEGIN: Level 1 - Assets -->
+<div class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+<div class="grid grid-cols-12 items-center px-6 py-4">
+<div class="col-span-6 lg:col-span-7 flex items-center gap-3">
+<button class="text-slate-400 hover:text-slate-600">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<span class="font-semibold text-slate-800">1000 - Activos</span>
+</div>
+<div class="col-span-3 lg:col-span-2 text-center">
+<span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Grupo</span>
+</div>
+<div class="col-span-3 lg:col-span-3 flex justify-end gap-2">
+<button add="" class="p-1.5 text-primary hover:bg-blue-50 rounded-custom" title="Nueva subcuenta">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<button class="p-1.5 text-slate-500 hover:bg-slate-100 rounded-custom" title="Editar">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+<!-- BEGIN: Level 2 - Current Assets -->
+<div class="pl-8 bg-slate-50/30">
+<div class="grid grid-cols-12 items-center px-6 py-3 border-t border-slate-100">
+<div class="col-span-6 lg:col-span-7 flex items-center gap-3">
+<button class="text-slate-400">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<span class="font-medium text-slate-700">1100 - Activos Corrientes</span>
+</div>
+<div class="col-span-3 lg:col-span-2 text-center">
+<span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Grupo</span>
+</div>
+<div class="col-span-3 lg:col-span-3 flex justify-end gap-2">
+<button class="p-1.5 text-primary hover:bg-blue-50 rounded-custom" title="Nueva subcuenta">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<button class="p-1.5 text-slate-500 hover:bg-slate-100 rounded-custom" title="Editar">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+<!-- BEGIN: Level 3 - Cash & Bank -->
+<div class="pl-12">
+<!-- Item 1.1.1 -->
+<div class="grid grid-cols-12 items-center px-6 py-2.5 border-t border-slate-100 group">
+<div class="col-span-6 lg:col-span-7 flex items-center gap-3">
+<div class="w-4 h-4 flex items-center justify-center">
+<div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+</div>
+<span class="text-sm text-slate-600">1101 - Caja</span>
+</div>
+<div class="col-span-3 lg:col-span-2 text-center">
+<span class="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase rounded-custom">Cuenta</span>
+</div>
+<div class="col-span-3 lg:col-span-3 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1 text-slate-500 hover:text-primary" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+<button class="p-1 text-slate-500 hover:text-red-600" title="Eliminar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+</div>
+</div>
+<!-- Item 1.1.2 -->
+<div class="grid grid-cols-12 items-center px-6 py-2.5 border-t border-slate-100 group">
+<div class="col-span-6 lg:col-span-7 flex items-center gap-3">
+<div class="w-4 h-4 flex items-center justify-center">
+<div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+</div>
+<span class="text-sm text-slate-600">1102 - Cuenta Bancaria (USD)</span>
+</div>
+<div class="col-span-3 lg:col-span-2 text-center">
+<span class="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase rounded-custom">Cuenta</span>
+</div>
+<div class="col-span-3 lg:col-span-3 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1 text-slate-500 hover:text-primary" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+<button class="p-1 text-slate-500 hover:text-red-600" title="Eliminar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+</div>
+</div>
+</div>
+<!-- END: Level 3 -->
+</div>
+<!-- END: Level 2 -->
+</div>
+<!-- END: Level 1 - Assets -->
+<!-- BEGIN: Level 1 - Liabilities -->
+<div class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+<div class="grid grid-cols-12 items-center px-6 py-4">
+<div class="col-span-6 lg:col-span-7 flex items-center gap-3">
+<button class="text-slate-400 hover:text-slate-600">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<span class="font-semibold text-slate-800">2000 - Pasivos</span>
+</div>
+<div class="col-span-3 lg:col-span-2 text-center">
+<span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Grupo</span>
+</div>
+<div class="col-span-3 lg:col-span-3 flex justify-end gap-2">
+<button class="p-1.5 text-primary hover:bg-blue-50 rounded-custom" title="Nueva subcuenta">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<button class="p-1.5 text-slate-500 hover:bg-slate-100 rounded-custom" title="Editar">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+</div>
+<!-- END: Level 1 - Liabilities -->
+<!-- BEGIN: Level 1 - Equity -->
+<div class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+<div class="grid grid-cols-12 items-center px-6 py-4">
+<div class="col-span-6 lg:col-span-7 flex items-center gap-3">
+<button class="text-slate-400 hover:text-slate-600">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<span class="font-semibold text-slate-800">3000 - Patrimonio</span>
+</div>
+<div class="col-span-3 lg:col-span-2 text-center">
+<span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Grupo</span>
+</div>
+<div class="col-span-3 lg:col-span-3 flex justify-end gap-2">
+<button class="p-1.5 text-primary hover:bg-blue-50 rounded-custom" title="Nueva subcuenta">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<button class="p-1.5 text-slate-500 hover:bg-slate-100 rounded-custom" title="Editar">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+</div>
+<!-- END: Level 1 - Equity -->
+<!-- BEGIN: Level 1 - Income -->
+<div class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+<div class="grid grid-cols-12 items-center px-6 py-4">
+<div class="col-span-6 lg:col-span-7 flex items-center gap-3">
+<button class="text-slate-400 hover:text-slate-600">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<span class="font-semibold text-slate-800">4000 - Ingresos</span>
+</div>
+<div class="col-span-3 lg:col-span-2 text-center">
+<span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Grupo</span>
+</div>
+<div class="col-span-3 lg:col-span-3 flex justify-end gap-2">
+<button class="p-1.5 text-primary hover:bg-blue-50 rounded-custom" title="Nueva subcuenta">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<button class="p-1.5 text-slate-500 hover:bg-slate-100 rounded-custom" title="Editar">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+</div>
+<!-- END: Level 1 - Income -->
+<!-- BEGIN: Level 1 - Expenses -->
+<div class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+<div class="grid grid-cols-12 items-center px-6 py-4">
+<div class="col-span-6 lg:col-span-7 flex items-center gap-3">
+<button class="text-slate-400 hover:text-slate-600">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<span class="font-semibold text-slate-800">5000 - Gastos</span>
+</div>
+<div class="col-span-3 lg:col-span-2 text-center">
+<span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Grupo</span>
+</div>
+<div class="col-span-3 lg:col-span-3 flex justify-end gap-2">
+<button class="p-1.5 text-primary hover:bg-blue-50 rounded-custom" title="Nueva subcuenta">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<button class="p-1.5 text-slate-500 hover:bg-slate-100 rounded-custom" title="Editar">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+</div>
+<!-- END: Level 1 - Expenses -->
+</div>
+</section>
+<!-- END: TreeViewContainer -->
+<!-- BEGIN: SummaryFooter -->
+<footer class="mt-6 flex justify-between items-center text-sm text-slate-500" data-purpose="footer-stats">
+<div>Total de Cuentas Raíz: <span class="font-semibold text-slate-700">5</span></div>
+<div>Mostrando <span class="font-semibold text-slate-700">12</span> registros en total</div>
+</footer>
+<!-- END: SummaryFooter -->
+</main>
+<!-- END: MainContainer -->
+<script data-purpose="interactivity-mock">
+    // Simplified interactivity for UI demonstration
+    document.querySelectorAll('[title]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        // Mock action for buttons
+        const action = el.getAttribute('title');
+        console.log(`Acción activada: ${action}`);
+      });
+    });
+  </script>
+</body></html>

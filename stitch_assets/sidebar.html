@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ContableNext - Sidebar Design</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0f172a", // Deep Navy Blue for professional accounting look
+                        "accent": "#ec5b13",  // Primary accent from theme
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#0f172a",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Public Sans', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-link .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="flex h-screen overflow-hidden">
+<!-- SideNavBar Component -->
+<aside class="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col h-full">
+<!-- Logo Section -->
+<div class="p-6">
+<div class="flex items-center gap-3">
+<div class="bg-primary flex items-center justify-center rounded-lg size-10 text-white">
+<span class="material-symbols-outlined text-2xl">account_balance</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight">ContableNext</h1>
+<p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Gestión Contable</p>
+</div>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 px-4 py-4 space-y-1">
+<!-- Dashboard (Active) -->
+<a class="active-link flex items-center gap-3 px-3 py-2.5 rounded-xl bg-primary text-white shadow-md shadow-primary/20 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-semibold">Dashboard</span>
+</a>
+<!-- Asientos Contables -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary dark:group-hover:text-slate-100" data-icon="receipt_long">receipt_long</span>
+<span class="text-sm font-medium">Asientos Contables</span>
+</a>
+<!-- Plan de Cuentas -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary dark:group-hover:text-slate-100" data-icon="account_tree">account_tree</span>
+<span class="text-sm font-medium">Plan de Cuentas</span>
+</a>
+<!-- Clientes/Proveedores -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary dark:group-hover:text-slate-100" data-icon="group">group</span>
+<span class="text-sm font-medium">Clientes/Proveedores</span>
+</a>
+<!-- Reportes -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary dark:group-hover:text-slate-100" data-icon="bar_chart">bar_chart</span>
+<span class="text-sm font-medium">Reportes</span>
+</a>
+<!-- Separator -->
+<div class="my-4 border-t border-slate-100 dark:border-slate-800"></div>
+<!-- Ajustes -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary dark:group-hover:text-slate-100" data-icon="settings">settings</span>
+<span class="text-sm font-medium">Ajustes</span>
+</a>
+</nav>
+<!-- User Profile Section -->
+<div class="p-4 mt-auto">
+<div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3 flex items-center gap-3 border border-slate-100 dark:border-slate-800">
+<div class="relative">
+<img alt="Jane Doe" class="size-10 rounded-full object-cover border-2 border-white dark:border-slate-700 shadow-sm" data-alt="Profile picture of a professional woman smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmqXcJ3yQycfWGjzH-FnLgR7c3cWl17Mf2em_FvHqV_jWHJO5g9lRqipjFmBhEv2vgzuCbm0TVlm_J4pcXGVgLvYazdagePTE-Z82QU4zBXnX7FYnWY6DevBnJLTBFEm-ACVkOzhrH49YinPWGt3TkPZc6vARZIjFj21pH9Kp5KotrrfIYIPP79ONpZW-TnVKhS0sIm_K4MFE3cQshja3GyJMFE_GPbznWTlRKHhnSFEPIb5b9KmwwJcOJon7epDvDwDJwVVk3WKw"/>
+<div class="absolute bottom-0 right-0 size-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">Jane Doe</span>
+<span class="text-xs text-slate-500 dark:text-slate-400 truncate">Contador Senior</span>
+</div>
+<button class="ml-auto text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+<span class="material-symbols-outlined text-xl">logout</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- Main Content Area (Placeholder) -->
+<main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-background-dark p-8">
+<header class="flex justify-between items-center mb-8">
+<div>
+<h2 class="text-2xl font-bold text-slate-900 dark:text-white">Panel de Control</h2>
+<p class="text-slate-500 dark:text-slate-400">Bienvenido de nuevo, Jane. Aquí está el resumen de hoy.</p>
+</div>
+<div class="flex gap-4">
+<button class="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">calendar_today</span>
+                        Últimos 30 días
+                    </button>
+<button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">add</span>
+                        Nuevo Asiento
+                    </button>
+</div>
+</header>
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<span class="text-xs font-bold text-green-500 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">+12.5%</span>
+</div>
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Ingresos Totales</p>
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">$45,280.00</h3>
+</div>
+<div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2 bg-orange-50 dark:bg-orange-900/30 rounded-lg text-orange-600 dark:text-orange-400">
+<span class="material-symbols-outlined">shopping_cart</span>
+</div>
+<span class="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded">-2.4%</span>
+</div>
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Gastos Totales</p>
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">$12,450.00</h3>
+</div>
+<div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+</div>
+<span class="text-xs font-bold text-green-500 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">+5.2%</span>
+</div>
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Balance Neto</p>
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">$32,830.00</h3>
+</div>
+<div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
+<span class="material-symbols-outlined">description</span>
+</div>
+<span class="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">0%</span>
+</div>
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Facturas Pendientes</p>
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">14</h3>
+</div>
+</div>
+<!-- Content Placeholder Graphic -->
+<div class="mt-8 bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 min-h-[400px] flex flex-col items-center justify-center text-center">
+<div class="size-20 bg-slate-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-500">insights</span>
+</div>
+<h4 class="text-lg font-semibold text-slate-900 dark:text-white">Análisis de Flujo de Caja</h4>
+<p class="text-slate-500 dark:text-slate-400 max-w-sm mt-2">Los gráficos y visualizaciones detalladas aparecerán aquí una vez que se procesen los datos del mes actual.</p>
+<div class="mt-6 w-full max-w-lg h-32 bg-slate-50 dark:bg-slate-700/50 rounded-xl relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/5 opacity-50"></div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

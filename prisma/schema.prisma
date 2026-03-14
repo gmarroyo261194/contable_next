@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model Empresa {
+  id        Int         @id @default(autoincrement())
+  nombre    String
+  cuit      String      @unique
+  direccion String?
+  ejercicios Ejercicio[]
+  entidades  Entidad[]
+  cuentas    Cuenta[]
+}
+
+model Ejercicio {
+  id         Int       @id @default(autoincrement())
+  inicio     DateTime
+  fin        DateTime
+  cerrado    Boolean   @default(false)
+  empresaId  Int
+  empresa    Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  asientos   Asiento[]
+  cuentas    Cuenta[]
+}
+
+model Cuenta {
+  id          Int       @id @default(autoincrement())
+  codigo      String
+  nombre      String
+  tipo        String    // ACTIVO, PASIVO, PATRIMONIO_NETO, RESULTADO_POSITIVO, RESULTADO_NEGATIVO
+  padreId     Int?
+  padre       Cuenta?   @relation("Jerarquia", fields: [padreId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  hijos       Cuenta[]  @relation("Jerarquia")
+  empresaId   Int
+  empresa     Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  ejercicioId Int
+  ejercicio   Ejercicio @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  renglones   RenglonAsiento[]
+
+  @@unique([codigo, ejercicioId])
+}
+
+model Asiento {
+  id          Int      @id @default(autoincrement())
+  numero      Int
+  fecha       DateTime
+  descripcion String
+  ejercicioId Int
+  ejercicio   Ejercicio @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  renglones   RenglonAsiento[]
+  facturas    Factura[]
+}
+
+model RenglonAsiento {
+  id         Int      @id @default(autoincrement())
+  debe       Decimal  @default(0) @db.Decimal(18, 2)
+  haber      Decimal  @default(0) @db.Decimal(18, 2)
+  cuentaId   Int
+  cuenta     Cuenta   @relation(fields: [cuentaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  asientoId  Int
+  asiento    Asiento  @relation(fields: [asientoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  monedaId   Int
+  moneda     Moneda   @relation(fields: [monedaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  cotizacion Decimal  @db.Decimal(18, 4)
+}
+
+model Entidad {
+  id        Int       @id @default(autoincrement())
+  nombre    String
+  cuit      String
+  tipo      String    // CLIENTE, PROVEEDOR, AMBOS
+  empresaId Int
+  empresa   Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  facturas  Factura[]
+}
+
+model Factura {
+  id          Int      @id @default(autoincrement())
+  tipo        String   // A, B, C, M
+  numero      String
+  fecha       DateTime
+  montoTotal  Decimal  @db.Decimal(18, 2)
+  iva         Decimal  @db.Decimal(18, 2)
+  entidadId   Int
+  entidad     Entidad  @relation(fields: [entidadId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  asientoId   Int?
+  asiento     Asiento? @relation(fields: [asientoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+}
+
+model Moneda {
+  id        Int      @id @default(autoincrement())
+  codigo    String   @unique // ARS, USD
+  nombre    String
+  simbolo   String
+  renglones RenglonAsiento[]
+  cotizaciones Cotizacion[]
+}
+
+model Cotizacion {
+  id       Int      @id @default(autoincrement())
+  fecha    DateTime
+  valor    Decimal  @db.Decimal(18, 4)
+  monedaId Int
+  moneda   Moneda   @relation(fields: [monedaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  @@unique([fecha, monedaId])
+}
