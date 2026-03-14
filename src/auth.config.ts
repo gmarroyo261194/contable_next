@@ -9,27 +9,11 @@ export const authConfig = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await (db as any).user.findUnique({ // eslint-disable-line @typescript-eslint/no-explicit-any
+        const user = await (db as any).user.findUnique({
           where: { email: credentials.email as string },
           include: {
-            roles: {
-              include: {
-                role: {
-                  include: {
-                    permissions: {
-                      include: {
-                        permission: true
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            empresas: {
-              include: {
-                empresa: true
-              }
-            }
+            roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
+            empresas: { include: { empresa: true } }
           }
         });
 
@@ -42,20 +26,35 @@ export const authConfig = {
 
         if (!isPasswordValid) return null;
 
-        const permissions = user.roles.flatMap((ur: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
-          ur.role.permissions.map((rp: any) => rp.permission.name) // eslint-disable-line @typescript-eslint/no-explicit-any
+        const permissions = user.roles.flatMap((ur: any) =>
+          ur.role.permissions.map((rp: any) => rp.permission.name)
         );
 
-        const primaryEmpresa = user.empresas[0]?.empresa;
+        const selectedEmpresaId = credentials.empresaId ? parseInt(credentials.empresaId as string) : null;
+        const selectedEjercicioId = credentials.ejercicioId ? parseInt(credentials.ejercicioId as string) : null;
+
+        let activeEmpresa = user.empresas[0]?.empresa;
+        if (selectedEmpresaId) {
+          const ue = user.empresas.find((e: any) => e.empresaId === selectedEmpresaId);
+          if (ue) activeEmpresa = ue.empresa;
+        }
+
+        let activeEjercicioNombre = "";
+        if (selectedEjercicioId) {
+          const ej = await (db as any).ejercicio.findUnique({ where: { id: selectedEjercicioId } });
+          if (ej) activeEjercicioNombre = ej.numero.toString();
+        }
 
         return {
           id: user.id,
           name: user.name,
           email: user.email,
-          roles: user.roles.map((ur: any) => ur.role.name), // eslint-disable-line @typescript-eslint/no-explicit-any
+          roles: user.roles.map((ur: any) => ur.role.name),
           permissions: Array.from(new Set(permissions)),
-          empresaId: primaryEmpresa?.id,
-          empresaNombre: primaryEmpresa?.nombre,
+          empresaId: activeEmpresa?.id,
+          empresaNombre: activeEmpresa?.nombre,
+          ejercicioId: selectedEjercicioId,
+          ejercicioNombre: activeEjercicioNombre,
         };
       },
     }),
@@ -66,18 +65,22 @@ export const authConfig = {
         token.id = user.id;
         token.roles = (user as any).roles; // eslint-disable-line @typescript-eslint/no-explicit-any
         token.permissions = (user as any).permissions; // eslint-disable-line @typescript-eslint/no-explicit-any
-        token.empresaId = (user as any).empresaId; // eslint-disable-line @typescript-eslint/no-explicit-any
-        token.empresaNombre = (user as any).empresaNombre; // eslint-disable-line @typescript-eslint/no-explicit-any
+        token.empresaId = (user as any).empresaId;
+        token.empresaNombre = (user as any).empresaNombre;
+        token.ejercicioId = (user as any).ejercicioId;
+        token.ejercicioNombre = (user as any).ejercicioNombre;
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
-        (session.user as any).roles = token.roles; // eslint-disable-line @typescript-eslint/no-explicit-any
-        (session.user as any).permissions = token.permissions; // eslint-disable-line @typescript-eslint/no-explicit-any
-        (session.user as any).empresaId = token.empresaId; // eslint-disable-line @typescript-eslint/no-explicit-any
-        (session.user as any).empresaNombre = token.empresaNombre; // eslint-disable-line @typescript-eslint/no-explicit-any
+        (session.user as any).roles = token.roles;
+        (session.user as any).permissions = token.permissions;
+        (session.user as any).empresaId = token.empresaId;
+        (session.user as any).empresaNombre = token.empresaNombre;
+        (session.user as any).ejercicioId = token.ejercicioId;
+        (session.user as any).ejercicioNombre = token.ejercicioNombre;
       }
       return session;
     },

@@ -1,18 +1,62 @@
+"use client";
+
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
-import { login } from "@/lib/actions/auth-actions";
+import { Mail, Lock, Eye, EyeOff, LogIn, Building2, Calendar, ArrowRight, Loader2 } from 'lucide-react';
+import { login, getLoginData } from "@/lib/actions/auth-actions";
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const [step, setStep] = useState(1); // 1: Credentials, 2: Selection
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginData, setLoginData] = useState<any[]>([]);
+  
+  const [selectedEmpresa, setSelectedEmpresa] = useState<string>("");
+  const [selectedEjercicio, setSelectedEjercicio] = useState<string>("");
+
+  const handleNextStep = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // In a real app, you might want to validate password here too before showing companies
+      // For this implementation, we fetch the companies associated with the email
+      const data = await getLoginData(email);
+      if (!data || data.length === 0) {
+        setError("No se encontraron empresas asociadas a este correo.");
+        setLoading(false);
+        return;
+      }
+
+      setLoginData(data);
+      setSelectedEmpresa(data[0].id.toString());
+      if (data[0].ejercicios.length > 0) {
+        setSelectedEjercicio(data[0].ejercicios[0].id.toString());
+      }
+      setStep(2);
+    } catch (err) {
+      setError("Error al verificar la cuenta.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const currentEmpresaData = loginData.find(e => e.id.toString() === selectedEmpresa);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("password", password);
+    formData.append("empresaId", selectedEmpresa);
+    formData.append("ejercicioId", selectedEjercicio);
 
     try {
       const result = await login(formData);
@@ -20,28 +64,111 @@ export default function LoginForm() {
         setError(result.error);
         setLoading(false);
       }
-      // If successful, NextAuth handles the redirect via redirectTo in signIn
     } catch {
       setError("Algo salió mal. Inténtalo de nuevo.");
       setLoading(false);
     }
   };
 
+  if (step === 2) {
+    return (
+      <form className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300" onSubmit={handleSubmit}>
+        <div className="text-center space-y-2 mb-4">
+          <p className="text-sm text-slate-500">Bienvenido de nuevo</p>
+          <p className="font-bold text-slate-800">{email}</p>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-red-600 text-sm font-medium">
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-slate-700">Seleccionar Empresa</label>
+            <div className="relative group">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <select 
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-slate-900 appearance-none cursor-pointer"
+                value={selectedEmpresa}
+                onChange={(e) => {
+                  const empId = e.target.value;
+                  setSelectedEmpresa(empId);
+                  const emp = loginData.find(d => d.id.toString() === empId);
+                  if (emp && emp.ejercicios.length > 0) {
+                    setSelectedEjercicio(emp.ejercicios[0].id.toString());
+                  } else {
+                    setSelectedEjercicio("");
+                  }
+                }}
+              >
+                {loginData.map((emp) => (
+                  <option key={emp.id} value={emp.id}>{emp.nombre}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-slate-700">Seleccionar Ejercicio</label>
+            <div className="relative group">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <select 
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-slate-900 appearance-none cursor-pointer"
+                value={selectedEjercicio}
+                onChange={(e) => setSelectedEjercicio(e.target.value)}
+                disabled={!currentEmpresaData || currentEmpresaData.ejercicios.length === 0}
+              >
+                {currentEmpresaData?.ejercicios.length > 0 ? (
+                  currentEmpresaData.ejercicios.map((ej: any) => (
+                    <option key={ej.id} value={ej.id}>Ejercicio {ej.numero}</option>
+                  ))
+                ) : (
+                  <option value="">No hay ejercicios abiertos</option>
+                )}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <button 
+            className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-lg shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2" 
+            type="submit"
+            disabled={loading || !selectedEmpresa || !selectedEjercicio}
+          >
+            {loading ? <Loader2 className="size-5 animate-spin" /> : <LogIn className="size-5" />}
+            Entrar al Panel
+          </button>
+          <button 
+            type="button" 
+            onClick={() => setStep(1)}
+            className="text-sm text-slate-500 hover:text-slate-700 font-medium"
+          >
+            Volver
+          </button>
+        </div>
+      </form>
+    );
+  }
+
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
+    <form className="space-y-5 animate-in fade-in slide-in-from-left-4 duration-300" onSubmit={handleNextStep}>
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg text-red-600 dark:text-red-400 text-sm font-medium">
+        <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-red-600 text-sm font-medium">
           {error}
         </div>
       )}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Correo electrónico</label>
+        <label className="text-sm font-semibold text-slate-700">Correo electrónico</label>
         <div className="relative group">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors" />
           <input 
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/50 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white" 
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-slate-900" 
             placeholder="ejemplo@contablenext.com" 
-            name="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             type="email"
             required
           />
@@ -50,20 +177,20 @@ export default function LoginForm() {
 
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Contraseña</label>
-          <a className="text-xs font-semibold text-[#ec5b13] hover:underline" href="#">¿Olvidaste tu contraseña?</a>
+          <label className="text-sm font-semibold text-slate-700">Contraseña</label>
         </div>
         <div className="relative group">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors" />
           <input 
-            className="w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/50 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white" 
+            className="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-slate-900" 
             placeholder="••••••••" 
-            name="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             type={showPassword ? "text" : "password"}
             required
           />
           <button 
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" 
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" 
             type="button"
             onClick={() => setShowPassword(!showPassword)}
           >
@@ -72,24 +199,13 @@ export default function LoginForm() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <input 
-          className="w-4 h-4 rounded border-slate-300 text-[#ec5b13] focus:ring-[#ec5b13]" 
-          id="remember" 
-          type="checkbox"
-        />
-        <label className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer" htmlFor="remember">
-          Recordarme en este dispositivo
-        </label>
-      </div>
-
       <button 
-        className="w-full bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white font-bold py-4 rounded-lg shadow-lg shadow-[#ec5b13]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2" 
+        className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-lg shadow-lg shadow-primary/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2" 
         type="submit"
         disabled={loading}
       >
-        <LogIn className="size-5" />
-        {loading ? "Cargando..." : "Entrar al Panel"}
+        {loading ? <Loader2 className="size-5 animate-spin" /> : <ArrowRight className="size-5" />}
+        Continuar
       </button>
     </form>
   );

@@ -13,6 +13,8 @@ export async function login(formData: FormData) {
     await signIn("credentials", {
       email,
       password,
+      empresaId: formData.get("empresaId") as string,
+      ejercicioId: formData.get("ejercicioId") as string,
       redirectTo: "/",
     });
   } catch (error) {
@@ -119,6 +121,39 @@ export async function register(formData: FormData) {
     console.error("Registration error:", error);
     return { error: "Error al procesar el registro. CUIT duplicado o error de base de datos." };
   }
+}
+
+export async function getLoginData(email: string) {
+  if (!email) return null;
+
+  const user = await db.user.findUnique({
+    where: { email },
+    include: {
+      empresas: {
+        include: {
+          empresa: {
+            include: {
+              ejercicios: {
+                where: { cerrado: false },
+                orderBy: { numero: "desc" },
+              },
+            },
+          },
+        },
+      },
+    },
+  }) as any;
+
+  if (!user) return null;
+
+  return user.empresas.map((ue: any) => ({
+    id: ue.empresa.id,
+    nombre: ue.empresa.nombre,
+    ejercicios: ue.empresa.ejercicios.map((ej: any) => ({
+      id: ej.id,
+      numero: ej.numero,
+    })),
+  }));
 }
 
 export async function logout() {

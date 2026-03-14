@@ -47,9 +47,9 @@ export default function RegisterForm() {
           <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Nombre completo</label>
           <div className="relative group">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
-            <input 
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400" 
-              placeholder="Ej. Juan Pérez" 
+            <input
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+              placeholder="Ej. Juan Pérez"
               name="name"
               type="text"
               required
@@ -62,9 +62,9 @@ export default function RegisterForm() {
           <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Correo electrónico</label>
           <div className="relative group">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
-            <input 
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400" 
-              placeholder="correo@ejemplo.com" 
+            <input
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+              placeholder="correo@ejemplo.com"
               name="email"
               type="email"
               required
@@ -78,9 +78,9 @@ export default function RegisterForm() {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Empresa</label>
             <div className="relative group">
               <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
-              <input 
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400" 
-                placeholder="Nombre de tu empresa" 
+              <input
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                placeholder="Nombre de tu empresa"
                 name="company"
                 type="text"
                 required
@@ -91,9 +91,9 @@ export default function RegisterForm() {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">CUIT</label>
             <div className="relative group">
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
-              <input 
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400" 
-                placeholder="20-12345678-9" 
+              <input
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                placeholder="20-12345678-9"
                 name="cuit"
                 type="text"
                 required
@@ -108,9 +108,9 @@ export default function RegisterForm() {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Contraseña</label>
             <div className="relative group">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
-              <input 
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400" 
-                placeholder="••••••••" 
+              <input
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                placeholder="••••••••"
                 name="password"
                 type="password"
                 required
@@ -121,9 +121,9 @@ export default function RegisterForm() {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Confirmar</label>
             <div className="relative group">
               <CheckCircle className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
-              <input 
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400" 
-                placeholder="••••••••" 
+              <input
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                placeholder="••••••••"
                 name="confirmPassword"
                 type="password"
                 required
@@ -134,7 +134,7 @@ export default function RegisterForm() {
       </div>
 
       {/* Terms */}
-      <div className="flex items-start gap-3 py-2">
+      {/* <div className="flex items-start gap-3 py-2">
         <input 
           className="mt-1 size-4 rounded text-[#ec5b13] focus:ring-[#ec5b13] border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 cursor-pointer" 
           id="terms" 
@@ -144,18 +144,18 @@ export default function RegisterForm() {
         <label className="text-sm text-slate-500 dark:text-slate-400 leading-tight cursor-pointer" htmlFor="terms">
           Acepto los <a className="text-[#ec5b13] font-medium hover:underline" href="#">términos y condiciones</a> y la <a className="text-[#ec5b13] font-medium hover:underline" href="#">política de privacidad</a>.
         </label>
-      </div>
+      </div> */}
 
       {/* Submit Button */}
-      <button 
-        className="w-full py-4 bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white font-bold rounded-xl transition-all shadow-lg shadow-[#ec5b13]/25 active:scale-[0.98] disabled:opacity-50" 
+      <button
+        className="w-full py-4 bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white font-bold rounded-xl transition-all shadow-lg shadow-[#ec5b13]/25 active:scale-[0.98] disabled:opacity-50"
         type="submit"
         disabled={loading}
       >
         {loading ? "Creando Cuenta..." : "Crear Cuenta"}
       </button>
 
-      <div className="mt-6 flex flex-col gap-4 text-center">
+      {/* <div className="mt-6 flex flex-col gap-4 text-center">
         <div className="flex items-center gap-4">
           <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
           <span className="text-xs text-slate-400 uppercase font-bold tracking-widest">O continúa con</span>
@@ -171,7 +171,7 @@ export default function RegisterForm() {
             <span className="text-xs font-semibold">Microsoft</span>
           </button>
         </div>
-      </div>
+      </div> */}
     </form>
   );
 }

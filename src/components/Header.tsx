@@ -34,7 +34,9 @@ export function Header() {
              <div className="text-right hidden sm:block">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <p className="text-xs font-semibold leading-none text-slate-900">{(session?.user as any)?.empresaNombre || 'Sin Empresa'}</p>
-                <p className="text-[10px] text-slate-500 mt-1">Ejercicio 2026</p>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  {(session?.user as any)?.ejercicioNombre ? `Ejercicio ${(session?.user as any).ejercicioNombre}` : 'Sin Ejercicio'}
+                </p>
              </div>
           </div>
         </div>

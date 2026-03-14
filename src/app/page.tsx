@@ -1,11 +1,11 @@
 "use client";
 
 import React from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Wallet, 
-  Upload, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Upload,
   Plus,
   ArrowUpRight,
   ArrowDownRight,
@@ -15,9 +15,11 @@ import {
 import { SummaryCard } from '@/components/SummaryCard';
 import { Dialog } from '@/components/Dialog';
 import { AsientoForm } from '@/components/AsientoForm';
+import { useSession } from "next-auth/react";
 
 export default function Dashboard() {
   const [isAsientoDialogOpen, setIsAsientoDialogOpen] = React.useState(false);
+  const { data: session } = useSession();
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -32,7 +34,7 @@ export default function Dashboard() {
             <Upload className="w-4 h-4 text-slate-400" />
             Subir Documento
           </button>
-          <button 
+          <button
             onClick={() => setIsAsientoDialogOpen(true)}
             className="flex items-center gap-2 bg-primary px-6 py-2.5 rounded-xl font-bold text-sm text-white hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-display"
           >
@@ -44,7 +46,7 @@ export default function Dashboard() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <SummaryCard 
+        <SummaryCard
           title="Ingresos Totales"
           value="$124,500.00"
           change="12.5%"
@@ -53,7 +55,7 @@ export default function Dashboard() {
           iconColor="text-primary-light"
           bgColor="bg-blue-50"
         />
-        <SummaryCard 
+        <SummaryCard
           title="Gastos Totales"
           value="$42,320.00"
           change="4.2%"
@@ -62,7 +64,7 @@ export default function Dashboard() {
           iconColor="text-red-600"
           bgColor="bg-red-50"
         />
-        <SummaryCard 
+        <SummaryCard
           title="Utilidad Neta"
           value="$82,180.00"
           change="18.3%"
@@ -179,15 +181,15 @@ export default function Dashboard() {
           </div>
 
           <div className="card bg-primary text-white border-none shadow-xl shadow-primary/20 relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 -mr-8 -mt-8 rounded-full"></div>
-             <div className="relative z-10">
-                <h4 className="font-bold text-sm mb-1 text-blue-100 font-display">Estado de Cuenta</h4>
-                <p className="text-2xl font-black mb-4">$284,920.00</p>
-                <div className="flex items-center gap-2 text-[10px] font-bold text-green-400 bg-white/10 w-fit px-2 py-1 rounded-full">
-                  <TrendingUp className="w-3 h-3" />
-                  +8.4% este mes
-                </div>
-             </div>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 -mr-8 -mt-8 rounded-full"></div>
+            <div className="relative z-10">
+              <h4 className="font-bold text-sm mb-1 text-blue-100 font-display">Estado de Cuenta</h4>
+              <p className="text-2xl font-black mb-4">$284,920.00</p>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-green-400 bg-white/10 w-fit px-2 py-1 rounded-full">
+                <TrendingUp className="w-3 h-3" />
+                +8.4% este mes
+              </div>
+            </div>
           </div>
         </div>
       </div>

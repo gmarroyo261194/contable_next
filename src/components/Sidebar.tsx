@@ -8,7 +8,9 @@ import {
   BarChart3, 
   Settings, 
   LogOut,
-  Calculator
+  Calculator,
+  Building2,
+  Calendar
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -17,8 +19,10 @@ import { logout } from '@/lib/actions/auth-actions';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+  { icon: Building2, label: 'Empresas', href: '/empresas' },
   { icon: ReceiptText, label: 'Asientos Contables', href: '/asientos' },
   { icon: Network, label: 'Plan de Cuentas', href: '/plan-cuentas' },
+  { icon: Calendar, label: 'Ejercicios', href: '/ejercicios' },
   { icon: Users, label: 'Clientes/Proveedores', href: '/entidades' },
   { icon: BarChart3, label: 'Reportes', href: '/reportes' },
   { icon: Settings, label: 'Ajustes', href: '/settings' },

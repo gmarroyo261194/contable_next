@@ -148,6 +148,7 @@ model VerificationToken {
 
 model Ejercicio {
   id           Int            @id @default(autoincrement())
+  numero       Int
   inicio       DateTime
   fin          DateTime
   cerrado      Boolean        @default(false)
@@ -163,6 +164,8 @@ model Ejercicio {
   updatedAt    DateTime       @updatedAt
   createdBy    String?
   updatedBy    String?
+
+  @@unique([numero, empresaId])
 }
 
 model Cuenta {
@@ -232,7 +235,8 @@ model Entidad {
   id                 Int                    @id @default(autoincrement())
   nombre             String
   cuit               String
-  tipo               String // CLIENTE, PROVEEDOR, AMBOS
+  tipoId             Int
+  tipo               TipoEntidad            @relation(fields: [tipoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   empresaId          Int
   empresa            Empresa                @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   documentos         DocumentoProveedores[]
@@ -385,4 +389,16 @@ model Cotizacion {
   updatedBy String?
 
   @@unique([fecha, monedaId])
+}
+
+model TipoEntidad {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique // CLIENTE, PROVEEDOR, AMBOS
+  entidades   Entidad[]
+
+  // Audit fields
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
 }
