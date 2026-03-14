@@ -8,97 +8,367 @@ datasource db {
 }
 
 model Empresa {
-  id        Int         @id @default(autoincrement())
-  nombre    String
-  cuit      String      @unique
-  direccion String?
-  ejercicios Ejercicio[]
-  entidades  Entidad[]
-  cuentas    Cuenta[]
+  id                    Int                   @id @default(autoincrement())
+  nombre                String
+  cuit                  String                @unique
+  direccion             String?
+  telefono              String?
+  email                 String?
+  logo                  String?
+  monedaId              Int
+  moneda                Moneda                @relation("EmpresaMoneda", fields: [monedaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  ejercicios            Ejercicio[]
+  entidades             Entidad[]
+  cuentas               Cuenta[]
+  pedidosPagos          PedidosPagos[]
+  pagos                 Pagos[]
+  documentosClientes    DocumentoClientes[]
+  documentosProveedores DocumentoProveedores[]
+  usuarios              EmpresaUsuario[]
+
+  // Audit fields
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  createdBy             String?
+  updatedBy             String?
+}
+
+model User {
+  id            String           @id @default(cuid())
+  name          String?
+  email         String?          @unique
+  password      String?          // Hashed password
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  roles         UserRole[]
+  empresas      EmpresaUsuario[]
+
+  // Audit fields
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  createdBy     String?
+  updatedBy     String?
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?
+  permissions RolePermission[]
+  users       UserRole[]
+
+  // Audit fields
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdBy   String?
+  updatedBy   String?
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  name        String           @unique // e.g., "asientos:create", "reportes:view"
+  description String?
+  roles       RolePermission[]
+
+  // Audit fields
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdBy   String?
+  updatedBy   String?
+}
+
+// Junction table for User <-> Role
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+// Junction table for Role <-> Permission
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+// Multi-tenant relationship
+model EmpresaUsuario {
+  empresaId Int
+  userId    String
+  role      String? // Optional role override per enterprise
+  empresa   Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([empresaId, userId])
+}
+
+// Standard NextAuth models (simplified for Credentials)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Ejercicio {
-  id         Int       @id @default(autoincrement())
-  inicio     DateTime
-  fin        DateTime
-  cerrado    Boolean   @default(false)
-  empresaId  Int
-  empresa    Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  asientos   Asiento[]
-  cuentas    Cuenta[]
+  id           Int            @id @default(autoincrement())
+  inicio       DateTime
+  fin          DateTime
+  cerrado      Boolean        @default(false)
+  empresaId    Int
+  empresa      Empresa        @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  asientos     Asiento[]
+  cuentas      Cuenta[]
+  pedidosPagos PedidosPagos[]
+  pagos        Pagos[]
+
+  // Audit fields
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  createdBy    String?
+  updatedBy    String?
 }
 
 model Cuenta {
-  id          Int       @id @default(autoincrement())
+  id          Int              @id @default(autoincrement())
   codigo      String
+  codigoCorto Int? //un codigo de hasta 5 digitos, para referenciar rapidamente la cuenta
   nombre      String
-  tipo        String    // ACTIVO, PASIVO, PATRIMONIO_NETO, RESULTADO_POSITIVO, RESULTADO_NEGATIVO
+  tipo        String // ACTIVO, PASIVO, PATRIMONIO_NETO, RESULTADO_POSITIVO, RESULTADO_NEGATIVO
   padreId     Int?
-  padre       Cuenta?   @relation("Jerarquia", fields: [padreId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  hijos       Cuenta[]  @relation("Jerarquia")
+  padre       Cuenta?          @relation("Jerarquia", fields: [padreId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  hijos       Cuenta[]         @relation("Jerarquia")
   empresaId   Int
-  empresa     Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  empresa     Empresa          @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   ejercicioId Int
-  ejercicio   Ejercicio @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  ejercicio   Ejercicio        @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  imputable   Boolean          @default(true) // Cuenta imputable, es decir, puede ser debida o habida
   renglones   RenglonAsiento[]
+
+  // Audit fields
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdBy   String?
+  updatedBy   String?
 
   @@unique([codigo, ejercicioId])
 }
 
 model Asiento {
-  id          Int      @id @default(autoincrement())
+  id          Int                    @id @default(autoincrement())
   numero      Int
   fecha       DateTime
   descripcion String
   ejercicioId Int
-  ejercicio   Ejercicio @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  ejercicio   Ejercicio              @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   renglones   RenglonAsiento[]
-  facturas    Factura[]
+  documentos  DocumentoProveedores[] @relation("AsientoADocumentoProv")
+  docClientes DocumentoClientes[]    @relation("AsientoADocumentoCli")
+  pagos       Pagos[]
+
+  // Audit fields
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  createdBy   String?
+  updatedBy   String?
 }
 
 model RenglonAsiento {
-  id         Int      @id @default(autoincrement())
-  debe       Decimal  @default(0) @db.Decimal(18, 2)
-  haber      Decimal  @default(0) @db.Decimal(18, 2)
+  id         Int     @id @default(autoincrement())
+  debe       Decimal @default(0) @db.Decimal(18, 2)
+  haber      Decimal @default(0) @db.Decimal(18, 2)
   cuentaId   Int
-  cuenta     Cuenta   @relation(fields: [cuentaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  cuenta     Cuenta  @relation(fields: [cuentaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   asientoId  Int
-  asiento    Asiento  @relation(fields: [asientoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  asiento    Asiento @relation(fields: [asientoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   monedaId   Int
-  moneda     Moneda   @relation(fields: [monedaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  cotizacion Decimal  @db.Decimal(18, 4)
+  moneda     Moneda  @relation("MonedaRenglones", fields: [monedaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  cotizacion Decimal @db.Decimal(18, 4)
+
+  // Audit fields
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  createdBy  String?
+  updatedBy  String?
 }
 
 model Entidad {
-  id        Int       @id @default(autoincrement())
-  nombre    String
-  cuit      String
-  tipo      String    // CLIENTE, PROVEEDOR, AMBOS
-  empresaId Int
-  empresa   Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  facturas  Factura[]
+  id                 Int                    @id @default(autoincrement())
+  nombre             String
+  cuit               String
+  tipo               String // CLIENTE, PROVEEDOR, AMBOS
+  empresaId          Int
+  empresa            Empresa                @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  documentos         DocumentoProveedores[]
+  documentosClientes DocumentoClientes[]
+
+  // Audit fields
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  createdBy          String?
+  updatedBy          String?
 }
 
-model Factura {
-  id          Int      @id @default(autoincrement())
-  tipo        String   // A, B, C, M
-  numero      String
-  fecha       DateTime
-  montoTotal  Decimal  @db.Decimal(18, 2)
-  iva         Decimal  @db.Decimal(18, 2)
-  entidadId   Int
-  entidad     Entidad  @relation(fields: [entidadId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  asientoId   Int?
-  asiento     Asiento? @relation(fields: [asientoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+model DocumentoProveedores {
+  id         Int      @id @default(autoincrement())
+  tipo       String // A, B, C, M
+  numero     String
+  fecha      DateTime
+  montoTotal Decimal  @db.Decimal(18, 2)
+  iva        Decimal  @db.Decimal(18, 2)
+  entidadId  Int
+  entidad    Entidad  @relation(fields: [entidadId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  empresaId  Int
+  empresa    Empresa  @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  asientoId  Int?
+  asiento    Asiento? @relation("AsientoADocumentoProv", fields: [asientoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  // Audit fields
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  createdBy  String?
+  updatedBy  String?
+}
+
+model DocumentoClientes {
+  id         Int      @id @default(autoincrement())
+  tipo       String // A, B, C, M
+  numero     String
+  fecha      DateTime
+  montoTotal Decimal  @db.Decimal(18, 2)
+  iva        Decimal  @db.Decimal(18, 2)
+  entidadId  Int
+  entidad    Entidad  @relation(fields: [entidadId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  empresaId  Int
+  empresa    Empresa  @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  asientoId  Int?
+  asiento    Asiento? @relation("AsientoADocumentoCli", fields: [asientoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  // Audit fields
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  createdBy  String?
+  updatedBy  String?
+}
+
+model PedidosPagos {
+  id                Int       @id @default(autoincrement())
+  ejercicioId       Int
+  ejercicio         Ejercicio @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  empresaId         Int
+  empresa           Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  tipo              String //PROVEEDOR, DOCENTES, CLIENTES
+  fechaPedido       DateTime
+  totalPedido       Decimal   @db.Decimal(18, 2)
+  concepto          String
+  solicitadoPor     String
+  anulado           Boolean   @default(false)
+  fechaAnulacion    DateTime?
+  anuladoPor        String?
+  autorizado        Boolean   @default(false)
+  fechaAutorizacion DateTime?
+  autorizadoPor      String?
+  nroPago           Int?
+  pagos             Pagos[]
+
+  // Audit fields
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  createdBy         String?
+  updatedBy         String?
+}
+
+model Pagos {
+  id             Int          @id @default(autoincrement())
+  ejercicioId    Int
+  ejercicio      Ejercicio    @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  empresaId      Int
+  empresa        Empresa      @relation(fields: [empresaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  pedidoId       Int
+  pedido         PedidosPagos @relation(fields: [pedidoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  fechaPago      DateTime
+  importeBruto   Decimal      @db.Decimal(18, 2)
+  importeNeto    Decimal      @db.Decimal(18, 2)
+  asientoId      Int?
+  asiento        Asiento?     @relation(fields: [asientoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  formaPagoId    Int
+  formaPago      FormaPago    @relation(fields: [formaPagoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  beneficiarioId String?
+  descripcion    String?
+  concepto       String
+  anulado        Boolean      @default(false)
+  fechaAnulacion DateTime?
+  anuladoPor     String?
+
+  // Audit fields
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  createdBy      String?
+  updatedBy      String?
+}
+
+model FormaPago {
+  id     Int     @id @default(autoincrement())
+  nombre String
+  pagos  Pagos[]
+
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
 }
 
 model Moneda {
-  id        Int      @id @default(autoincrement())
-  codigo    String   @unique // ARS, USD
-  nombre    String
-  simbolo   String
-  renglones RenglonAsiento[]
+  id           Int              @id @default(autoincrement())
+  codigo       String           @unique // ARS, USD
+  nombre       String
+  simbolo      String
+  renglones    RenglonAsiento[] @relation("MonedaRenglones")
   cotizaciones Cotizacion[]
+  empresas     Empresa[]        @relation("EmpresaMoneda")
+
+  // Audit fields
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  createdBy    String?
+  updatedBy    String?
 }
 
 model Cotizacion {
@@ -107,6 +377,12 @@ model Cotizacion {
   valor    Decimal  @db.Decimal(18, 4)
   monedaId Int
   moneda   Moneda   @relation(fields: [monedaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
 
   @@unique([fecha, monedaId])
 }

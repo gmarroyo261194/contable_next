@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 import { 
   BarChart3, 
   BookOpen, 
-  FileText, 
   Users, 
   Settings, 
   LayoutDashboard,

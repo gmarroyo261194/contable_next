@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { logout } from '@/lib/actions/auth-actions';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
@@ -24,6 +26,11 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const userInitial = session?.user?.name 
+    ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : '??';
 
   return (
     <aside className="w-72 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0">
@@ -66,15 +73,19 @@ export function Sidebar() {
         <div className="bg-slate-50 rounded-2xl p-3 flex items-center gap-3 border border-slate-100">
           <div className="relative">
             <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden text-slate-500 text-xs font-bold">
-              JD
+              {userInitial}
             </div>
             <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-semibold text-slate-900 truncate">Jane Doe</span>
-            <span className="text-[11px] text-slate-500 truncate">Contador Senior</span>
+            <span className="text-sm font-semibold text-slate-900 truncate">{session?.user?.name || 'Invitado'}</span>
+            <span className="text-[11px] text-slate-500 truncate">{session?.user?.email || 'No identificado'}</span>
           </div>
-          <button className="ml-auto text-slate-400 hover:text-slate-600 transition-colors">
+          <button 
+            onClick={() => logout()}
+            className="ml-auto text-slate-400 hover:text-red-500 transition-colors"
+            title="Cerrar sesión"
+          >
             <LogOut className="w-5 h-5" />
           </button>
         </div>

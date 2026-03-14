@@ -10,9 +10,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Clock,
-  Send,
-  FileSearch,
-  ArrowRight
+  Send
 } from 'lucide-react';
 import { SummaryCard } from '@/components/SummaryCard';
 import { Dialog } from '@/components/Dialog';

@@ -3,9 +3,6 @@
 import React, { useState } from 'react';
 import { 
   Plus, 
-  Search, 
-  Bell, 
-  HelpCircle,
   FileSpreadsheet,
   FileText,
   Calendar,

@@ -1,7 +1,11 @@
-import React from 'react';
+"use client";
+
+import { useSession } from 'next-auth/react';
 import { Search, Bell } from 'lucide-react';
 
 export function Header() {
+  const { data: session } = useSession();
+
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -28,8 +32,9 @@ export function Header() {
           
           <div className="flex items-center gap-3">
              <div className="text-right hidden sm:block">
-                <p className="text-xs font-semibold leading-none text-slate-900">Empresa Demo S.A.</p>
-                <p className="text-[10px] text-slate-500 mt-1">Ejercicio 2024</p>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <p className="text-xs font-semibold leading-none text-slate-900">{(session?.user as any)?.empresaNombre || 'Sin Empresa'}</p>
+                <p className="text-[10px] text-slate-500 mt-1">Ejercicio 2026</p>
              </div>
           </div>
         </div>

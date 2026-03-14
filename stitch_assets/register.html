@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ec5b13",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#221610",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<title>ContableNext - Registro</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Top Navigation Bar (Simplified for Auth) -->
+<header class="w-full px-6 py-4 flex items-center justify-between bg-white/50 dark:bg-background-dark/50 backdrop-blur-md border-b border-primary/10">
+<div class="flex items-center gap-2">
+<div class="bg-primary p-1.5 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-2xl">account_balance_wallet</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">ContableNext</h1>
+</div>
+<div class="hidden sm:block">
+<span class="text-sm text-slate-500 dark:text-slate-400">¿Ya tienes cuenta?</span>
+<a class="ml-2 text-sm font-bold text-primary hover:underline" href="#">Inicia Sesión</a>
+</div>
+</header>
+<main class="flex-1 flex items-center justify-center p-6 sm:p-12">
+<div class="w-full max-w-xl bg-white dark:bg-slate-900/50 rounded-xl shadow-xl border border-primary/5 overflow-hidden">
+<div class="flex flex-col md:flex-row">
+<!-- Branding/Side Panel -->
+<div class="hidden md:flex md:w-1/3 bg-primary p-8 flex-col justify-between text-white relative overflow-hidden">
+<div class="relative z-10">
+<h2 class="text-2xl font-black leading-tight mb-4">Potencia tu Negocio</h2>
+<p class="text-primary-50/80 text-sm">Gestiona tus impuestos, facturas y reportes en un solo lugar con la tecnología de ContableNext.</p>
+</div>
+<div class="relative z-10 mt-auto">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-primary bg-slate-200" data-alt="Avatar de usuario satisfecho 1"></div>
+<div class="w-8 h-8 rounded-full border-2 border-primary bg-slate-300" data-alt="Avatar de usuario satisfecho 2"></div>
+<div class="w-8 h-8 rounded-full border-2 border-primary bg-slate-400" data-alt="Avatar de usuario satisfecho 3"></div>
+</div>
+<p class="text-[10px] mt-2 text-white/70 uppercase font-bold tracking-widest">Utilizado por +10k contadores</p>
+</div>
+<!-- Decorative element -->
+<div class="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+</div>
+<!-- Registration Form -->
+<div class="flex-1 p-8 sm:p-10">
+<div class="mb-8">
+<h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Crear Cuenta</h2>
+<p class="text-slate-500 dark:text-slate-400 mt-2">Únete a ContableNext y gestiona tu contabilidad fácilmente.</p>
+</div>
+<form action="#" class="space-y-4">
+<div class="grid grid-cols-1 gap-4">
+<!-- Full Name -->
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Nombre completo</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors text-lg">person</span>
+<input class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400" placeholder="Ej. Juan Pérez" type="text"/>
+</div>
+</div>
+<!-- Email -->
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Correo electrónico</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors text-lg">mail</span>
+<input class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400" placeholder="correo@ejemplo.com" type="email"/>
+</div>
+</div>
+<!-- Company -->
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Empresa</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors text-lg">business</span>
+<input class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400" placeholder="Nombre de tu empresa" type="text"/>
+</div>
+</div>
+<!-- Password Fields -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Contraseña</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors text-lg">lock</span>
+<input class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400" placeholder="••••••••" type="password"/>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Confirmar</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors text-lg">check_circle</span>
+<input class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400" placeholder="••••••••" type="password"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Terms -->
+<div class="flex items-start gap-3 py-2">
+<input class="mt-1 w-4 h-4 rounded text-primary focus:ring-primary border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 cursor-pointer" id="terms" type="checkbox"/>
+<label class="text-sm text-slate-500 dark:text-slate-400 leading-tight" for="terms">
+                                Acepto los <a class="text-primary font-medium hover:underline" href="#">términos y condiciones</a> y la <a class="text-primary font-medium hover:underline" href="#">política de privacidad</a>.
+                            </label>
+</div>
+<!-- Submit Button -->
+<button class="w-full py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all shadow-lg shadow-primary/25 active:scale-[0.98]" type="submit">
+                            Crear Cuenta
+                        </button>
+<div class="mt-6 flex flex-col gap-4 text-center">
+<div class="flex items-center gap-4">
+<div class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
+<span class="text-xs text-slate-400 uppercase font-bold tracking-widest">O continúa con</span>
+<div class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" type="button">
+<div class="w-5 h-5 bg-slate-100 rounded-sm" data-alt="Icono de Google"></div>
+<span class="text-xs font-semibold">Google</span>
+</button>
+<button class="flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" type="button">
+<div class="w-5 h-5 bg-slate-100 rounded-sm" data-alt="Icono de Microsoft"></div>
+<span class="text-xs font-semibold">Microsoft</span>
+</button>
+</div>
+</div>
+<div class="mt-8 text-center sm:hidden">
+<p class="text-sm text-slate-500">
+                                ¿Ya tienes cuenta? <a class="text-primary font-bold hover:underline" href="#">Inicia Sesión</a>
+</p>
+</div>
+</form>
+</div>
+</div>
+</div>
+</main>
+<footer class="w-full py-6 px-10 text-center">
+<p class="text-xs text-slate-400 dark:text-slate-500">
+            © 2024 ContableNext. Todos los derechos reservados.
+        </p>
+</footer>
+</body></html>
