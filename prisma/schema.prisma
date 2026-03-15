@@ -205,6 +205,11 @@ model Asiento {
   docClientes DocumentoClientes[]    @relation("AsientoADocumentoCli")
   pagos       Pagos[]
 
+  // Relación de anulación
+  anulaAId    Int?
+  anulaA      Asiento?               @relation("Reversion", fields: [anulaAId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  anulaciones Asiento[]              @relation("Reversion")
+
   // Audit fields
   createdAt   DateTime               @default(now())
   updatedAt   DateTime               @updatedAt
@@ -216,6 +221,7 @@ model RenglonAsiento {
   id         Int     @id @default(autoincrement())
   debe       Decimal @default(0) @db.Decimal(18, 2)
   haber      Decimal @default(0) @db.Decimal(18, 2)
+  leyenda    String?
   cuentaId   Int
   cuenta     Cuenta  @relation(fields: [cuentaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   asientoId  Int

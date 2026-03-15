@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: "Sistema de gestión contable moderno",
 };
 
+import { Toaster } from "sonner";
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -24,6 +26,7 @@ export default async function RootLayout({
   return (
     <html lang="es" className={`${inter.variable}`}>
       <body className="font-sans antialiased text-slate-900 bg-slate-50">
+        <Toaster position="top-right" richColors />
         <AuthProvider>
           {isAuthenticated ? (
             <div className="flex min-h-screen">

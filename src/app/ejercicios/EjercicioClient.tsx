@@ -48,9 +48,15 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
     }
   };
 
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const normalized = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+    return format(normalized, "dd MMM yyyy", { locale: es });
+  };
+
   const columns = [
-    { 
-      header: "Período", 
+    {
+      header: "Período",
       accessor: (e: any) => (
         <div className="flex items-center gap-3">
           <div className={`size-8 rounded-lg flex items-center justify-center ${e.cerrado ? 'bg-slate-100 text-slate-400' : 'bg-green-50 text-green-600'}`}>
@@ -61,25 +67,24 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
               Ejercicio {e.numero}
             </span>
             <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider">
-              {format(new Date(e.inicio), "dd MMM yyyy", { locale: es })} - {format(new Date(e.fin), "dd MMM yyyy", { locale: es })}
+              {formatDate(e.inicio)} - {formatDate(e.fin)}
             </span>
           </div>
         </div>
       )
     },
-    { 
-      header: "Estado", 
+    {
+      header: "Estado",
       accessor: (e: any) => (
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-          e.cerrado ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
-        }`}>
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${e.cerrado ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+          }`}>
           {e.cerrado ? <Lock className="size-3" /> : <Unlock className="size-3" />}
           {e.cerrado ? 'Cerrado' : 'Abierto'}
         </span>
       )
     },
-    { 
-      header: "Asientos", 
+    {
+      header: "Asientos",
       accessor: (e: any) => (
         <span className="text-xs font-semibold text-slate-500">
           Sin asientos registrados
@@ -95,7 +100,7 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
           <h2 className="text-2xl font-bold text-slate-800 font-display">Ejercicios Contables</h2>
           <p className="text-slate-500 text-sm">Gestiona los períodos fiscales de tu empresa</p>
         </div>
-        <button 
+        <button
           onClick={handleCreate}
           className="flex items-center gap-2 bg-primary px-6 py-2.5 rounded-xl font-bold text-sm text-white hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-display"
         >
@@ -109,24 +114,23 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
         columns={columns}
         actions={(item) => (
           <>
-            <button 
+            <button
               onClick={() => handleToggleStatus(item)}
               title={item.cerrado ? "Reabrir ejercicio" : "Cerrar ejercicio"}
-              className={`p-2 rounded-lg transition-colors ${
-                item.cerrado 
-                  ? 'text-slate-400 hover:text-green-600 hover:bg-green-50' 
-                  : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
-              }`}
+              className={`p-2 rounded-lg transition-colors ${item.cerrado
+                ? 'text-slate-400 hover:text-green-600 hover:bg-green-50'
+                : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
+                }`}
             >
               {item.cerrado ? <Unlock className="size-4" /> : <Lock className="size-4" />}
             </button>
-            <button 
+            <button
               onClick={() => handleEdit(item)}
-              className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+              className="p-2 text-primary rounded-lg"
             >
               <Pencil className="size-4" />
             </button>
-            <button 
+            <button
               onClick={() => handleDelete(item.id)}
               className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
@@ -136,13 +140,13 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
         )}
       />
 
-      <Dialog 
-        isOpen={isDialogOpen} 
+      <Dialog
+        isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         title={editingEjercicio ? "Editar Ejercicio" : "Crear Nuevo Ejercicio"}
       >
-        <EjercicioForm 
-          initialData={editingEjercicio} 
+        <EjercicioForm
+          initialData={editingEjercicio}
           onClose={() => setIsDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />

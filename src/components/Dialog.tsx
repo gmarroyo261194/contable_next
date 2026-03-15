@@ -8,9 +8,12 @@ interface DialogProps {
   onClose: () => void;
   children: React.ReactNode;
   title?: string;
+  hideHeader?: boolean;
+  noPadding?: boolean;
+  maxWidth?: string;
 }
 
-export function Dialog({ isOpen, onClose, children, title }: DialogProps) {
+export function Dialog({ isOpen, onClose, children, title, hideHeader, noPadding, maxWidth = 'max-w-4xl' }: DialogProps) {
   if (!isOpen) return null;
 
   return (
@@ -19,19 +22,21 @@ export function Dialog({ isOpen, onClose, children, title }: DialogProps) {
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" 
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          {title ? (
-            <h3 className="text-xl font-bold text-slate-800 font-display">{title}</h3>
-          ) : <div></div>}
-          <button 
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-8">
+      <div className={`relative bg-white rounded-3xl shadow-2xl w-full ${maxWidth} overflow-hidden animate-in fade-in zoom-in duration-200`}>
+        {!hideHeader && (
+          <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            {title ? (
+              <h3 className="text-xl font-bold text-slate-800 font-display">{title}</h3>
+            ) : <div></div>}
+            <button 
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+        <div className={noPadding ? "" : "p-8"}>
           {children}
         </div>
       </div>
