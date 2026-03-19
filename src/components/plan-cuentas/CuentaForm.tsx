@@ -21,7 +21,7 @@ export function CuentaForm({ initialData, cuentas, onClose, onSuccess }: CuentaF
       codigoCorto: initialData.codigoCorto,
       nombre: initialData.nombre,
       tipo: initialData.tipo,
-      imputable: initialData.imputable,
+      imputable: initialData.imputable, // Mantener tipo original (booleano)
       padreId: initialData.padreId,
     } : {
       codigo: "",
@@ -32,6 +32,9 @@ export function CuentaForm({ initialData, cuentas, onClose, onSuccess }: CuentaF
       padreId: "",
     },
   });
+
+  const isImputable = watch("imputable");
+  const isImputableVal = isImputable === "true" || isImputable === true;
 
   const onSubmit = async (data: any) => {
     setLoading(true);
@@ -136,33 +139,75 @@ export function CuentaForm({ initialData, cuentas, onClose, onSuccess }: CuentaF
         <div className="space-y-3 md:col-span-2">
           <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">¿Cómo operará esta cuenta?</label>
           <div className="grid grid-cols-2 gap-4">
-            <label className="cursor-pointer">
+            <label className="cursor-pointer group relative">
               <input type="radio" value="true" {...register("imputable")} className="hidden peer" />
-              <div className="h-full flex flex-col items-center text-center p-4 bg-white border-2 border-slate-100 rounded-2xl shadow-sm peer-checked:border-emerald-500 peer-checked:bg-emerald-50/50 transition-all hover:border-slate-200 group relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-12 h-12 bg-emerald-500/10 rounded-bl-3xl translate-x-4 -translate-y-4 peer-checked:translate-x-0 peer-checked:translate-y-0 transition-transform"></div>
-                <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform peer-checked:bg-emerald-500 peer-checked:text-white">
-                  <CheckSquare className="size-5 text-slate-400 peer-checked:text-white" />
-                </div>
-                <span className="text-sm font-black text-slate-700 peer-checked:text-emerald-800 uppercase tracking-tighter">Imputable</span>
-                <p className="text-[10px] font-bold text-slate-400 mt-1 leading-tight peer-checked:text-emerald-600/70 uppercase">Registra movimientos y asientos en el libro diario</p>
+              <div className={`h-full flex flex-col items-center text-center p-5 border-2 rounded-2xl transition-all duration-300 relative overflow-hidden ${
+                isImputableVal 
+                ? "bg-emerald-50/50 border-emerald-500 shadow-lg shadow-emerald-500/10 scale-[1.02]" 
+                : "bg-white border-slate-100 hover:border-slate-200"
+              }`}>
+                {/* Corner Splash */}
+                <div className={`absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-bl-3xl transition-transform duration-500 ${
+                  isImputableVal ? "translate-x-0 translate-y-0" : "translate-x-6 -translate-y-6"
+                }`}></div>
                 
-                {/* Visual indicator dot */}
-                <div className="mt-3 size-2 rounded-full bg-slate-200 peer-checked:bg-emerald-500 animate-pulse"></div>
+                {/* Icon Container */}
+                <div className={`size-12 rounded-xl flex items-center justify-center mb-3 transition-all duration-300 ${
+                  isImputableVal ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30" : "bg-slate-100 text-slate-400 group-hover:scale-110"
+                }`}>
+                  <CheckSquare className="size-6" />
+                </div>
+                
+                <span className={`text-sm font-black uppercase tracking-tighter transition-colors duration-300 ${
+                  isImputableVal ? "text-emerald-800" : "text-slate-600"
+                }`}>Imputable</span>
+                
+                <p className={`text-[10px] font-bold mt-1.5 leading-tight uppercase transition-colors duration-300 ${
+                  isImputableVal ? "text-emerald-700/70" : "text-slate-400"
+                }`}>
+                  Registra movimientos y asientos en el libro diario
+                </p>
+                
+                {/* Selection indicator */}
+                <div className={`mt-3.5 size-2 rounded-full transition-all duration-300 ${
+                  isImputableVal ? "bg-emerald-500 scale-125 animate-pulse" : "bg-slate-200"
+                }`}></div>
               </div>
             </label>
 
-            <label className="cursor-pointer">
+            <label className="cursor-pointer group relative">
               <input type="radio" value="false" {...register("imputable")} className="hidden peer" />
-              <div className="h-full flex flex-col items-center text-center p-4 bg-white border-2 border-slate-100 rounded-2xl shadow-sm peer-checked:border-amber-500 peer-checked:bg-amber-50/50 transition-all hover:border-slate-200 group relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-12 h-12 bg-amber-500/10 rounded-bl-3xl translate-x-4 -translate-y-4 peer-checked:translate-x-0 peer-checked:translate-y-0 transition-transform"></div>
-                <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform peer-checked:bg-amber-500 peer-checked:text-white">
-                  <GitBranch className="size-5 text-slate-400 peer-checked:text-white" />
-                </div>
-                <span className="text-sm font-black text-slate-700 peer-checked:text-amber-800 uppercase tracking-tighter">De Sumatoria</span>
-                <p className="text-[10px] font-bold text-slate-400 mt-1 leading-tight peer-checked:text-amber-600/70 uppercase">Agrupa otras subcuentas y muestra el saldo total</p>
+              <div className={`h-full flex flex-col items-center text-center p-5 border-2 rounded-2xl transition-all duration-300 relative overflow-hidden ${
+                !isImputableVal 
+                ? "bg-amber-50/50 border-amber-500 shadow-lg shadow-amber-500/10 scale-[1.02]" 
+                : "bg-white border-slate-100 hover:border-slate-200"
+              }`}>
+                {/* Corner Splash */}
+                <div className={`absolute top-0 right-0 w-16 h-16 bg-amber-500/10 rounded-bl-3xl transition-transform duration-500 ${
+                  !isImputableVal ? "translate-x-0 translate-y-0" : "translate-x-6 -translate-y-6"
+                }`}></div>
                 
-                {/* Visual indicator dot */}
-                <div className="mt-3 size-2 rounded-full bg-slate-200 peer-checked:bg-amber-500 animate-pulse"></div>
+                {/* Icon Container */}
+                <div className={`size-12 rounded-xl flex items-center justify-center mb-3 transition-all duration-300 ${
+                  !isImputableVal ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30" : "bg-slate-100 text-slate-400 group-hover:scale-110"
+                }`}>
+                  <GitBranch className="size-6" />
+                </div>
+                
+                <span className={`text-sm font-black uppercase tracking-tighter transition-colors duration-300 ${
+                  !isImputableVal ? "text-amber-800" : "text-slate-600"
+                }`}>De Sumatoria</span>
+                
+                <p className={`text-[10px] font-bold mt-1.5 leading-tight uppercase transition-colors duration-300 ${
+                  !isImputableVal ? "text-amber-700/70" : "text-slate-400"
+                }`}>
+                  Agrupa otras subcuentas y muestra el saldo total
+                </p>
+                
+                {/* Selection indicator */}
+                <div className={`mt-3.5 size-2 rounded-full transition-all duration-300 ${
+                  !isImputableVal ? "bg-amber-500 scale-125 animate-pulse" : "bg-slate-200"
+                }`}></div>
               </div>
             </label>
           </div>
