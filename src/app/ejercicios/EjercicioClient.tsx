@@ -57,7 +57,8 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
   const columns = [
     {
       header: "Período",
-      accessor: (e: any) => (
+      accessor: "numero",
+      cell: (e: any) => (
         <div className="flex items-center gap-3">
           <div className={`size-8 rounded-lg flex items-center justify-center ${e.cerrado ? 'bg-slate-100 text-slate-400' : 'bg-green-50 text-green-600'}`}>
             <Calendar className="size-4" />
@@ -75,7 +76,8 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
     },
     {
       header: "Estado",
-      accessor: (e: any) => (
+      accessor: "cerrado",
+      cell: (e: any) => (
         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${e.cerrado ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
           }`}>
           {e.cerrado ? <Lock className="size-3" /> : <Unlock className="size-3" />}
@@ -85,7 +87,7 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
     },
     {
       header: "Asientos",
-      accessor: (e: any) => (
+      cell: (e: any) => (
         <span className="text-xs font-semibold text-slate-500">
           Sin asientos registrados
         </span>

@@ -77,8 +77,47 @@ async function main() {
     },
   });
 
+  // 6. Create Default Currency and Company (Requested: Login must have a company)
+  let moneda = await prisma.moneda.findUnique({ where: { codigo: 'ARS' } });
+  if (!moneda) {
+    moneda = await prisma.moneda.create({
+      data: {
+        codigo: 'ARS',
+        nombre: 'Pesos Argentinos',
+        simbolo: '$',
+      },
+    });
+  }
+
+  const defaultEmpresa = await prisma.empresa.upsert({
+    where: { cuit: '00-00000000-0' },
+    update: {},
+    create: {
+      nombre: 'Empresa Demo',
+      cuit: '00-00000000-0',
+      monedaId: moneda.id,
+    },
+  });
+
+  // 7. Associate Admin with the Default Company
+  await prisma.empresaUsuario.upsert({
+    where: {
+      empresaId_userId: {
+        empresaId: defaultEmpresa.id,
+        userId: adminUser.id,
+      },
+    },
+    update: { role: 'ADMIN' },
+    create: {
+      empresaId: defaultEmpresa.id,
+      userId: adminUser.id,
+      role: 'ADMIN',
+    },
+  });
+
   console.log('Seeding completed successfully!');
   console.log('Initial User: admin@contablenext.com / admin123');
+  console.log('Initial Empresa: Empresa Demo');
 }
 
 main()

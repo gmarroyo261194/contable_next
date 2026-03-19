@@ -1,12 +1,13 @@
 import React from "react";
-import { getUsers, getRoles, getPermissions } from "./actions";
+import { getUsers, getRoles, getPermissions, getEmpresas } from "./actions";
 import { SecurityClient } from "./SecurityClient";
 
 export default async function SecurityPage() {
-  const [users, roles, permissions] = await Promise.all([
+  const [users, roles, permissions, empresas] = await Promise.all([
     getUsers(),
     getRoles(),
     getPermissions(),
+    getEmpresas(),
   ]);
 
   return (
@@ -15,6 +16,7 @@ export default async function SecurityPage() {
         users={users} 
         roles={roles} 
         permissions={permissions} 
+        empresas={empresas}
       />
     </div>
   );

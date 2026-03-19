@@ -9,7 +9,7 @@ export default async function EmpresasPage() {
   ]);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-8">
       <EmpresaClient 
         initialEmpresas={empresas} 
         monedas={monedas} 

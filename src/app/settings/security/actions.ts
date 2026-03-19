@@ -35,7 +35,13 @@ export async function createUser(data: any) {
         create: data.roleIds?.map((id: string) => ({
           roleId: id
         }))
-      }
+      },
+      empresas: data.empresaIds ? {
+        create: data.empresaIds.map((empId: number) => ({
+          empresaId: empId,
+          role: "ADMIN"
+        }))
+      } : undefined
     }
   });
   revalidatePath("/settings/security");
@@ -63,11 +69,63 @@ export async function updateUser(id: string, data: any) {
         create: data.roleIds?.map((roleId: string) => ({
           roleId
         }))
-      }
+      },
+      empresas: data.empresaIds ? {
+        deleteMany: {},
+        create: data.empresaIds.map((empId: number) => ({
+          empresaId: empId,
+          role: "ADMIN" // Default role for now
+        }))
+      } : undefined
     }
   });
   revalidatePath("/settings/security");
   return user;
+}
+
+// --- Empresas & Assignments ---
+export async function getEmpresas() {
+  return await prisma.empresa.findMany({
+    include: {
+      usuarios: {
+        include: {
+          user: true
+        }
+      }
+    },
+    orderBy: { nombre: 'asc' }
+  });
+}
+
+export async function assignUserToEmpresa(userId: string, empresaId: number, role: string = "USER") {
+  const assignment = await prisma.empresaUsuario.upsert({
+    where: {
+      empresaId_userId: {
+        empresaId,
+        userId
+      }
+    },
+    update: { role },
+    create: {
+      empresaId,
+      userId,
+      role
+    }
+  });
+  revalidatePath("/settings/security");
+  return assignment;
+}
+
+export async function unassignUserFromEmpresa(userId: string, empresaId: number) {
+  await prisma.empresaUsuario.delete({
+    where: {
+      empresaId_userId: {
+        empresaId,
+        userId
+      }
+    }
+  });
+  revalidatePath("/settings/security");
 }
 
 export async function deleteUser(id: string) {

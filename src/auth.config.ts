@@ -60,6 +60,16 @@ export const authConfig = {
     }),
   ],
   callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isPublicPage = nextUrl.pathname === "/" || nextUrl.pathname === "/login" || nextUrl.pathname === "/register";
+      
+      if (!isLoggedIn && !isPublicPage) {
+        return Response.redirect(new URL("/", nextUrl));
+      }
+      
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

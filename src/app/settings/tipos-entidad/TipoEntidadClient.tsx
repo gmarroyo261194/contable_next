@@ -38,7 +38,8 @@ export function TipoEntidadClient({ initialTipos }: { initialTipos: any[] }) {
   const columns = [
     { 
       header: "Nombre del Tipo", 
-      accessor: (t: any) => (
+      accessor: "nombre",
+      cell: (t: any) => (
         <div className="flex items-center gap-3">
           <div className="size-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
             <Tag className="size-4" />

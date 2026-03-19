@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useForm } from "react-hook-form";
-import { User, Hash, Tag, Loader2, ChevronDown } from "lucide-react";
+import { User, Hash, Tag, Loader2, ChevronDown, Mail, Phone, CreditCard } from "lucide-react";
 import { createEntidad, updateEntidad } from "@/app/entidades/actions";
 
 interface EntidadFormProps {
@@ -18,10 +18,16 @@ export function EntidadForm({ initialData, tipos, onClose, onSuccess }: EntidadF
     defaultValues: initialData ? {
       nombre: initialData.nombre || "",
       cuit: initialData.cuit || "",
+      nroDoc: initialData.nroDoc || "",
+      email: initialData.email || "",
+      telefono: initialData.telefono || "",
       tipoId: initialData.tipoId,
     } : {
       nombre: "",
       cuit: "",
+      nroDoc: "",
+      email: "",
+      telefono: "",
       tipoId: tipos.length > 0 ? tipos[0].id : "",
     },
   });
@@ -32,6 +38,10 @@ export function EntidadForm({ initialData, tipos, onClose, onSuccess }: EntidadF
       const payload = {
         ...data,
         tipoId: parseInt(data.tipoId),
+        cuit: data.cuit || null,
+        nroDoc: data.nroDoc || null,
+        email: data.email || null,
+        telefono: data.telefono || null,
       };
       if (initialData) {
         await updateEntidad(initialData.id, payload);
@@ -71,12 +81,51 @@ export function EntidadForm({ initialData, tipos, onClose, onSuccess }: EntidadF
           <div className="relative group">
             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary transition-colors" />
             <input
-              {...register("cuit", { required: true })}
+              {...register("cuit")}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
-              placeholder="Ej. 20-12345678-9"
+              placeholder="Ej. 20-12345678-9 (Opcional)"
             />
           </div>
-          {errors.cuit && <span className="text-xs text-red-500 font-medium">Este campo es requerido</span>}
+        </div>
+
+        {/* DNI */}
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-slate-700">DNI / Nro. Documento</label>
+          <div className="relative group">
+            <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <input
+              {...register("nroDoc")}
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
+              placeholder="Ej. 12345678"
+            />
+          </div>
+        </div>
+
+        {/* Email */}
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-slate-700">Email</label>
+          <div className="relative group">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <input
+              type="email"
+              {...register("email")}
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
+              placeholder="correo@ejemplo.com"
+            />
+          </div>
+        </div>
+
+        {/* Teléfono */}
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-slate-700">Teléfono</label>
+          <div className="relative group">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <input
+              {...register("telefono")}
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
+              placeholder="Ej. +54 9..."
+            />
+          </div>
         </div>
 
         {/* Tipo */}

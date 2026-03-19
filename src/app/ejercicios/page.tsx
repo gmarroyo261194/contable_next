@@ -6,7 +6,7 @@ export default async function EjerciciosPage() {
   const ejercicios = await getEjercicios();
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-8">
       <EjercicioClient initialEjercicios={ejercicios} />
     </div>
   );

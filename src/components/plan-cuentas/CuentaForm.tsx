@@ -133,19 +133,36 @@ export function CuentaForm({ initialData, cuentas, onClose, onSuccess }: CuentaF
         </div>
 
         {/* Imputable */}
-        <div className="space-y-2 md:col-span-2">
-          <label className="text-sm font-bold text-slate-700">Es imputable (recibe asientos)</label>
-          <div className="flex gap-4">
-            <label className="flex-1 cursor-pointer">
+        <div className="space-y-3 md:col-span-2">
+          <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">¿Cómo operará esta cuenta?</label>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="cursor-pointer">
               <input type="radio" value="true" {...register("imputable")} className="hidden peer" />
-              <div className="flex items-center justify-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary transition-all text-sm font-bold text-slate-500">
-                Sí
+              <div className="h-full flex flex-col items-center text-center p-4 bg-white border-2 border-slate-100 rounded-2xl shadow-sm peer-checked:border-emerald-500 peer-checked:bg-emerald-50/50 transition-all hover:border-slate-200 group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-12 h-12 bg-emerald-500/10 rounded-bl-3xl translate-x-4 -translate-y-4 peer-checked:translate-x-0 peer-checked:translate-y-0 transition-transform"></div>
+                <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform peer-checked:bg-emerald-500 peer-checked:text-white">
+                  <CheckSquare className="size-5 text-slate-400 peer-checked:text-white" />
+                </div>
+                <span className="text-sm font-black text-slate-700 peer-checked:text-emerald-800 uppercase tracking-tighter">Imputable</span>
+                <p className="text-[10px] font-bold text-slate-400 mt-1 leading-tight peer-checked:text-emerald-600/70 uppercase">Registra movimientos y asientos en el libro diario</p>
+                
+                {/* Visual indicator dot */}
+                <div className="mt-3 size-2 rounded-full bg-slate-200 peer-checked:bg-emerald-500 animate-pulse"></div>
               </div>
             </label>
-            <label className="flex-1 cursor-pointer">
+
+            <label className="cursor-pointer">
               <input type="radio" value="false" {...register("imputable")} className="hidden peer" />
-              <div className="flex items-center justify-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary transition-all text-sm font-bold text-slate-500">
-                No (Solo sumatoria)
+              <div className="h-full flex flex-col items-center text-center p-4 bg-white border-2 border-slate-100 rounded-2xl shadow-sm peer-checked:border-amber-500 peer-checked:bg-amber-50/50 transition-all hover:border-slate-200 group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-12 h-12 bg-amber-500/10 rounded-bl-3xl translate-x-4 -translate-y-4 peer-checked:translate-x-0 peer-checked:translate-y-0 transition-transform"></div>
+                <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform peer-checked:bg-amber-500 peer-checked:text-white">
+                  <GitBranch className="size-5 text-slate-400 peer-checked:text-white" />
+                </div>
+                <span className="text-sm font-black text-slate-700 peer-checked:text-amber-800 uppercase tracking-tighter">De Sumatoria</span>
+                <p className="text-[10px] font-bold text-slate-400 mt-1 leading-tight peer-checked:text-amber-600/70 uppercase">Agrupa otras subcuentas y muestra el saldo total</p>
+                
+                {/* Visual indicator dot */}
+                <div className="mt-3 size-2 rounded-full bg-slate-200 peer-checked:bg-amber-500 animate-pulse"></div>
               </div>
             </label>
           </div>

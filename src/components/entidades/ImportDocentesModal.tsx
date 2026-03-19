@@ -2,15 +2,15 @@
 
 import React, { useState } from "react";
 import * as XLSX from "xlsx";
-import { Upload, FileSpreadsheet, AlertCircle, Loader2, Check } from "lucide-react";
-import { importCuentas } from "@/app/plan-cuentas/actions";
+import { Upload, FileSpreadsheet, AlertCircle, Loader2, Check, UserPlus } from "lucide-react";
+import { importEntidadesDocentes } from "@/app/entidades/actions";
 
-interface ImportModalProps {
+interface ImportDocentesModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
+export function ImportDocentesModal({ onClose, onSuccess }: ImportDocentesModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +49,9 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
         throw new Error("El archivo está vacío.");
       }
 
-      // Asegurar que el objeto sea plano (plain object) para evitar errores de serialización en Server Actions
+      // Sanitizar JSON para Server Action
       const plainJson = JSON.parse(JSON.stringify(json));
-      const result = await importCuentas(plainJson);
+      const result = await importEntidadesDocentes(plainJson);
       
       if (result.success) {
         setSuccess(true);
@@ -59,7 +59,7 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
         setTimeout(onClose, 2000);
       }
     } catch (err: any) {
-      console.error("Error en importancia:", err);
+      console.error("Error en importación de docentes:", err);
       setError(err.message || "Error al procesar el archivo Excel.");
     } finally {
       setLoading(false);
@@ -84,7 +84,7 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
           </div>
         ) : (
           <div className="text-center">
-            <p className="text-sm font-bold text-slate-700 mb-2">Selecciona un archivo Excel (.xlsx o .xls)</p>
+            <p className="text-sm font-bold text-slate-700 mb-2">Selecciona Excel de Docentes</p>
             <label className="inline-flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold text-slate-600 cursor-pointer hover:border-primary transition-colors">
               <Upload className="size-3" />
               Elegir archivo
@@ -94,13 +94,14 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
         )}
       </div>
 
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
-        <AlertCircle className="size-5 text-blue-500 shrink-0" />
+      <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex gap-3">
+        <UserPlus className="size-5 text-emerald-500 shrink-0" />
         <div className="space-y-1">
-          <p className="text-xs font-bold text-blue-800">Instrucciones de importación</p>
-          <p className="text-[10px] text-blue-600 leading-relaxed">
-            El archivo debe contener las columnas: <strong>codigoCta</strong>, <strong>nombreCta</strong>, 
-            <strong>codigoAlt</strong>, <strong>capitulo</strong> e <strong>imputable</strong>.
+          <p className="text-xs font-bold text-emerald-800">Mapeo de Importación</p>
+          <p className="text-[10px] text-emerald-600 leading-relaxed uppercase">
+            Columnas requeridas: <strong>Apellido</strong>, <strong>Nombre</strong>, <strong>NroDocumento</strong>, <strong>NroCuil</strong>.
+            <br />
+            Se creará automáticamente el tipo de entidad <strong>DOCENTE</strong>.
           </p>
         </div>
       </div>
@@ -130,9 +131,9 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
           ) : success ? (
             <Check className="w-4 h-4" />
           ) : (
-            "Iniciar Importación"
+            "Importar Docentes"
           )}
-          {success ? "¡Completado!" : "Importar Datos"}
+          {success ? "¡Completado!" : "Procesar Archivo"}
         </button>
       </div>
     </div>

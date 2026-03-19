@@ -6,7 +6,7 @@ export default async function PlanCuentasPage() {
   const cuentas = await getCuentas();
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-8">
       <PlanCuentasClient initialCuentas={cuentas} />
     </div>
   );

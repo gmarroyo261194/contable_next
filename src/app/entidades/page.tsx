@@ -9,7 +9,7 @@ export default async function EntidadesPage() {
   ]);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-8">
       <EntidadClient initialEntidades={entidades} tipos={tipos} />
     </div>
   );

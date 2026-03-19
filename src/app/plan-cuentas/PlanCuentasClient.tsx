@@ -46,7 +46,8 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
   const columns = [
     { 
       header: "Código", 
-      accessor: (c: any) => (
+      accessor: "codigo",
+      cell: (c: any) => (
         <span className={`font-mono text-xs ${c.imputable ? 'text-slate-600' : 'font-black text-slate-900'}`}>
           {c.codigo}
         </span>
@@ -54,7 +55,8 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
     },
     { 
       header: "Nombre / Cuenta", 
-      accessor: (c: any) => (
+      accessor: "nombre",
+      cell: (c: any) => (
         <div className="flex flex-col">
           <span className={`text-sm ${c.imputable ? 'text-slate-700' : 'font-black text-slate-900'}`}>
             {c.nombre}
@@ -69,7 +71,8 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
     },
     { 
       header: "Tipo", 
-      accessor: (c: any) => (
+      accessor: "tipo",
+      cell: (c: any) => (
         <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
           c.tipo === 'ACTIVO' ? 'bg-green-50 text-green-600' :
           c.tipo === 'PASIVO' ? 'bg-red-50 text-red-600' :
@@ -82,7 +85,8 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
     },
     { 
       header: "Imputable", 
-      accessor: (c: any) => (
+      accessor: "imputable",
+      cell: (c: any) => (
         <span className={`text-[10px] font-black uppercase ${c.imputable ? 'text-blue-600' : 'text-slate-300'}`}>
           {c.imputable ? 'Si' : 'No'}
         </span>
@@ -116,18 +120,8 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-3 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por código o nombre..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 flex items-center gap-3">
+      <div className="flex justify-end">
+        <div className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 flex items-center gap-3 w-fit">
           <GitGraph className="size-4 text-primary" />
           <div className="flex flex-col">
             <span className="text-[10px] uppercase font-black text-slate-400">Total Cuentas</span>
@@ -158,19 +152,22 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
         </div>
       ) : (
         <DataGrid
-          data={filteredCuentas}
+          data={initialCuentas}
           columns={columns}
+          pageSize={25}
           actions={(item) => (
             <>
               <button 
                 onClick={() => handleEdit(item)}
                 className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                title="Editar"
               >
                 <Pencil className="size-4" />
               </button>
               <button 
                 onClick={() => handleDelete(item.id)}
                 className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Eliminar"
               >
                 <Trash2 className="size-4" />
               </button>

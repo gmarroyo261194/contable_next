@@ -92,10 +92,14 @@ export async function importCuentas(rawRows: any[]) {
 
   if (!empresaId || !ejercicioId) throw new Error("Contexto no configurado.");
 
-  // Delete existing ones for this context before importing? 
-  // User didn't specify, but usually import means start fresh or merge. 
-  // Let's assume merge/update if exists, but for simplicity of padreId calculation, 
-  // we'll process them in order.
+  console.log(`Iniciando importación de ${rawRows.length} cuentas...`);
+
+  // Ordenar las filas por longitud de código para asegurar que los padres aparezcan antes que los hijos
+  const sortedRows = [...rawRows].sort((a, b) => {
+    const colA = String(a.codigoCta || "");
+    const colB = String(b.codigoCta || "");
+    return colA.length - colB.length || colA.localeCompare(colB);
+  });
 
   const mapCapitulo: { [key: string]: string } = {
     "0": "ACTIVO",
@@ -108,60 +112,83 @@ export async function importCuentas(rawRows: any[]) {
   const codeToId: { [code: string]: number } = {};
   let count = 0;
 
-  // Process rows
-  for (const row of rawRows) {
-    const codigo = String(row.codigoCta).trim();
-    const nombre = String(row.nombreCta).trim();
-    const codigoCorto = row.codigoAlt && row.codigoAlt !== "NULL" ? parseInt(row.codigoAlt) : null;
-    const tipo = mapCapitulo[String(row.capitulo)] || "ACTIVO";
-    const imputable = String(row.imputable) === "-1" || String(row.imputable).toUpperCase() === "S";
-
-    // Find parentId logic:
-    // We look for a previous code that is a prefix of this one.
-    // Since rows usually come level by level: 100, 110, 111...
-    // The parent is the longest prefix in codeToId.
-    let padreId: number | undefined = undefined;
-    let longestPrefix = "";
-
-    for (const existingCode of Object.keys(codeToId)) {
-      if (codigo.startsWith(existingCode) && existingCode !== codigo) {
-        if (existingCode.length > longestPrefix.length) {
-          longestPrefix = existingCode;
-          padreId = codeToId[existingCode];
-        }
-      }
+  // Validate IDs
+    if (isNaN(empresaId) || isNaN(ejercicioId)) {
+      console.error("Invalid context IDs:", { empresaId, ejercicioId });
+      throw new Error("ID de empresa o ejercicio inválido.");
     }
 
-    // Upsert to handle existing
-    const account = await prisma.cuenta.upsert({
-      where: {
-        codigo_ejercicioId: {
-          codigo,
-          ejercicioId
-        }
-      },
-      update: {
-        nombre,
-        tipo,
-        imputable,
-        codigoCorto,
-        padreId
-      },
-      create: {
-        codigo,
-        nombre,
-        tipo,
-        imputable,
-        codigoCorto,
-        padreId,
-        empresaId,
-        ejercicioId
-      }
-    });
+    // Process rows
+    for (const row of sortedRows) {
+      const codigo = String(row.codigoCta || "").trim();
+      if (!codigo) continue; // Skip empty rows
 
-    codeToId[codigo] = account.id;
-    count++;
-  }
+      const nombre = String(row.nombreCta || "").trim();
+      
+      let codigoCorto: number | null = null;
+      if (row.codigoAlt && row.codigoAlt !== "NULL") {
+        const parsedAlt = parseInt(row.codigoAlt);
+        if (!isNaN(parsedAlt)) codigoCorto = parsedAlt;
+      }
+
+      const tipo = mapCapitulo[String(row.capitulo)] || "ACTIVO";
+      const imputable = String(row.imputable) === "-1" || String(row.imputable).toUpperCase() === "S";
+
+      // Find parentId logic
+      let padreId: number | null = null;
+      let longestPrefix = "";
+
+      for (const existingCode of Object.keys(codeToId)) {
+        if (codigo.startsWith(existingCode) && existingCode !== codigo) {
+          if (existingCode.length > longestPrefix.length) {
+            longestPrefix = existingCode;
+            padreId = codeToId[existingCode];
+          }
+        }
+      }
+
+      // Upsert to handle existing
+      try {
+        const account = await prisma.cuenta.upsert({
+          where: {
+            codigo_ejercicioId: {
+              codigo,
+              ejercicioId
+            }
+          },
+          update: {
+            nombre,
+            tipo,
+            imputable,
+            codigoCorto,
+            padreId: padreId
+          },
+          create: {
+            codigo,
+            nombre,
+            tipo,
+            imputable,
+            codigoCorto,
+            padreId,
+            empresaId,
+            ejercicioId
+          }
+        });
+        codeToId[codigo] = account.id;
+        count++;
+      } catch (err: any) {
+        console.error(`Error upserting account ${codigo}:`, {
+          nombre,
+          padreId,
+          empresaId,
+          ejercicioId,
+          errorMessage: err.message,
+          errorCode: err.code,
+          meta: err.meta
+        });
+        throw new Error(`Error en cuenta ${codigo}: ${err.message}`);
+      }
+    }
 
   revalidatePath("/plan-cuentas");
   return { success: true, count };

@@ -157,5 +157,5 @@ export async function getLoginData(email: string) {
 }
 
 export async function logout() {
-  await signOut({ redirectTo: "/login" });
+  await signOut({ redirectTo: "/" });
 }

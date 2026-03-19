@@ -8,32 +8,40 @@ import { createUser, updateUser } from "@/app/settings/security/actions";
 interface UserFormProps {
   initialData?: any;
   availableRoles: any[];
+  availableEmpresas: any[];
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function UserForm({ initialData, availableRoles, onClose, onSuccess }: UserFormProps) {
+export function UserForm({ initialData, availableRoles, availableEmpresas, onClose, onSuccess }: UserFormProps) {
   const [loading, setLoading] = React.useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: initialData ? {
       name: initialData.name || "",
       email: initialData.email || "",
       roleIds: initialData.roles?.map((r: any) => r.roleId) || [],
+      empresaIds: initialData.empresas?.map((e: any) => e.empresaId) || [],
     } : {
       name: "",
       email: "",
       password: "",
       roleIds: [],
+      empresaIds: [],
     },
   });
 
   const onSubmit = async (data: any) => {
     setLoading(true);
+    const formattedData = {
+      ...data,
+      empresaIds: data.empresaIds?.map((id: string) => parseInt(id)) || [],
+    };
+    
     try {
       if (initialData) {
-        await updateUser(initialData.id, data);
+        await updateUser(initialData.id, formattedData);
       } else {
-        await createUser(data);
+        await createUser(formattedData);
       }
       onSuccess();
       onClose();
@@ -88,7 +96,7 @@ export function UserForm({ initialData, availableRoles, onClose, onSuccess }: Us
 
         <div className="space-y-2">
           <label className="text-sm font-bold text-slate-700">Roles</label>
-          <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl max-h-40 overflow-y-auto">
+          <div className="grid grid-cols-1 gap-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl min-h-[100px] max-h-32 overflow-y-auto">
             {availableRoles.map((role) => (
               <label key={role.id} className="flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer hover:text-primary transition-colors">
                 <input
@@ -98,6 +106,23 @@ export function UserForm({ initialData, availableRoles, onClose, onSuccess }: Us
                   className="rounded border-slate-300 text-primary focus:ring-primary/20"
                 />
                 {role.name}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-slate-700">Empresas Asignadas</label>
+          <div className="grid grid-cols-1 gap-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl min-h-[100px] max-h-32 overflow-y-auto">
+            {availableEmpresas.map((emp) => (
+              <label key={emp.id} className="flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer hover:text-primary transition-colors">
+                <input
+                  type="checkbox"
+                  value={emp.id.toString()}
+                  {...register("empresaIds")}
+                  className="rounded border-slate-300 text-primary focus:ring-primary/20"
+                />
+                {emp.nombre}
               </label>
             ))}
           </div>

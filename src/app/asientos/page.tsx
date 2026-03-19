@@ -109,7 +109,7 @@ export default function AsientosPage() {
   const totalPages = pageSize === 'all' ? 1 : Math.ceil(total / (pageSize as number));
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-8 space-y-6">
       {/* Title and Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

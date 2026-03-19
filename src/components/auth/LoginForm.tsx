@@ -136,7 +136,7 @@ export default function LoginForm() {
           <button 
             className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-lg shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2" 
             type="submit"
-            disabled={loading || !selectedEmpresa || !selectedEjercicio}
+            disabled={loading || !selectedEmpresa}
           >
             {loading ? <Loader2 className="size-5 animate-spin" /> : <LogIn className="size-5" />}
             Entrar al Panel
