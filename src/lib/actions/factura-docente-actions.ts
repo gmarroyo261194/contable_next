@@ -114,6 +114,29 @@ export async function createFacturaDocente(data: {
   }
 }
 
+export async function authorizeFacturaDocente(id: number, fechaHabilitacionPago: string) {
+  const session = await auth();
+  const userIdentity = session?.user?.email || session?.user?.name || "Usuario Desconocido";
+
+  try {
+    const factura = await db.facturaDocente.update({
+      where: { id },
+      data: {
+        estado: "Autorizado",
+        fechaAutorizado: new Date(),
+        usuarioAutorizado: userIdentity,
+        fechaHabilitacionPago: new Date(fechaHabilitacionPago),
+      },
+    });
+
+    revalidatePath("/facturas-docentes");
+    return { success: true, data: JSON.parse(JSON.stringify(factura)) };
+  } catch (error) {
+    console.error("Error al autorizar factura de docente:", error);
+    return { error: "Error al autorizar la factura." };
+  }
+}
+
 export async function deleteFacturaDocente(id: number) {
   try {
     const factura = await db.facturaDocente.findUnique({
@@ -122,7 +145,7 @@ export async function deleteFacturaDocente(id: number) {
     });
 
     if (factura?.asientoPagoId) {
-      return { error: "No se puede eliminar una factura que tiene un asiento de pago asociado." };
+      return { error: "No se puede eliminar una factura que ya ha sido pagada." };
     }
 
     await db.facturaDocente.delete({

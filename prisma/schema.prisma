@@ -466,15 +466,19 @@ model FacturaDocente {
   observaciones   String?  @db.NVarChar(4000)
   asientoPagoId   Int?
   empresaId       Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  createdBy       String?
-  updatedBy       String?
+  estado            String    @default("Autorizacion Pendiente") @db.NVarChar(30)
+  fechaAutorizado   DateTime?
+  usuarioAutorizado String?   @db.NVarChar(100)
+  fechaHabilitacionPago DateTime? @db.Date
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  createdBy         String?
+  updatedBy         String?
 
-  entidad         Entidad  @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
-  cuentaGastos    Cuenta   @relation(fields: [cuentaGastosId], references: [id], onUpdate: NoAction)
-  asientoPago     Asiento? @relation(fields: [asientoPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  empresa         Empresa  @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  entidad           Entidad   @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
+  cuentaGastos      Cuenta    @relation(fields: [cuentaGastosId], references: [id], onUpdate: NoAction)
+  asientoPago       Asiento?  @relation(fields: [asientoPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  empresa           Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
 
   @@unique([entidadId, puntoVenta, numero], name: "UQ_DocenteFactura")
 }
