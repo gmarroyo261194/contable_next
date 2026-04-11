@@ -30,6 +30,8 @@ model Empresa {
   pagos                 Pagos[]
   pedidosPagos          PedidosPagos[]
   facturasDocentes      FacturaDocente[]
+  mediosPago           MedioPago[]
+  gestionesPago        GestionPago[]
 }
 
 model User {
@@ -150,6 +152,7 @@ model Ejercicio {
   empresa      Empresa        @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
   pagos        Pagos[]
   pedidosPagos PedidosPagos[]
+  gestionesPago GestionPago[]
 
   @@unique([numero, empresaId])
 }
@@ -174,6 +177,7 @@ model Cuenta {
   hijos       Cuenta[]         @relation("Jerarquia")
   renglones   RenglonAsiento[]
   facturasDocentes FacturaDocente[]
+  mediosPago      MedioPago[]
 
   @@unique([codigo, ejercicioId])
 }
@@ -197,6 +201,8 @@ model Asiento {
   pagos       Pagos[]
   renglones   RenglonAsiento[]
   facturasDocentes FacturaDocente[]
+  pagosGestion     GestionPago[] @relation("AsientoDePago")
+  anulacionesGestion GestionPago[] @relation("AsientoDeAnulacion")
 }
 
 model RenglonAsiento {
@@ -233,6 +239,7 @@ model Entidad {
   documentosClientes DocumentoClientes[]
   documentos         DocumentoProveedores[]
   facturasDocentes   FacturaDocente[]
+  pagosGestion       GestionPago[]
   empresa            Empresa                @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
   tipo               TipoEntidad            @relation(fields: [tipoId], references: [id], onUpdate: NoAction)
 }
@@ -479,6 +486,50 @@ model FacturaDocente {
   cuentaGastos      Cuenta    @relation(fields: [cuentaGastosId], references: [id], onUpdate: NoAction)
   asientoPago       Asiento?  @relation(fields: [asientoPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   empresa           Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  gestionPagoId     Int?
+  gestionPago       GestionPago? @relation(fields: [gestionPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([entidadId, puntoVenta, numero], name: "UQ_DocenteFactura")
+}
+
+model MedioPago {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  cuentaId  Int?
+  empresaId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  cuenta    Cuenta?   @relation(fields: [cuentaId], references: [id], onUpdate: NoAction)
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  pagos     GestionPago[]
+}
+
+model GestionPago {
+  id                Int       @id @default(autoincrement())
+  fecha             DateTime
+  importeTotal      Decimal   @db.Decimal(18, 2)
+  entidadId         Int
+  asientoId         Int
+  medioPagoId       Int
+  observaciones     String?   @db.NVarChar(4000)
+  anulado           Boolean   @default(false)
+  fechaAnulacion    DateTime?
+  asientoAnulacionId Int?
+  empresaId         Int
+  ejercicioId       Int
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  createdBy         String?
+  updatedBy         String?
+
+  entidad           Entidad     @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
+  asiento           Asiento     @relation("AsientoDePago", fields: [asientoId], references: [id], onUpdate: NoAction)
+  asientoAnulacion  Asiento?    @relation("AsientoDeAnulacion", fields: [asientoAnulacionId], references: [id], onUpdate: NoAction)
+  medioPago         MedioPago   @relation(fields: [medioPagoId], references: [id], onUpdate: NoAction)
+  empresa           Empresa     @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  ejercicio         Ejercicio   @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
+  facturasDocentes  FacturaDocente[]
 }

@@ -37,9 +37,10 @@ interface AsientoFormProps {
   onClose: () => void;
   asientoToEdit?: any;
   onJump?: (id: number) => void;
+  readOnly?: boolean;
 }
 
-export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps) {
+export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }: AsientoFormProps) {
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
   const [descripcion, setDescripcion] = useState('');
   const [renglones, setRenglones] = useState<Renglon[]>([
@@ -227,10 +228,18 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight font-display">
-              {asientoToEdit ? `Editar Asiento #${asientoToEdit.numero.toString().padStart(5, '0')}` : 'Nuevo Asiento Contable'}
+              {readOnly 
+                ? `Asiento #${asientoToEdit?.numero.toString().padStart(5, '0')}`
+                : asientoToEdit 
+                  ? `Editar Asiento #${asientoToEdit.numero.toString().padStart(5, '0')}` 
+                  : 'Nuevo Asiento Contable'}
             </h1>
             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
-              {asientoToEdit ? 'Modificación de registro' : 'Manual Journal Entry'}
+              {readOnly 
+                ? 'Consulta de registro' 
+                : asientoToEdit 
+                  ? 'Modificación de registro' 
+                  : 'Manual Journal Entry'}
             </p>
           </div>
         </div>
@@ -240,16 +249,18 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-slate-500 font-bold text-sm hover:bg-slate-50 transition-colors"
           >
             <X className="w-4 h-4" />
-            Cancelar
+            {readOnly ? 'Cerrar' : 'Cancelar'}
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="flex items-center gap-2 bg-primary px-6 py-2.5 rounded-xl font-bold text-sm text-white hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
-          >
-            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            {asientoToEdit ? 'Guardar Cambios' : 'Registrar Asiento'}
-          </button>
+          {!readOnly && (
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="flex items-center gap-2 bg-primary px-6 py-2.5 rounded-xl font-bold text-sm text-white hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              {asientoToEdit ? 'Guardar Cambios' : 'Registrar Asiento'}
+            </button>
+          )}
         </div>
       </header>
 
@@ -306,6 +317,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
                   text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary focus:border-primary outline-hidden p-3 shadow-sm transition-all"
                   id="entry_date"
                   type="date"
+                  disabled={readOnly}
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
                 />
@@ -318,6 +330,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
                 focus:ring-2 focus:ring-primary focus:border-primary outline-hidden p-3 shadow-sm transition-all min-h-[46px] resize-none"
                 id="main_desc"
                 placeholder="Ej: Pago de alquiler Octubre 2023..."
+                disabled={readOnly}
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
                 rows={1}
@@ -347,6 +360,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
                         className="w-full border-none p-0 focus:ring-0 text-sm font-black text-primary placeholder-slate-200 bg-transparent"
                         placeholder="F7 para buscar"
                         type="text"
+                        disabled={readOnly}
                         value={r.codigoDisplay}
                         onChange={(e) => updateRenglon(r.id, { codigoDisplay: e.target.value })}
                         onBlur={(e) => handleLookup(r.id, e.target.value)}
@@ -362,6 +376,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
                         className="w-full border-none p-0 focus:ring-0 text-sm text-slate-500 placeholder-slate-200 bg-transparent font-medium"
                         placeholder="Referencia de línea..."
                         type="text"
+                        disabled={readOnly}
                         value={r.leyenda}
                         onChange={(e) => updateRenglon(r.id, { leyenda: e.target.value })}
                       />
@@ -372,6 +387,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
                         placeholder="0.00"
                         type="number"
                         step="0.01"
+                        disabled={readOnly}
                         value={r.debe || ''}
                         onChange={(e) => updateRenglon(r.id, { debe: parseFloat(e.target.value) || 0, haber: 0 })}
                       />
@@ -382,9 +398,11 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
                         placeholder="0.00"
                         type="number"
                         step="0.01"
+                        disabled={readOnly}
                         value={r.haber || ''}
                         onChange={(e) => updateRenglon(r.id, { haber: parseFloat(e.target.value) || 0, debe: 0 })}
                         onKeyDown={(e) => {
+                          if (readOnly) return;
                           if (e.key === 'Enter') {
                             e.preventDefault();
                             if (idx === renglones.length - 1) {
@@ -410,28 +428,32 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
                       />
                     </td>
                     <td className="px-4 py-4">
-                      <button
-                        onClick={() => removeLine(r.id)}
-                        className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {!readOnly && (
+                        <button
+                          onClick={() => removeLine(r.id)}
+                          className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="p-4 bg-slate-50/30 flex justify-between items-center">
-              <button
-                onClick={addLine}
-                className="flex items-center gap-2 text-primary hover:text-blue-700 text-xs font-black uppercase tracking-widest transition-all px-4 py-2 rounded-xl hover:bg-primary/5"
-              >
-                <Plus className="w-4 h-4" />
-                Añadir Línea
-              </button>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Enter en Monto para nueva fila • F7 para búsqueda avanzada</p>
-            </div>
+            {!readOnly && (
+              <div className="p-4 bg-slate-50/30 flex justify-between items-center">
+                <button
+                  onClick={addLine}
+                  className="flex items-center gap-2 text-primary hover:text-blue-700 text-xs font-black uppercase tracking-widest transition-all px-4 py-2 rounded-xl hover:bg-primary/5"
+                >
+                  <Plus className="w-4 h-4" />
+                  Añadir Línea
+                </button>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Enter en Monto para nueva fila • F7 para búsqueda avanzada</p>
+              </div>
+            )}
           </div>
         </section>
       </div>
