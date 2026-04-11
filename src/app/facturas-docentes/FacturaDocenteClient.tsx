@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Trash2, Users, Receipt, Calendar, CreditCard, Hash, BookOpen, CheckCircle, Clock, CalendarDays, XCircle } from "lucide-react";
+import { Plus, Trash2, Users, Receipt, Calendar, CreditCard, Hash, BookOpen, CheckCircle, Clock, CalendarDays, XCircle, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DataGrid } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
@@ -15,6 +15,8 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [authId, setAuthId] = useState<number | null>(null);
   const [authDate, setAuthDate] = useState("");
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [unauthId, setUnauthId] = useState<number | null>(null);
   
   const router = useRouter();
 
@@ -25,27 +27,27 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
 
   if (!mounted) return null;
 
-  const handleDelete = async (id: number) => {
-    if (confirm("¿Está seguro de que desea eliminar esta factura?")) {
-      const result = await deleteFacturaDocente(id);
-      if (result.success) {
-        toast.success("Factura eliminada.");
-        router.refresh();
-      } else {
-        toast.error(result.error);
-      }
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    const result = await deleteFacturaDocente(deleteId);
+    if (result.success) {
+      toast.success("Factura eliminada.");
+      setDeleteId(null);
+      router.refresh();
+    } else {
+      toast.error(result.error);
     }
   };
 
-  const handleUnauthorize = async (id: number) => {
-    if (confirm("¿Está seguro de que desea quitar la autorización de esta factura?")) {
-      const result = await unauthorizeFacturaDocente(id);
-      if (result.success) {
-        toast.success("Autorización quitada.");
-        router.refresh();
-      } else {
-        toast.error(result.error);
-      }
+  const confirmUnauth = async () => {
+    if (!unauthId) return;
+    const result = await unauthorizeFacturaDocente(unauthId);
+    if (result.success) {
+      toast.success("Autorización quitada.");
+      setUnauthId(null);
+      router.refresh();
+    } else {
+      toast.error(result.error);
     }
   };
 
@@ -196,7 +198,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
             )}
             {item.estado === "Autorizado" && !item.asientoPagoId && (
               <button
-                onClick={() => handleUnauthorize(item.id)}
+                onClick={() => setUnauthId(item.id)}
                 className="p-2 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-all border border-amber-100 shadow-sm"
                 title="Quitar Autorización"
               >
@@ -204,7 +206,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
               </button>
             )}
             <button
-              onClick={() => handleDelete(item.id)}
+              onClick={() => setDeleteId(item.id)}
               className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-all border border-red-100 shadow-sm"
               title="Eliminar"
             >
@@ -270,6 +272,88 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
             <button
               onClick={handleConfirmAuth}
               className="flex-1 px-6 py-3 bg-blue-600 rounded-xl font-bold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+            >
+              Confirmar
+            </button>
+          </div>
+        </motion.div>
+      </Dialog>
+
+      {/* Confirmación de Eliminación */}
+      <Dialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        title="Confirmar Eliminación"
+        maxWidth="max-w-md"
+      >
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="space-y-6"
+        >
+          <div className="flex items-start gap-4 p-4 bg-red-50 rounded-2xl border border-red-100">
+            <div className="size-10 rounded-xl bg-red-600 flex items-center justify-center text-white shrink-0 mt-1">
+              <AlertTriangle className="size-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-red-900">¿Eliminar esta factura?</h4>
+              <p className="text-xs text-red-700 leading-relaxed mt-1">
+                Esta acción borrará el registro de forma permanente. No se puede deshacer.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setDeleteId(null)}
+              className="flex-1 px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={confirmDelete}
+              className="flex-1 px-6 py-3 bg-red-600 rounded-xl font-bold text-white shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
+            >
+              Eliminar
+            </button>
+          </div>
+        </motion.div>
+      </Dialog>
+
+      {/* Confirmación de Quitar Autorización */}
+      <Dialog
+        isOpen={!!unauthId}
+        onClose={() => setUnauthId(null)}
+        title="Quitar Autorización"
+        maxWidth="max-w-md"
+      >
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="space-y-6"
+        >
+          <div className="flex items-start gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100">
+            <div className="size-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shrink-0 mt-1">
+              <XCircle className="size-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-amber-900">¿Revertir autorización?</h4>
+              <p className="text-xs text-amber-700 leading-relaxed mt-1">
+                La factura volverá al estado "Pendiente de Autorización".
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setUnauthId(null)}
+              className="flex-1 px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={confirmUnauth}
+              className="flex-1 px-6 py-3 bg-amber-600 rounded-xl font-bold text-white shadow-lg shadow-amber-200 hover:bg-amber-700 transition-all"
             >
               Confirmar
             </button>
