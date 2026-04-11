@@ -114,6 +114,74 @@ export async function createFacturaDocente(data: {
   }
 }
 
+export async function updateFacturaDocente(id: number, data: {
+  entidadId: number;
+  puntoVenta: string;
+  numero: string;
+  fecha: string;
+  importe: number;
+  anioHonorarios: number;
+  mesHonorarios: number;
+  cuentaGastosId: number;
+  observaciones?: string;
+}) {
+  const session = await auth();
+  const empresaId = parseInt((session?.user as any)?.empresaId);
+  const userEmail = session?.user?.email;
+
+  if (!empresaId) return { error: "No hay una empresa activa seleccionada." };
+
+  try {
+    const original = await db.facturaDocente.findUnique({
+      where: { id },
+      include: { asientoPago: true }
+    });
+
+    if (!original) return { error: "Factura no encontrada." };
+
+    // Check if paid and trying to change amount
+    if (original.asientoPagoId && original.importe.toNumber() !== data.importe) {
+      return { error: "No se puede modificar el importe de una factura que ya ha sido pagada." };
+    }
+
+    // Update the invoice
+    const updated = await db.facturaDocente.update({
+      where: { id },
+      data: {
+        entidadId: data.entidadId,
+        puntoVenta: data.puntoVenta.padStart(5, '0'),
+        numero: data.numero.padStart(8, '0'),
+        fecha: new Date(data.fecha),
+        importe: data.importe,
+        anioHonorarios: data.anioHonorarios,
+        mesHonorarios: data.mesHonorarios,
+        cuentaGastosId: data.cuentaGastosId,
+        observaciones: data.observaciones,
+        updatedBy: userEmail,
+      },
+    });
+
+    // logic: If paid and account changed, update Asiento Renglones
+    if (original.asientoPagoId && original.cuentaGastosId !== data.cuentaGastosId) {
+      await db.renglonAsiento.updateMany({
+        where: {
+          asientoId: original.asientoPagoId,
+          cuentaId: original.cuentaGastosId
+        },
+        data: {
+          cuentaId: data.cuentaGastosId
+        }
+      });
+    }
+
+    revalidatePath("/facturas-docentes");
+    return { success: true, data: JSON.parse(JSON.stringify(updated)) };
+  } catch (error: any) {
+    console.error("Error al actualizar factura de docente:", error);
+    return { error: "Hubo un error al actualizar la factura." };
+  }
+}
+
 export async function authorizeFacturaDocente(id: number, fechaHabilitacionPago: string) {
   const session = await auth();
   const userIdentity = session?.user?.email || session?.user?.name || "Usuario Desconocido";

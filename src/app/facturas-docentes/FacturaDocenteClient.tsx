@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Trash2, Users, Receipt, Calendar, CreditCard, Hash, BookOpen, CheckCircle, Clock, CalendarDays, XCircle, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Users, Receipt, Calendar, CreditCard, Hash, BookOpen, CheckCircle, Clock, CalendarDays, XCircle, AlertTriangle, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DataGrid } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
@@ -17,6 +17,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
   const [authDate, setAuthDate] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [unauthId, setUnauthId] = useState<number | null>(null);
+  const [editingInvoice, setEditingInvoice] = useState<any>(null);
   
   const router = useRouter();
 
@@ -174,7 +175,10 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
           {/* <p className="text-slate-500 text-sm">Registro de honorarios y comprobantes</p> */}
         </div>
         <button
-          onClick={() => setIsDialogOpen(true)}
+          onClick={() => {
+            setEditingInvoice(null);
+            setIsDialogOpen(true);
+          }}
           className="flex items-center gap-2 bg-primary px-6 py-2.5 rounded-xl font-bold text-sm text-white hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-display"
         >
           <Plus className="w-4 h-4" />
@@ -187,6 +191,16 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
         columns={columns as any}
         actions={(item) => (
           <>
+            <button
+              onClick={() => {
+                setEditingInvoice(item);
+                setIsDialogOpen(true);
+              }}
+              className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all border border-blue-100 shadow-sm"
+              title="Editar"
+            >
+              <Pencil className="size-4" />
+            </button>
             {(!item.estado || item.estado === "Autorizacion Pendiente") && !item.asientoPagoId && (
               <button
                 onClick={() => handleOpenAuth(item.id)}
@@ -224,7 +238,11 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
         maxWidth="max-w-2xl"
       >
         <FacturaDocenteForm
-          onClose={() => setIsDialogOpen(false)}
+          invoice={editingInvoice}
+          onClose={() => {
+            setIsDialogOpen(false);
+            setEditingInvoice(null);
+          }}
           onSuccess={() => router.refresh()}
         />
       </Dialog>

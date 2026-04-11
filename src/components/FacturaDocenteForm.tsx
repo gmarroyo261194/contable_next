@@ -11,10 +11,11 @@ import {
   CircleDollarSign,
   AlertCircle,
   Loader2,
-  BookOpen
+  BookOpen,
+  Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getDocentes, createFacturaDocente } from '@/lib/actions/factura-docente-actions';
+import { getDocentes, createFacturaDocente, updateFacturaDocente } from '@/lib/actions/factura-docente-actions';
 import { getCuentas } from '@/lib/actions/asiento-actions';
 import { EntitySearchDialog } from './entidades/EntitySearchDialog';
 import { AccountSearchDialog } from './AccountSearchDialog';
@@ -22,6 +23,7 @@ import { AccountSearchDialog } from './AccountSearchDialog';
 interface FacturaDocenteFormProps {
   onClose: () => void;
   onSuccess: () => void;
+  invoice?: any;
 }
 
 const MESES = [
@@ -39,7 +41,7 @@ const MESES = [
   { id: 12, nombre: 'Diciembre' },
 ];
 
-export function FacturaDocenteForm({ onClose, onSuccess }: FacturaDocenteFormProps) {
+export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocenteFormProps) {
   const [loading, setLoading] = useState(false);
   const [docentes, setDocentes] = useState<any[]>([]);
   const [cuentas, setCuentas] = useState<any[]>([]);
@@ -64,8 +66,22 @@ export function FacturaDocenteForm({ onClose, onSuccess }: FacturaDocenteFormPro
     Promise.all([getDocentes(), getCuentas()]).then(([d, c]) => {
       setDocentes(d);
       setCuentas(c);
+      
+      if (invoice) {
+        setFormData({
+          puntoVenta: invoice.puntoVenta,
+          numero: invoice.numero,
+          fecha: new Date(invoice.fecha).toISOString().split('T')[0],
+          importe: invoice.importe.toString(),
+          anioHonorarios: invoice.anioHonorarios,
+          mesHonorarios: invoice.mesHonorarios,
+          observaciones: invoice.observaciones || ''
+        });
+        setSelectedDocente(invoice.entidad);
+        setSelectedCuenta(invoice.cuentaGastos);
+      }
     });
-  }, []);
+  }, [invoice]);
 
   const handlePadPOS = () => {
     if (formData.puntoVenta) {
@@ -88,7 +104,15 @@ export function FacturaDocenteForm({ onClose, onSuccess }: FacturaDocenteFormPro
     if (Number(formData.importe) <= 0) return toast.error("El importe debe ser mayor a cero.");
 
     setLoading(true);
-    const result = await createFacturaDocente({
+
+    if (invoice && invoice.asientoPagoId && selectedCuenta.id !== invoice.cuentaGastosId) {
+      if (!confirm("Esta factura ya ha sido pagada. Al cambiar la cuenta de gastos, se modificará también el asiento contable del pago. ¿Desea continuar?")) {
+        setLoading(false);
+        return;
+      }
+    }
+
+    const payload = {
       entidadId: selectedDocente.id,
       puntoVenta: formData.puntoVenta,
       numero: formData.numero,
@@ -98,11 +122,15 @@ export function FacturaDocenteForm({ onClose, onSuccess }: FacturaDocenteFormPro
       mesHonorarios: formData.mesHonorarios,
       cuentaGastosId: selectedCuenta.id,
       observaciones: formData.observaciones
-    });
+    };
+
+    const result = invoice 
+      ? await updateFacturaDocente(invoice.id, payload)
+      : await createFacturaDocente(payload);
 
     setLoading(false);
     if (result.success) {
-      toast.success("Factura registrada correctamente.");
+      toast.success(invoice ? "Factura actualizada." : "Factura registrada correctamente.");
       onSuccess();
       onClose();
     } else {
@@ -114,8 +142,12 @@ export function FacturaDocenteForm({ onClose, onSuccess }: FacturaDocenteFormPro
     <div className="w-full">
       <header className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/30 backdrop-blur-md">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight font-display">Nueva Factura Docente</h1>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Carga manual de honorarios</p>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight font-display">
+            {invoice ? "Editar Factura Docente" : "Nueva Factura Docente"}
+          </h1>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
+            {invoice ? `Editando Comprobante ${invoice.puntoVenta}-${invoice.numero}` : "Carga manual de honorarios"}
+          </p>
         </div>
         <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400">
           <X className="w-6 h-6" />
@@ -203,12 +235,18 @@ export function FacturaDocenteForm({ onClose, onSuccess }: FacturaDocenteFormPro
               <input
                 type="number"
                 step="0.01"
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary outline-hidden transition-all shadow-sm font-bold text-slate-800"
+                disabled={invoice?.asientoPagoId}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary outline-hidden transition-all shadow-sm font-bold text-slate-800 disabled:opacity-60 disabled:bg-slate-100"
                 placeholder="0.00"
                 value={formData.importe || ''}
                 onChange={e => setFormData(prev => ({ ...prev, importe: e.target.value }))}
               />
             </div>
+            {invoice?.asientoPagoId && (
+              <p className="text-[9px] text-amber-600 font-bold uppercase ml-1 mt-1">
+                No se puede modificar importe (Ya pagado)
+              </p>
+            )}
           </div>
         </div>
 
@@ -280,7 +318,7 @@ export function FacturaDocenteForm({ onClose, onSuccess }: FacturaDocenteFormPro
             className="flex-[2] bg-primary text-white px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/30 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4 group-hover:scale-110 transition-transform" />}
-            Registrar Factura
+            {invoice ? "Guardar Cambios" : "Registrar Factura"}
           </button>
         </div>
       </form>
