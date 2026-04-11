@@ -189,7 +189,7 @@ export function DataGrid<T extends { id: any }>({
                     ))}
                     {actions && (
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-end gap-1">
                           {actions(item)}
                         </div>
                       </td>

@@ -11,10 +11,19 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
+  const [mounted, setMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [authId, setAuthId] = useState<number | null>(null);
-  const [authDate, setAuthDate] = useState(new Date().toISOString().split('T')[0]);
+  const [authDate, setAuthDate] = useState("");
+  
   const router = useRouter();
+
+  React.useEffect(() => {
+    setMounted(true);
+    setAuthDate(new Date().toISOString().split('T')[0]);
+  }, []);
+
+  if (!mounted) return null;
 
   const handleDelete = async (id: number) => {
     if (confirm("¿Está seguro de que desea eliminar esta factura?")) {
@@ -62,29 +71,29 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
         </div>
       )
     },
-    { 
-      header: "Comprobante", 
+    {
+      header: "Comprobante",
       cell: (f: any) => (
         <div className="font-mono text-xs font-bold text-slate-600">
           {f.puntoVenta}-{f.numero}
         </div>
       )
     },
-    { 
-      header: "Fecha", 
-      accessor: "fecha", 
-      cell: (f: any) => new Date(f.fecha).toLocaleDateString() 
+    {
+      header: "Fecha",
+      accessor: "fecha",
+      cell: (f: any) => new Date(f.fecha).toLocaleDateString()
     },
-    { 
-      header: "Período", 
+    {
+      header: "Período",
       cell: (f: any) => (
         <span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-black text-slate-500 uppercase">
           {f.mesHonorarios}/{f.anioHonorarios}
         </span>
       )
     },
-    { 
-      header: "Importe", 
+    {
+      header: "Importe",
       accessor: "importe",
       className: "text-right",
       cell: (f: any) => (
@@ -148,7 +157,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
             <Receipt className="w-5 h-5 text-primary" />
             <h2 className="text-2xl font-bold text-slate-800 font-display">Facturas de Docentes</h2>
           </div>
-          <p className="text-slate-500 text-sm">Registro de honorarios y comprobantes</p>
+          {/* <p className="text-slate-500 text-sm">Registro de honorarios y comprobantes</p> */}
         </div>
         <button
           onClick={() => setIsDialogOpen(true)}
@@ -167,7 +176,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
             {(!item.estado || item.estado === "Autorizacion Pendiente") && !item.asientoPagoId && (
               <button
                 onClick={() => handleOpenAuth(item.id)}
-                className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                className="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-all border border-emerald-100 shadow-sm"
                 title="Autorizar"
               >
                 <CheckCircle className="size-4" />
@@ -175,7 +184,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
             )}
             <button
               onClick={() => handleDelete(item.id)}
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-all border border-red-100 shadow-sm"
               title="Eliminar"
             >
               <Trash2 className="size-4" />
@@ -203,7 +212,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
         title="Autorizar Pago"
         maxWidth="max-w-md"
       >
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
