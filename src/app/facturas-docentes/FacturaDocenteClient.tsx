@@ -12,6 +12,7 @@ import { PaymentDialog } from "@/components/PaymentDialog";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getCuentas, getAsientoById } from "@/lib/actions/asiento-actions";
+import { Filter, Search as SearchIcon } from "lucide-react";
 import { AsientoForm } from "@/components/AsientoForm";
 
 export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
@@ -30,6 +31,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
   const [selectedAsiento, setSelectedAsiento] = useState<any>(null);
   const [isAsientoViewOpen, setIsAsientoViewOpen] = useState(false);
   const [isAsientoLoading, setIsAsientoLoading] = useState(false);
+  const [filter, setFilter] = useState<"all" | "pending" | "authorized" | "paid">("all");
   
   const router = useRouter();
 
@@ -141,6 +143,14 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
   };
 
   const selectedInvoices = initialData.filter(f => selectedIds.includes(f.id));
+
+  const filteredData = initialData.filter(f => {
+    if (filter === "all") return true;
+    if (filter === "pending") return f.estado === "Autorizacion Pendiente" || !f.estado;
+    if (filter === "authorized") return f.estado === "Autorizado" && !f.asientoPagoId;
+    if (filter === "paid") return !!f.asientoPagoId;
+    return true;
+  });
 
   const columns = [
     {
@@ -304,8 +314,44 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
         </div>
       </header>
 
+      {/* Filter Tabs */}
+      <div className="flex items-center justify-between mb-4 bg-white/50 p-2 rounded-2xl border border-slate-100 backdrop-blur-sm">
+        <div className="flex items-center gap-1">
+          {[
+            { id: "all", label: "Todos", icon: Receipt },
+            { id: "pending", label: "Pendientes", icon: Clock },
+            { id: "authorized", label: "Autorizados", icon: CheckCircle },
+            { id: "paid", label: "Pagados", icon: BookOpen },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilter(tab.id as any)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                filter === tab.id
+                  ? "bg-primary text-white shadow-lg shadow-primary/20"
+                  : "text-slate-500 hover:bg-slate-100"
+              }`}
+            >
+              <tab.icon className="size-3.5" />
+              {tab.label}
+              <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] ${
+                filter === tab.id ? "bg-white/20" : "bg-slate-100 text-slate-400"
+              }`}>
+                {initialData.filter(f => {
+                  if (tab.id === "all") return true;
+                  if (tab.id === "pending") return f.estado === "Autorizacion Pendiente" || !f.estado;
+                  if (tab.id === "authorized") return f.estado === "Autorizado" && !f.asientoPagoId;
+                  if (tab.id === "paid") return !!f.asientoPagoId;
+                  return true;
+                }).length}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <DataGrid
-        data={initialData}
+        data={filteredData}
         columns={columns as any}
         actions={(item) => (
           <>
