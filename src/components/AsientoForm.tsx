@@ -50,6 +50,8 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
   const [isSearching, setIsSearching] = useState(false);
   const [activeSearchRow, setActiveSearchRow] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   // Load accounts once
   useEffect(() => {
@@ -70,6 +72,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
         debe: r.debe,
         haber: r.haber
       })));
+      setTimeout(() => setIsDirty(false), 100);
     }
   }, [asientoToEdit]);
 
@@ -98,6 +101,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
 
   const updateRenglon = (id: string, updates: Partial<Renglon>) => {
     setRenglones(renglones.map(r => r.id === id ? { ...r, ...updates } : r));
+    setIsDirty(true);
   };
 
   const handleLookup = (id: string, value: string) => {
@@ -208,6 +212,14 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const handleCloseAttempt = () => {
+    if (isDirty) {
+      setShowExitConfirm(true);
+    } else {
+      onClose();
+    }
+  };
+
   return (
     <div className="flex flex-col h-full max-h-[90vh] bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100">
       {/* Header Section */}
@@ -224,7 +236,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={onClose}
+            onClick={handleCloseAttempt}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-slate-500 font-bold text-sm hover:bg-slate-50 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -372,6 +384,29 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
                         step="0.01"
                         value={r.haber || ''}
                         onChange={(e) => updateRenglon(r.id, { haber: parseFloat(e.target.value) || 0, debe: 0 })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (idx === renglones.length - 1) {
+                              // If it's the last line, add a new one with the same legend
+                              setRenglones([...renglones, {
+                                id: Math.random().toString(36).substr(2, 9),
+                                cuentaId: null,
+                                codigoDisplay: '',
+                                cuentaNombre: '',
+                                leyenda: r.leyenda, // Inherit legend
+                                debe: 0,
+                                haber: 0
+                              }]);
+                              setIsDirty(true);
+                            }
+                            // Small delay to allow react to render the new row before focusing
+                            setTimeout(() => {
+                              const nextRowCode = document.querySelector(`tr:nth-child(${idx + 2}) input[data-row-id]`) as HTMLInputElement;
+                              nextRowCode?.focus();
+                            }, 50);
+                          }
+                        }}
                       />
                     </td>
                     <td className="px-4 py-4">
@@ -440,7 +475,6 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
           </div>
         </div>
       </footer>
-
       {/* Search Dialog */}
       <AccountSearchDialog
         isOpen={isSearching}
@@ -451,6 +485,36 @@ export function AsientoForm({ onClose, asientoToEdit, onJump }: AsientoFormProps
         onSelect={onSelectAccount}
         cuentas={cuentas}
       />
+
+      {/* Custom Confirmation Modal */}
+      {showExitConfirm && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowExitConfirm(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-100 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-3 mb-4 text-orange-500">
+              <AlertCircle className="w-6 h-6" />
+              <h3 className="text-lg font-bold text-slate-800">¿Cerrar sin guardar?</h3>
+            </div>
+            <p className="text-sm text-slate-600 mb-6">
+              Tienes cambios sin registrar en este asiento. Si sales ahora, se perderán permanentemente.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowExitConfirm(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition-colors"
+              >
+                Volver
+              </button>
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl font-bold text-sm hover:bg-red-600 shadow-lg shadow-red-200 transition-all"
+              >
+                SÍ, SALIR
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

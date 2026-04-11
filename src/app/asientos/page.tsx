@@ -332,6 +332,8 @@ export default function AsientosPage() {
         hideHeader
         noPadding
         maxWidth="max-w-screen-2xl"
+        preventCloseOnOutsideClick
+        preventCloseOnEscape
       >
         <AsientoForm
           asientoToEdit={selectedAsiento}

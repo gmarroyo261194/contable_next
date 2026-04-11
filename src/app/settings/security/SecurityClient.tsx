@@ -169,7 +169,7 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
             title="Listado de Usuarios"
             description="Usuarios con acceso al sistema y sus empresas/roles asignados"
             data={users}
-            columns={userColumns}
+            columns={userColumns as any[]}
             onCreate={handleCreate}
             createLabel="Nuevo Usuario"
             actions={(item) => (
@@ -190,7 +190,7 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
             title="Asignación por Empresa"
             description="Visualiza y gestiona qué usuarios pertenecen a cada empresa"
             data={empresas}
-            columns={assignmentColumns}
+            columns={assignmentColumns as any[]}
             actions={(item) => (
               <div className="flex gap-2">
                 <Link href={`/empresas`} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" title="Ver Empresa">
@@ -206,7 +206,7 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
             title="Roles de Usuario"
             description="Define grupos de permisos para asignar a los usuarios"
             data={roles}
-            columns={roleColumns}
+            columns={roleColumns as any[]}
             onCreate={handleCreate}
             createLabel="Nuevo Rol"
             actions={(item) => (
@@ -227,7 +227,7 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
             title="Permisos del Sistema"
             description="Permisos granulares que pueden ser asignados a los roles"
             data={permissions}
-            columns={permissionColumns}
+            columns={permissionColumns as any[]}
             onCreate={handleCreate}
             createLabel="Nuevo Permiso"
             actions={(item) => (

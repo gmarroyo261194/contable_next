@@ -21,15 +21,31 @@ interface AccountSearchDialogProps {
 export function AccountSearchDialog({ isOpen, onClose, onSelect, cuentas }: AccountSearchDialogProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filtered, setFiltered] = useState<Account[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
-    const term = searchTerm.toLowerCase();
+    const terms = searchTerm.toLowerCase().split(' ').filter(t => t.length > 0);
+    
+    setSelectedIndex(0); // Reset selection on new search
+
+    if (terms.length === 0) {
+      setFiltered(cuentas);
+      return;
+    }
+
     setFiltered(
-      cuentas.filter(c => 
-        c.nombre.toLowerCase().includes(term) || 
-        c.codigo.includes(term) || 
-        c.codigoCorto?.toString().includes(term)
-      )
+      cuentas.filter(c => {
+        const name = c.nombre.toLowerCase();
+        const code = c.codigo.toLowerCase();
+        const shortCode = c.codigoCorto?.toString() || '';
+        
+        // Match ALL terms (AND logic)
+        return terms.every(term => 
+          name.includes(term) || 
+          code.includes(term) || 
+          shortCode.includes(term)
+        );
+      })
     );
   }, [searchTerm, cuentas]);
 
@@ -48,8 +64,15 @@ export function AccountSearchDialog({ isOpen, onClose, onSelect, cuentas }: Acco
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && filtered.length > 0) {
-                onSelect(filtered[0]);
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedIndex(prev => Math.min(prev + 1, filtered.length - 1));
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedIndex(prev => Math.max(prev - 1, 0));
+              } else if (e.key === 'Enter' && filtered.length > 0) {
+                e.preventDefault();
+                onSelect(filtered[selectedIndex]);
                 onClose();
               }
             }}
@@ -58,14 +81,16 @@ export function AccountSearchDialog({ isOpen, onClose, onSelect, cuentas }: Acco
 
         <div className="max-h-[350px] overflow-y-auto space-y-2 pr-1 custom-scrollbar pb-2">
           {filtered.length > 0 ? (
-            filtered.map((cuenta) => (
+            filtered.map((cuenta, idx) => (
               <button
                 key={cuenta.id}
                 onClick={() => {
                   onSelect(cuenta);
                   onClose();
                 }}
-                className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-primary/5 hover:text-primary transition-all text-left group"
+                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all text-left group ${
+                  idx === selectedIndex ? 'bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20' : 'hover:bg-slate-50'
+                }`}
               >
                 <div>
                   <div className="font-bold text-sm text-slate-700 group-hover:text-primary">{cuenta.nombre}</div>

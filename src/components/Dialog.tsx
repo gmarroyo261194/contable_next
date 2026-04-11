@@ -11,16 +11,45 @@ interface DialogProps {
   hideHeader?: boolean;
   noPadding?: boolean;
   maxWidth?: string;
+  preventCloseOnOutsideClick?: boolean;
+  preventCloseOnEscape?: boolean;
 }
 
-export function Dialog({ isOpen, onClose, children, title, hideHeader, noPadding, maxWidth = 'max-w-4xl' }: DialogProps) {
+export function Dialog({ 
+  isOpen, 
+  onClose, 
+  children, 
+  title, 
+  hideHeader, 
+  noPadding, 
+  maxWidth = 'max-w-4xl',
+  preventCloseOnOutsideClick = false,
+  preventCloseOnEscape = false
+}: DialogProps) {
+  
+  React.useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !preventCloseOnEscape) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      window.addEventListener('keydown', handleEscape);
+    }
+    
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, preventCloseOnEscape, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div 
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" 
-        onClick={onClose}
+        onClick={() => !preventCloseOnOutsideClick && onClose()}
       />
       <div className={`relative bg-white rounded-3xl shadow-2xl w-full ${maxWidth} overflow-hidden animate-in fade-in zoom-in duration-200`}>
         {!hideHeader && (
