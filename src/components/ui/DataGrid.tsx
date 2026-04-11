@@ -150,7 +150,7 @@ export function DataGrid<T extends { id: any }>({
                   className={`px-6 py-4 text-[10px] uppercase font-black text-slate-400 tracking-widest ${col.sortable !== false && col.accessor ? 'cursor-pointer hover:text-primary transition-colors' : ''} ${col.className}`}
                   onClick={() => col.sortable !== false && col.accessor && handleSort(col.accessor)}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className={`flex items-center gap-2 ${col.className?.includes('text-right') ? 'justify-end' : ''}`}>
                     {col.header}
                     {col.sortable !== false && col.accessor && (
                       sortConfig.key === col.accessor ? (

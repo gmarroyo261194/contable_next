@@ -86,8 +86,12 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
     { 
       header: "Importe", 
       accessor: "importe",
-      className: "text-right font-black text-slate-900",
-      cell: (f: any) => `$ ${Number(f.importe).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+      className: "text-right",
+      cell: (f: any) => (
+        <span className="font-black text-slate-900">
+          $ {Number(f.importe).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        </span>
+      )
     },
     {
       header: "Estado",
