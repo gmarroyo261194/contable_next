@@ -137,6 +137,26 @@ export async function authorizeFacturaDocente(id: number, fechaHabilitacionPago:
   }
 }
 
+export async function unauthorizeFacturaDocente(id: number) {
+  try {
+    await db.facturaDocente.update({
+      where: { id },
+      data: {
+        estado: "Autorizacion Pendiente",
+        fechaAutorizado: null,
+        usuarioAutorizado: null,
+        fechaHabilitacionPago: null,
+      },
+    });
+
+    revalidatePath("/facturas-docentes");
+    return { success: true };
+  } catch (error) {
+    console.error("Error al quitar autorización:", error);
+    return { error: "No se pudo quitar la autorización." };
+  }
+}
+
 export async function deleteFacturaDocente(id: number) {
   try {
     const factura = await db.facturaDocente.findUnique({

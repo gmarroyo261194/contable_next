@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Trash2, Users, Receipt, Calendar, CreditCard, Hash, BookOpen, CheckCircle, Clock, CalendarDays } from "lucide-react";
+import { Plus, Trash2, Users, Receipt, Calendar, CreditCard, Hash, BookOpen, CheckCircle, Clock, CalendarDays, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DataGrid } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
 import { FacturaDocenteForm } from "@/components/FacturaDocenteForm";
-import { deleteFacturaDocente, authorizeFacturaDocente } from "@/lib/actions/factura-docente-actions";
+import { deleteFacturaDocente, authorizeFacturaDocente, unauthorizeFacturaDocente } from "@/lib/actions/factura-docente-actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -30,6 +30,18 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
       const result = await deleteFacturaDocente(id);
       if (result.success) {
         toast.success("Factura eliminada.");
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    }
+  };
+
+  const handleUnauthorize = async (id: number) => {
+    if (confirm("¿Está seguro de que desea quitar la autorización de esta factura?")) {
+      const result = await unauthorizeFacturaDocente(id);
+      if (result.success) {
+        toast.success("Autorización quitada.");
         router.refresh();
       } else {
         toast.error(result.error);
@@ -180,6 +192,15 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
                 title="Autorizar"
               >
                 <CheckCircle className="size-4" />
+              </button>
+            )}
+            {item.estado === "Autorizado" && !item.asientoPagoId && (
+              <button
+                onClick={() => handleUnauthorize(item.id)}
+                className="p-2 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-all border border-amber-100 shadow-sm"
+                title="Quitar Autorización"
+              >
+                <XCircle className="size-4" />
               </button>
             )}
             <button
