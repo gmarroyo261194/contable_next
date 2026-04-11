@@ -22,6 +22,7 @@ interface DataGridProps<T> {
   onCreate?: () => void;
   createLabel?: string;
   pageSize?: number;
+  groupBy?: keyof T;
 }
 
 export function DataGrid<T extends { id: any }>({ 
@@ -34,7 +35,8 @@ export function DataGrid<T extends { id: any }>({
   description,
   onCreate,
   createLabel = "Nuevo",
-  pageSize = 10
+  pageSize = 10,
+  groupBy
 }: DataGridProps<T>) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof T | null; direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
@@ -56,7 +58,22 @@ export function DataGrid<T extends { id: any }>({
   // 2. Ordenamiento
   const sortedData = React.useMemo(() => {
     let sortableItems = [...filteredData];
-    if (sortConfig.key !== null) {
+    
+    // Si hay agrupamiento, primero ordenamos por el campo de agrupamiento
+    if (groupBy) {
+      sortableItems.sort((a, b) => {
+        const aVal = String(a[groupBy]);
+        const bVal = String(b[groupBy]);
+        const compare = aVal.localeCompare(bVal);
+        if (compare !== 0) return compare;
+        
+        // Si son del mismo grupo, mantenemos el orden por código si existe
+        if ((a as any).codigo && (b as any).codigo) {
+           return (a as any).codigo.localeCompare((b as any).codigo);
+        }
+        return 0;
+      });
+    } else if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         const aVal = a[sortConfig.key!];
         const bVal = b[sortConfig.key!];
@@ -67,7 +84,7 @@ export function DataGrid<T extends { id: any }>({
       });
     }
     return sortableItems;
-  }, [filteredData, sortConfig]);
+  }, [filteredData, sortConfig, groupBy]);
 
   // 3. Paginación
   const totalPages = Math.ceil(sortedData.length / pageSize);
@@ -87,6 +104,9 @@ export function DataGrid<T extends { id: any }>({
     }
     setSortConfig({ key, direction });
   };
+
+  // Lógica para detectar cambio de grupo
+  let lastGroup: any = null;
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
@@ -146,24 +166,38 @@ export function DataGrid<T extends { id: any }>({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {paginatedData.map((item) => (
-              <tr key={item.id} className="hover:bg-slate-50/30 transition-colors group">
-                {columns.map((col, i) => (
-                  <td key={i} className={`px-6 py-4 text-sm text-slate-600 ${col.className}`}>
-                    {col.cell 
-                      ? col.cell(item) 
-                      : col.accessor ? (item[col.accessor] as React.ReactNode) : null}
-                  </td>
-                ))}
-                {actions && (
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {actions(item)}
-                    </div>
-                  </td>
-                )}
-              </tr>
-            ))}
+            {paginatedData.map((item) => {
+              const showGroupHeader = groupBy && item[groupBy] !== lastGroup;
+              if (showGroupHeader) lastGroup = item[groupBy];
+
+              return (
+                <React.Fragment key={item.id}>
+                  {showGroupHeader && (
+                    <tr className="bg-slate-50/80">
+                      <td colSpan={columns.length + (actions ? 1 : 0)} className="px-6 py-1.5 text-[10px] font-black text-primary uppercase tracking-widest border-y border-slate-100 italic">
+                        {String(item[groupBy!])}
+                      </td>
+                    </tr>
+                  )}
+                  <tr className="hover:bg-slate-50/30 transition-colors group">
+                    {columns.map((col, i) => (
+                      <td key={i} className={`px-6 py-4 text-sm text-slate-600 ${col.className}`}>
+                        {col.cell 
+                          ? col.cell(item) 
+                          : col.accessor ? (item[col.accessor] as React.ReactNode) : null}
+                      </td>
+                    ))}
+                    {actions && (
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {actions(item)}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                </React.Fragment>
+              );
+            })}
             {paginatedData.length === 0 && (
               <tr>
                 <td colSpan={columns.length + (actions ? 1 : 0)} className="px-6 py-12 text-center text-slate-400 italic text-sm font-medium">
