@@ -8,7 +8,7 @@ import { CuentaForm } from "@/components/plan-cuentas/CuentaForm";
 import { ImportModal } from "@/components/plan-cuentas/ImportModal";
 import { deleteCuenta } from "@/app/plan-cuentas/actions";
 import { useRouter } from "next/navigation";
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx-js-style';
 
 export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] }) {
   const [isFormOpen, setIsFormOpen] = React.useState(false);
@@ -106,26 +106,51 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
   };
 
   const exportToExcel = (data: any[], filename: string) => {
-    const isHierarchical = data.some(d => (d.level ?? 0) > 0);
-
-    const worksheetData = data.map(c => {
-      const row: any = {
+    // Preparar los datos tabulares simples
+    const worksheetDataRaw = data.map(c => {
+      const nameValue = c.imputable ? c.nombre : c.nombre.toUpperCase();
+      
+      return {
         "Código": c.codigo,
-        "Nombre": isHierarchical ? "      ".repeat(c.level || 0) + (c.imputable ? c.nombre : c.nombre.toUpperCase()) : c.nombre,
+        "Nombre": nameValue,
+        "Código Corto": c.codigoCorto || "",
         "Tipo": c.tipo,
         "Imputable": c.imputable ? 'SI' : 'NO'
       };
-      return row;
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const worksheet = XLSX.utils.json_to_sheet(worksheetDataRaw);
+    
+    // Aplicar estilos (colores)
+    data.forEach((c, idx) => {
+      const rowIndex = idx + 2; // +1 encabezado, +1 base 1
+      const nameCell = `B${rowIndex}`;
+      
+      if (worksheet[nameCell]) {
+        let color = "000000"; // Negro por defecto
+        
+        if (c.imputable) {
+          if (c.tipo === 'ACTIVO') color = "0000FF"; // Azul para activos imputables
+          else if (c.tipo === 'PASIVO') color = "FF0000"; // Rojo para pasivos imputables
+          else if (c.tipo === 'RESULTADO') color = "008000"; // Verde para resultados
+        }
+
+        worksheet[nameCell].s = {
+          font: { 
+            color: { rgb: color },
+            bold: !c.imputable // Negrita para grupos (para mayor claridad)
+          }
+        };
+      }
+    });
 
     // Ajustar anchos de columna
     const wscols = [
-      { wch: 20 },
-      { wch: 50 },
-      { wch: 15 },
-      { wch: 10 }
+      { wch: 18 }, // Código
+      { wch: 50 }, // Nombre
+      { wch: 12 }, // Código Corto
+      { wch: 15 }, // Tipo
+      { wch: 10 }  // Imputable
     ];
     worksheet['!cols'] = wscols;
 
