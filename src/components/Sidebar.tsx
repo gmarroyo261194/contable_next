@@ -30,6 +30,7 @@ const navItems = [
   { icon: Calendar, label: 'Ejercicios', href: '/ejercicios' },
   { icon: Users, label: 'Clientes/Proveedores', href: '/entidades' },
   { icon: Receipt, label: 'Documentos Proveedores', href: '/docprov' },
+  { icon: ReceiptText, label: 'Facturas Docentes', href: '/facturas-docentes' },
   { icon: BarChart3, label: 'Reportes', href: '/reportes' },
   { icon: Settings, label: 'Ajustes', href: '/settings' },
 ];

@@ -29,6 +29,7 @@ model Empresa {
   entidades             Entidad[]
   pagos                 Pagos[]
   pedidosPagos          PedidosPagos[]
+  facturasDocentes      FacturaDocente[]
 }
 
 model User {
@@ -172,6 +173,7 @@ model Cuenta {
   padre       Cuenta?          @relation("Jerarquia", fields: [padreId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hijos       Cuenta[]         @relation("Jerarquia")
   renglones   RenglonAsiento[]
+  facturasDocentes FacturaDocente[]
 
   @@unique([codigo, ejercicioId])
 }
@@ -194,6 +196,7 @@ model Asiento {
   documentos  DocumentoProveedores[] @relation("AsientoADocumentoProv")
   pagos       Pagos[]
   renglones   RenglonAsiento[]
+  facturasDocentes FacturaDocente[]
 }
 
 model RenglonAsiento {
@@ -229,6 +232,7 @@ model Entidad {
   updatedBy          String?
   documentosClientes DocumentoClientes[]
   documentos         DocumentoProveedores[]
+  facturasDocentes   FacturaDocente[]
   empresa            Empresa                @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
   tipo               TipoEntidad            @relation(fields: [tipoId], references: [id], onUpdate: NoAction)
 }
@@ -447,4 +451,30 @@ model LogProcesamiento {
   factura   Factura? @relation(fields: [facturaId], references: [id])
 
   @@map("log_procesamiento")
+}
+
+model FacturaDocente {
+  id              Int      @id @default(autoincrement())
+  entidadId       Int
+  puntoVenta      String   @db.NVarChar(5)
+  numero          String   @db.NVarChar(8)
+  fecha           DateTime @db.Date
+  importe         Decimal  @db.Decimal(18, 2)
+  anioHonorarios  Int
+  mesHonorarios   Int      // 1-12
+  cuentaGastosId  Int
+  observaciones   String?  @db.NVarChar(4000)
+  asientoPagoId   Int?
+  empresaId       Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String?
+  updatedBy       String?
+
+  entidad         Entidad  @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
+  cuentaGastos    Cuenta   @relation(fields: [cuentaGastosId], references: [id], onUpdate: NoAction)
+  asientoPago     Asiento? @relation(fields: [asientoPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  empresa         Empresa  @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+
+  @@unique([entidadId, puntoVenta, numero], name: "UQ_DocenteFactura")
 }
