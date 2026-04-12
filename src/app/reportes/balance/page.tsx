@@ -188,10 +188,10 @@ export default function BalanceSumasSaldosPage() {
                   <th className="px-6 py-2 text-[10px] border-r border-slate-100 font-black uppercase tracking-widest text-slate-400">Código</th>
                   <th className="px-6 py-2 text-[10px] border-r border-slate-100 font-black uppercase tracking-widest text-slate-400">Nombre</th>
                   
-                  <th className="px-6 py-2 text-[10px] border-r border-slate-100 font-black uppercase tracking-widest text-slate-400 text-right w-36">Debe</th>
-                  <th className="px-6 py-2 text-[10px] border-r border-slate-100 font-black uppercase tracking-widest text-slate-400 text-right w-36">Haber</th>
+                  <th className="px-6 py-2 text-[10px] border-r border-slate-100 font-black uppercase tracking-widest text-slate-400 text-right w-44">Debe</th>
+                  <th className="px-6 py-2 text-[10px] border-r border-slate-100 font-black uppercase tracking-widest text-slate-400 text-right w-44">Haber</th>
                   
-                  <th className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-36">Saldo</th>
+                  <th className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-48">Saldo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 text-sm">
@@ -212,16 +212,16 @@ export default function BalanceSumasSaldosPage() {
                      </td>
                      
                      {/* Suma Debe */}
-                     <td className={`px-6 py-2 border-r border-slate-50 text-right ${totalDebe > 0 ? 'text-slate-900 font-medium' : 'text-slate-300'}`}>
+                     <td className={`px-6 py-2 border-r border-slate-50 text-right whitespace-nowrap ${totalDebe > 0 ? 'text-slate-900 font-medium' : 'text-slate-300'}`}>
                        {totalDebe !== 0 ? totalDebe.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}
                      </td>
                      {/* Suma Haber */}
-                     <td className={`px-6 py-2 border-r border-slate-50 text-right ${totalHaber > 0 ? 'text-slate-900 font-medium' : 'text-slate-300'}`}>
+                     <td className={`px-6 py-2 border-r border-slate-50 text-right whitespace-nowrap ${totalHaber > 0 ? 'text-slate-900 font-medium' : 'text-slate-300'}`}>
                        {totalHaber !== 0 ? totalHaber.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}
                      </td>
 
                      {/* Saldo Único */}
-                     <td className={`px-6 py-2 text-right ${saldo > 0 ? 'text-primary font-bold' : saldo < 0 ? 'text-red-500 font-bold' : 'text-slate-300'}`}>
+                     <td className={`px-6 py-2 text-right whitespace-nowrap ${saldo > 0 ? 'text-primary font-bold' : saldo < 0 ? 'text-red-500 font-bold' : 'text-slate-300'}`}>
                        {saldo !== 0 ? (saldo > 0 ? '' : '- ') + '$ ' + Math.abs(saldo).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}
                      </td>
                    </tr>
@@ -234,10 +234,10 @@ export default function BalanceSumasSaldosPage() {
                      TOTAL GENERAL (Cuentas Imputables):
                    </td>
                    
-                   <td className="px-6 py-3 font-black text-slate-900 text-right border-r border-slate-200">{totales.debe.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                   <td className="px-6 py-3 font-black text-slate-900 text-right border-r border-slate-200">{totales.haber.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                   <td className="px-6 py-3 font-black text-slate-900 text-right whitespace-nowrap border-r border-slate-200">{totales.debe.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                   <td className="px-6 py-3 font-black text-slate-900 text-right whitespace-nowrap border-r border-slate-200">{totales.haber.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                    
-                   <td className={`px-6 py-3 font-black text-right ${totales.saldo > 0 ? 'text-primary' : totales.saldo < 0 ? 'text-red-500' : 'text-slate-900'}`}>{totales.saldo !== 0 ? (totales.saldo < 0 ? '- ' : '') + '$ ' + Math.abs(totales.saldo).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}</td>
+                   <td className={`px-6 py-3 font-black text-right whitespace-nowrap ${totales.saldo > 0 ? 'text-primary' : totales.saldo < 0 ? 'text-red-500' : 'text-slate-900'}`}>{totales.saldo !== 0 ? (totales.saldo < 0 ? '- ' : '') + '$ ' + Math.abs(totales.saldo).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}</td>
                 </tr>
               </tfoot>
             </table>

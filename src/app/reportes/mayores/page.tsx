@@ -199,9 +199,9 @@ export default function LibroMayorPage() {
                   <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 w-24">Fecha</th>
                   <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center w-24">Asiento</th>
                   <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Descripción</th>
-                  <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-32">Debe</th>
-                  <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-32">Haber</th>
-                  <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-32">Saldo</th>
+                  <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-40">Debe</th>
+                  <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-40">Haber</th>
+                  <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-44">Saldo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -214,13 +214,13 @@ export default function LibroMayorPage() {
                        {r.esTransporte ? '-' : <span className="text-xs font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">#{String(r.nroAsiento).padStart(5, '0')}</span>}
                      </td>
                      <td className="px-6 py-2 text-sm text-slate-800 font-medium">{r.descripcion}</td>
-                     <td className={`px-6 py-2 text-sm text-right font-black ${r.debe > 0 ? 'text-slate-900' : 'text-slate-300'}`}>
+                     <td className={`px-6 py-2 text-sm text-right font-black whitespace-nowrap ${r.debe > 0 ? 'text-slate-900' : 'text-slate-300'}`}>
                        {r.debe > 0 ? `$ ${r.debe.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '-'}
                      </td>
-                     <td className={`px-6 py-2 text-sm text-right font-black ${r.haber > 0 ? 'text-slate-900' : 'text-slate-300'}`}>
+                     <td className={`px-6 py-2 text-sm text-right font-black whitespace-nowrap ${r.haber > 0 ? 'text-slate-900' : 'text-slate-300'}`}>
                        {r.haber > 0 ? `$ ${r.haber.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '-'}
                      </td>
-                     <td className={`px-6 py-2 text-sm text-right font-black ${r.saldo < 0 ? 'text-red-600' : 'text-primary'}`}>
+                     <td className={`px-6 py-2 text-sm text-right font-black whitespace-nowrap ${r.saldo < 0 ? 'text-red-600' : 'text-primary'}`}>
                        $ {r.saldo.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                      </td>
                    </tr>
