@@ -15,7 +15,8 @@ export async function getAsientoById(id: number) {
         include: { cuenta: true }
       },
       anulaA: true,
-      anulaciones: true
+      anulaciones: true,
+      gestionPago: true
     }
   });
 
@@ -68,6 +69,7 @@ export async function getAsientos(params: {
         },
         anulaA: true,
         anulaciones: true,
+        gestionPago: true,
       },
       orderBy: { [actualSortBy]: sortOrder },
       skip,

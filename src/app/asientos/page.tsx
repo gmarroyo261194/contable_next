@@ -15,10 +15,10 @@ import {
   Printer,
   SquaresExclude
 } from 'lucide-react';
-import { Dialog } from '@/components/Dialog';
-import { AsientoForm } from '@/components/AsientoForm';
 import { getAsientos, anularAsiento, getAsientoById } from '@/lib/actions/asiento-actions';
+import { anularPago } from '@/lib/actions/pago-actions';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 type SortOrder = 'asc' | 'desc';
 
@@ -34,6 +34,10 @@ export default function AsientosPage() {
   const [sortBy, setSortBy] = useState('numero');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedAsiento, setSelectedAsiento] = useState<any>(null);
+
+  // Confirm Dialog State
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [asientoToAnular, setAsientoToAnular] = useState<any>(null);
 
   const fetchAsientos = useCallback(async () => {
     setLoading(true);
@@ -79,16 +83,36 @@ export default function AsientosPage() {
     }
   };
 
-  const handleAnular = async (asientoId: number) => {
-    if (window.confirm("¿Está seguro que desea anular este asiento? Se generará un contra-asiento.")) {
-      const result = await anularAsiento(asientoId);
+  const handleAnular = async () => {
+    if (!asientoToAnular) return;
+    
+    const isPayment = !!asientoToAnular.gestionPago;
+    
+    try {
+      const result = isPayment 
+        ? await anularPago(asientoToAnular.gestionPago.id)
+        : await anularAsiento(asientoToAnular.id);
+
       if ('success' in result && result.success) {
-        toast.success("Asiento anulado correctamente. Se ha generado un contra-asiento.");
+        toast.success(isPayment 
+          ? "Pago y asiento anulados correctamente. Las facturas han vuelto al estado Autorizado." 
+          : "Asiento anulado correctamente. Se ha generado un contra-asiento."
+        );
         fetchAsientos();
       } else {
         toast.error((result as any).error || "Error al anular");
       }
+    } catch (error) {
+      toast.error("Ocurrió un error inesperado al anular.");
+    } finally {
+      setIsConfirmOpen(false);
+      setAsientoToAnular(null);
     }
+  };
+
+  const openAnularDialog = (asiento: any) => {
+    setAsientoToAnular(asiento);
+    setIsConfirmOpen(true);
   };
 
   const handleSort = (column: string) => {
@@ -251,7 +275,7 @@ export default function AsientosPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleAnular(asiento.id);
+                              openAnularDialog(asiento);
                             }}
                             className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all"
                             title="Anular"
@@ -345,6 +369,19 @@ export default function AsientosPage() {
           }}
         />
       </Dialog>
+
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={handleAnular}
+        title={asientoToAnular?.gestionPago ? "Anular Pago y Asiento" : "Anular Asiento"}
+        description={asientoToAnular?.gestionPago 
+          ? "Este asiento está asociado al pago de facturas docentes. Al anularlo, el pago se cancelará y las facturas volverán al estado 'Autorizado'. ¿Desea proceder?"
+          : "¿Está seguro que desea anular este asiento? Se generará un contra-asiento compensatorio."
+        }
+        confirmText="Confirmar Anulación"
+        variant="danger"
+      />
     </div>
   );
 }
