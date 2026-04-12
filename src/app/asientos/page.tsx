@@ -15,6 +15,8 @@ import {
   Printer,
   SquaresExclude
 } from 'lucide-react';
+import { Dialog } from '@/components/Dialog';
+import { AsientoForm } from '@/components/AsientoForm';
 import { getAsientos, anularAsiento, getAsientoById } from '@/lib/actions/asiento-actions';
 import { anularPago } from '@/lib/actions/pago-actions';
 import { toast } from 'sonner';
@@ -86,11 +88,12 @@ export default function AsientosPage() {
   const handleAnular = async () => {
     if (!asientoToAnular) return;
     
-    const isPayment = !!asientoToAnular.gestionPago;
+    const payment = asientoToAnular.pagosGestion?.[0];
+    const isPayment = !!payment;
     
     try {
       const result = isPayment 
-        ? await anularPago(asientoToAnular.gestionPago.id)
+        ? await anularPago(payment.id)
         : await anularAsiento(asientoToAnular.id);
 
       if ('success' in result && result.success) {
@@ -374,8 +377,8 @@ export default function AsientosPage() {
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleAnular}
-        title={asientoToAnular?.gestionPago ? "Anular Pago y Asiento" : "Anular Asiento"}
-        description={asientoToAnular?.gestionPago 
+        title={asientoToAnular?.pagosGestion?.[0] ? "Anular Pago y Asiento" : "Anular Asiento"}
+        description={asientoToAnular?.pagosGestion?.[0] 
           ? "Este asiento está asociado al pago de facturas docentes. Al anularlo, el pago se cancelará y las facturas volverán al estado 'Autorizado'. ¿Desea proceder?"
           : "¿Está seguro que desea anular este asiento? Se generará un contra-asiento compensatorio."
         }
