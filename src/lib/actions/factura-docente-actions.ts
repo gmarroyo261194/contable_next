@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { parseFacturaPDF } from "@/lib/facturas/facturaParser";
 
 export async function getFacturasDocentes() {
   const session = await auth();
@@ -253,5 +254,55 @@ export async function deleteFacturaDocente(id: number) {
   } catch (error) {
     console.error("Error al eliminar factura de docente:", error);
     return { error: "Error al eliminar el registro." };
+  }
+}
+
+export async function parseFacturaDocentePDF(formData: FormData) {
+  const session = await auth();
+  if (!session) return { error: "No autorizado." };
+
+  const file = formData.get("file") as File;
+  if (!file) return { error: "No se ha proporcionado ningún archivo." };
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const extractedData = await parseFacturaPDF(buffer);
+
+    // Intentar buscar al docente por CUIT
+    const docente = await db.entidad.findFirst({
+      where: {
+        cuit: {
+          contains: extractedData.cuitEmisor
+        },
+        tipo: { nombre: 'DOCENTE' }
+      }
+    });
+
+    return {
+      success: true,
+      data: extractedData,
+      docente: docente ? JSON.parse(JSON.stringify(docente)) : null
+    };
+  } catch (error: any) {
+    console.error("Error al procesar PDF:", error);
+    return { error: error.message || "Error al procesar el archivo PDF." };
+  }
+}
+
+export async function getLastCuentaGastosForDocente(entidadId: number) {
+  const session = await auth();
+  if (!session) return null;
+
+  try {
+    const lastInvoice = await db.facturaDocente.findFirst({
+      where: { entidadId },
+      orderBy: { fecha: 'desc' },
+      include: { cuentaGastos: true }
+    });
+
+    return lastInvoice?.cuentaGastos ? JSON.parse(JSON.stringify(lastInvoice.cuentaGastos)) : null;
+  } catch (error) {
+    console.error("Error al obtener última cuenta de gastos:", error);
+    return null;
   }
 }

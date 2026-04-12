@@ -13,10 +13,12 @@ import {
   CreditCard,
   Building2,
   ShieldCheck,
-  Clock
+  Clock,
+  FileText,
+  Paperclip
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getDocentes, createFacturaDocente, updateFacturaDocente } from '@/lib/actions/factura-docente-actions';
+import { getDocentes, createFacturaDocente, updateFacturaDocente, parseFacturaDocentePDF, getLastCuentaGastosForDocente } from '@/lib/actions/factura-docente-actions';
 import { getCuentas } from '@/lib/actions/asiento-actions';
 import { EntitySearchDialog } from './entidades/EntitySearchDialog';
 import { AccountSearchDialog } from './AccountSearchDialog';
@@ -65,6 +67,8 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
   });
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [parsingPdf, setParsingPdf] = useState(false);
 
   useEffect(() => {
     Promise.all([getDocentes(), getCuentas()]).then(([d, c]) => {
@@ -128,6 +132,50 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
     }
   };
 
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setParsingPdf(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const result = await parseFacturaDocentePDF(formData);
+    setParsingPdf(false);
+
+    if (result.success && result.data) {
+      const { data, docente } = result;
+
+      setFormData(prev => ({
+        ...prev,
+        puntoVenta: data.puntoVenta,
+        numero: data.numero,
+        fecha: data.fechaEmision,
+        importe: data.importeTotal.toString(),
+        anioHonorarios: data.anioHonorarios || prev.anioHonorarios,
+        mesHonorarios: data.mesHonorarios || prev.mesHonorarios,
+      }));
+
+      if (docente) {
+        setSelectedDocente(docente);
+        toast.success(`PDF procesado: Docente identificado como ${docente.nombre}`);
+        
+        // Sugerir cuenta de gastos
+        const lastCuenta = await getLastCuentaGastosForDocente(docente.id);
+        if (lastCuenta) {
+          setSelectedCuenta(lastCuenta);
+          toast.info(`Sugerencia: Se aplicó la cuenta "${lastCuenta.nombre}" basada en facturas anteriores.`);
+        }
+      } else {
+        toast.warning(`PDF procesado: Datos extraídos pero no se encontró un docente con el CUIT ${data.cuitEmisor}.`);
+      }
+    } else {
+      toast.error(result.error || "Error al procesar el PDF");
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -155,9 +203,35 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
             {invoice ? `Editando Comprobante ${invoice.puntoVenta}-${invoice.numero}` : "Carga manual de honorarios"}
           </p>
         </div>
-        <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400">
-          <X className="w-6 h-6" />
-        </button>
+        <div className="flex items-center gap-3">
+          {!invoice && (
+            <>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".pdf"
+                onChange={handlePdfUpload}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={parsingPdf}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:border-primary/30 hover:text-primary transition-all shadow-xs group disabled:opacity-50"
+              >
+                {parsingPdf ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+                )}
+                {parsingPdf ? "Procesando..." : "Importar PDF"}
+              </button>
+            </>
+          )}
+          <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
       </header>
 
       <form onSubmit={handleSubmit} className="p-8 pt-6">
