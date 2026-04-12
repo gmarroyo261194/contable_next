@@ -11,7 +11,9 @@ import {
   Loader2,
   BookOpen,
   CreditCard,
-  Building2
+  Building2,
+  ShieldCheck,
+  Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getDocentes, createFacturaDocente, updateFacturaDocente } from '@/lib/actions/factura-docente-actions';
@@ -159,7 +161,7 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
       </header>
 
       <form onSubmit={handleSubmit} className="p-8 pt-6">
-        <div className={`flex flex-col lg:flex-row gap-8 ${invoice?.gestionPago ? 'items-start' : ''}`}>
+        <div className={`flex flex-col lg:flex-row gap-8 ${invoice?.gestionPago || invoice?.estado === 'Autorizado' ? 'items-start' : ''}`}>
           {/* Main Form Content */}
           <div className="flex-1 space-y-5">
             {/* Docente Selector */}
@@ -330,57 +332,98 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
             </div>
           </div>
 
-          {/* Payment Sidebar (only for paid invoices) */}
-          {invoice?.gestionPago && (
-            <div className="w-full lg:w-[320px] bg-emerald-50/50 border border-emerald-100 rounded-[32px] p-8 space-y-6 lg:sticky lg:top-0 animate-in fade-in slide-in-from-right-4 duration-500">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-emerald-500 rounded-xl text-white shadow-lg shadow-emerald-200">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-xs font-black text-emerald-800 uppercase tracking-widest block leading-none">Pago</span>
-                  <span className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest">Confirmado</span>
-                </div>
-              </div>
+          {/* Sidebar Section (Authorization & Payment) */}
+          {(invoice?.gestionPago || invoice?.estado === 'Autorizado') && (
+            <div className="w-full lg:w-[320px] lg:sticky lg:top-0 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              
+              {/* Authorization Section */}
+              {invoice?.estado === 'Autorizado' && (
+                <div className="bg-blue-50/50 border border-blue-100 rounded-[32px] p-8 space-y-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-blue-800 uppercase tracking-widest block leading-none">Autorización</span>
+                      <span className="text-[10px] font-bold text-blue-600/60 uppercase tracking-widest">Aprobada</span>
+                    </div>
+                  </div>
 
-              <div className="space-y-6">
-                <div className="space-y-1.5 p-4 bg-white rounded-2xl border border-emerald-100/50 shadow-sm">
-                  <label className="text-[9px] font-bold text-emerald-600/40 uppercase tracking-widest flex items-center gap-1.5">
-                    <Calendar className="w-3 h-3 text-emerald-500" /> Fecha del Pago
-                  </label>
-                  <p className="text-lg font-black text-emerald-900 leading-none">
-                    {new Date(invoice.gestionPago.fecha).toLocaleDateString()}
-                  </p>
-                </div>
+                  <div className="space-y-4">
+                    <div className="space-y-1.5 p-4 bg-white rounded-2xl border border-blue-100/50 shadow-sm">
+                      <label className="text-[9px] font-bold text-blue-600/40 uppercase tracking-widest flex items-center gap-1.5">
+                        <Clock className="w-3 h-3 text-blue-500" /> Fecha de Aprobación
+                      </label>
+                      <p className="text-sm font-black text-blue-900 leading-none">
+                        {invoice.fechaAutorizado ? new Date(invoice.fechaAutorizado).toLocaleDateString() : '-'}
+                      </p>
+                    </div>
 
-                <div className="space-y-1.5 p-4 bg-white rounded-2xl border border-emerald-100/50 shadow-sm">
-                  <label className="text-[9px] font-bold text-emerald-600/40 uppercase tracking-widest flex items-center gap-1.5">
-                    <CreditCard className="w-3 h-3 text-emerald-500" /> Medio / Instrumento
-                  </label>
-                  <p className="text-sm font-black text-emerald-900">
-                    {invoice.gestionPago.medioPago.nombre}
-                  </p>
-                </div>
-
-                <div className="space-y-1.5 p-4 bg-white rounded-2xl border border-emerald-100/50 shadow-sm">
-                  <label className="text-[9px] font-bold text-emerald-600/40 uppercase tracking-widest flex items-center gap-1.5">
-                    <Building2 className="w-3 h-3 text-emerald-500" /> Origen de Fondos
-                  </label>
-                  <p className="text-sm font-black text-emerald-900">
-                    {invoice.gestionPago.medioPago.cuenta?.nombre}
-                  </p>
-                  <p className="text-[10px] font-bold text-emerald-500/60 font-mono tracking-tighter">
-                    {invoice.gestionPago.medioPago.cuenta?.codigo}
-                  </p>
-                </div>
-
-                <div className="pt-4 border-t border-emerald-100/50">
-                  <div className="flex items-center justify-between text-emerald-800">
-                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">ID Gestión</span>
-                    <span className="font-mono text-xs font-bold bg-emerald-100 px-2 py-0.5 rounded-lg">#{invoice.gestionPagoId}</span>
+                    <div className="space-y-1.5 p-4 bg-white rounded-2xl border border-blue-100/50 shadow-sm">
+                      <label className="text-[9px] font-bold text-blue-600/40 uppercase tracking-widest flex items-center gap-1.5">
+                        <User className="w-3 h-3 text-blue-500" /> Autorizado por
+                      </label>
+                      <p className="text-sm font-black text-blue-900 truncate" title={invoice.usuarioAutorizado}>
+                        {invoice.usuarioAutorizado || 'Sistema'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* Payment Section */}
+              {invoice?.gestionPago && (
+                <div className="bg-emerald-50/50 border border-emerald-100 rounded-[32px] p-8 space-y-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-emerald-500 rounded-xl text-white shadow-lg shadow-emerald-200">
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-emerald-800 uppercase tracking-widest block leading-none">Pago</span>
+                      <span className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest">Confirmado</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-1.5 p-4 bg-white rounded-2xl border border-emerald-100/50 shadow-sm">
+                      <label className="text-[9px] font-bold text-emerald-600/40 uppercase tracking-widest flex items-center gap-1.5">
+                        <Calendar className="w-3 h-3 text-emerald-500" /> Fecha del Pago
+                      </label>
+                      <p className="text-lg font-black text-emerald-900 leading-none">
+                        {new Date(invoice.gestionPago.fecha).toLocaleDateString()}
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5 p-4 bg-white rounded-2xl border border-emerald-100/50 shadow-sm">
+                      <label className="text-[9px] font-bold text-emerald-600/40 uppercase tracking-widest flex items-center gap-1.5">
+                        <CreditCard className="w-3 h-3 text-emerald-500" /> Medio / Instrumento
+                      </label>
+                      <p className="text-sm font-black text-emerald-900">
+                        {invoice.gestionPago.medioPago.nombre}
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5 p-4 bg-white rounded-2xl border border-emerald-100/50 shadow-sm">
+                      <label className="text-[9px] font-bold text-emerald-600/40 uppercase tracking-widest flex items-center gap-1.5">
+                        <Building2 className="w-3 h-3 text-emerald-500" /> Origen de Fondos
+                      </label>
+                      <p className="text-sm font-black text-emerald-900">
+                        {invoice.gestionPago.medioPago.cuenta?.nombre}
+                      </p>
+                      <p className="text-[10px] font-bold text-emerald-500/60 font-mono tracking-tighter">
+                        {invoice.gestionPago.medioPago.cuenta?.codigo}
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-emerald-100/50">
+                      <div className="flex items-center justify-between text-emerald-800">
+                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">ID Gestión</span>
+                        <span className="font-mono text-xs font-bold bg-emerald-100 px-2 py-0.5 rounded-lg">#{invoice.gestionPagoId}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

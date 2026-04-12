@@ -397,7 +397,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
         onClose={() => setIsDialogOpen(false)}
         hideHeader
         noPadding
-        maxWidth={editingInvoice?.asientoPagoId ? "max-w-5xl" : "max-w-2xl"}
+        maxWidth={editingInvoice?.asientoPagoId || editingInvoice?.estado === 'Autorizado' ? "max-w-5xl" : "max-w-2xl"}
       >
         <FacturaDocenteForm
           invoice={editingInvoice}
