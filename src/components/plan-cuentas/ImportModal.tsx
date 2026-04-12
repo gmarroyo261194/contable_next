@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import * as XLSX from "xlsx";
-import { Upload, FileSpreadsheet, AlertCircle, Loader2, Check } from "lucide-react";
-import { importCuentas } from "@/app/plan-cuentas/actions";
+import { Upload, FileSpreadsheet, AlertCircle, Loader2, Check, Database } from "lucide-react";
+import { importCuentas, importCuentasLegacy } from "@/app/plan-cuentas/actions";
 
 interface ImportModalProps {
   onClose: () => void;
@@ -66,6 +66,27 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
     }
   };
 
+  const handleLegacyImport = async () => {
+    if (!confirm("Se importarán todas las cuentas desde la base de datos Fundación para el ejercicio actual. ¿Desea continuar?")) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await importCuentasLegacy();
+      if (result.success) {
+        setSuccess(true);
+        onSuccess();
+        setTimeout(onClose, 2000);
+      } else {
+        setError(result.message || "Error al importar desde legacy.");
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 hover:bg-slate-100/50 transition-colors">
@@ -103,6 +124,23 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
             <strong>codigoAlt</strong>, <strong>capitulo</strong> e <strong>imputable</strong>.
           </p>
         </div>
+      </div>
+
+      <div className="flex items-center gap-4 py-4 px-2 border-t border-slate-100">
+        <div className="size-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+          <Database className="size-5 text-amber-500" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-bold text-slate-800">Conexión Legacy (ContableFundacion)</p>
+          <p className="text-[11px] text-slate-500">Importar directamente desde la base de datos anterior</p>
+        </div>
+        <button 
+          onClick={handleLegacyImport}
+          disabled={loading || success}
+          className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-200 disabled:opacity-50"
+        >
+          {loading ? "Procesando..." : "Sincronizar ahora"}
+        </button>
       </div>
 
       {error && (

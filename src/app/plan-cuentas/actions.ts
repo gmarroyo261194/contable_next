@@ -193,3 +193,46 @@ export async function importCuentas(rawRows: any[]) {
   revalidatePath("/plan-cuentas");
   return { success: true, count };
 }
+
+export async function importCuentasLegacy() {
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+  const ejercicioId = (session?.user as any)?.ejercicioId;
+
+  if (!empresaId || !ejercicioId) throw new Error("Contexto no configurado.");
+
+  try {
+    // 0. Obtener el número de ejercicio actual
+    const ejercicioActual = await prisma.ejercicio.findUnique({
+      where: { id: parseInt(ejercicioId) },
+      select: { numero: true }
+    });
+
+    if (!ejercicioActual) throw new Error("Ejercicio no encontrado.");
+    const anio = ejercicioActual.numero;
+
+    // 1. Obtener cuentas de la base vieja
+    const rawRows: any[] = await prisma.$queryRawUnsafe(`
+      SELECT codigoCta, nombreCta, codigoAlt, capitulo, imputable
+      FROM [ContableFundacion].[dbo].[PlanCtaEjercicio]
+      WHERE ejercicio = ${anio}
+    `);
+
+    if (rawRows.length === 0) {
+      return { success: false, message: `No se encontró un plan de cuentas para el ejercicio ${anio} en la base legacy.` };
+    }
+
+    // 2. Usar la lógica de importación existente
+    // Adaptamos imputable: -1 es imputable en legacy
+    const processedRows = rawRows.map(row => ({
+      ...row,
+      imputable: String(row.imputable) === "-1" ? "-1" : "0"
+    }));
+
+    return await importCuentas(processedRows);
+
+  } catch (error: any) {
+    console.error("Legacy Import Error:", error);
+    throw new Error(error.message || "Error al importar el plan de cuentas legacy.");
+  }
+}

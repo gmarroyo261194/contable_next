@@ -2,8 +2,8 @@
 
 import React from "react";
 import { useForm } from "react-hook-form";
-import { Calendar, Lock, Unlock, Loader2, Hash } from "lucide-react";
-import { createEjercicio, updateEjercicio } from "@/app/ejercicios/actions";
+import { Calendar, Lock, Unlock, Loader2, Hash, Database, CheckCircle2 } from "lucide-react";
+import { createEjercicio, updateEjercicio, migrateAsientosLegacy } from "@/app/ejercicios/actions";
 
 interface EjercicioFormProps {
   initialData?: any;
@@ -33,6 +33,26 @@ export function EjercicioForm({ initialData, onClose, onSuccess }: EjercicioForm
       cerrado: false,
     },
   });
+
+  const onMigration = async () => {
+    if (!initialData) return;
+    if (!confirm(`¿Desea iniciar la migración de asientos desde la base de datos Fundacion para el año ${initialData.numero}? Solo se migrarán los asientos que no existan actualmente.`)) return;
+
+    setLoading(true);
+    try {
+      const result = await migrateAsientosLegacy(initialData.id, initialData.numero);
+      if (result.success) {
+        alert(`Migración completada. Se migraron ${result.count} asientos.`);
+        onSuccess();
+      } else {
+        alert(result.message);
+      }
+    } catch (error: any) {
+      alert(error.message || "Error al migrar los asientos.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onSubmit = async (data: any) => {
     setLoading(true);
@@ -140,6 +160,21 @@ export function EjercicioForm({ initialData, onClose, onSuccess }: EjercicioForm
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+        {initialData && (
+          <button
+            type="button"
+            onClick={onMigration}
+            disabled={loading}
+            className="mr-auto flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm text-amber-600 hover:bg-amber-50 border border-amber-200 transition-all disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Database className="w-4 h-4" />
+            )}
+            Migrar Asientos (Legacy)
+          </button>
+        )}
         <button
           type="button"
           onClick={onClose}
