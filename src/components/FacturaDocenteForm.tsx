@@ -9,7 +9,9 @@ import {
   Calendar,
   CircleDollarSign,
   Loader2,
-  BookOpen
+  BookOpen,
+  CreditCard,
+  Building2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getDocentes, createFacturaDocente, updateFacturaDocente } from '@/lib/actions/factura-docente-actions';
@@ -306,6 +308,47 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
             onChange={e => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
           />
         </div>
+        
+        {/* Payment Details Section (only for paid invoices) */}
+        {invoice?.gestionPago && (
+          <div className="bg-emerald-50/50 border border-emerald-100 rounded-[28px] p-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1.5 bg-emerald-500 rounded-lg text-white">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">Información del Pago</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-widest flex items-center gap-1.5">
+                  <Calendar className="w-3 h-3" /> Fecha de Pago
+                </label>
+                <p className="text-sm font-bold text-emerald-900 ml-4">
+                  {new Date(invoice.gestionPago.fecha).toLocaleDateString()}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-widest flex items-center gap-1.5">
+                  <CreditCard className="w-3 h-3" /> Medio de Pago
+                </label>
+                <p className="text-sm font-bold text-emerald-900 ml-4">
+                  {invoice.gestionPago.medioPago.nombre}
+                </p>
+              </div>
+
+              <div className="col-span-2 space-y-1">
+                <label className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-widest flex items-center gap-1.5">
+                  <Building2 className="w-3 h-3" /> Cuenta Pagadora
+                </label>
+                <p className="text-sm font-bold text-emerald-900 ml-4">
+                  {invoice.gestionPago.medioPago.cuenta?.codigo} - {invoice.gestionPago.medioPago.cuenta?.nombre}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="pt-4 flex gap-3">
           <button

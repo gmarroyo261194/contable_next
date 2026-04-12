@@ -18,6 +18,15 @@ export async function getFacturasDocentes() {
       entidad: true,
       cuentaGastos: true,
       asientoPago: true,
+      gestionPago: {
+        include: {
+          medioPago: {
+            include: {
+              cuenta: true
+            }
+          }
+        }
+      }
     },
     orderBy: {
       fecha: "desc",
