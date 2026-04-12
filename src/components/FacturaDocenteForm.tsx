@@ -161,7 +161,7 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
       </header>
 
       <form onSubmit={handleSubmit} className="p-8 pt-6">
-        <div className={`flex flex-col lg:flex-row gap-8 ${invoice?.gestionPago || invoice?.estado === 'Autorizado' ? 'items-start' : ''}`}>
+        <div className={`flex flex-col lg:flex-row gap-8 ${invoice?.gestionPago || invoice?.fechaAutorizado ? 'items-start' : ''}`}>
           {/* Main Form Content */}
           <div className="flex-1 space-y-5">
             {/* Docente Selector */}
@@ -333,11 +333,11 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
           </div>
 
           {/* Sidebar Section (Authorization & Payment) */}
-          {(invoice?.gestionPago || invoice?.estado === 'Autorizado') && (
+          {(invoice?.gestionPago || invoice?.fechaAutorizado) && (
             <div className="w-full lg:w-[320px] lg:sticky lg:top-0 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
               
               {/* Authorization Section */}
-              {invoice?.estado === 'Autorizado' && (
+              {invoice?.fechaAutorizado && (
                 <div className="bg-blue-50/50 border border-blue-100 rounded-[32px] p-8 space-y-6">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200">
