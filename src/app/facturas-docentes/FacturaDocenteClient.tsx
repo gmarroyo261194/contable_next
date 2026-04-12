@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Trash2, Users, Receipt, Calendar, CreditCard, Hash, BookOpen, CheckCircle, Clock, CalendarDays, XCircle, AlertTriangle, Pencil, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Trash2, Users, Receipt, CreditCard, BookOpen, CheckCircle, Clock, CalendarDays, XCircle, AlertTriangle, Pencil, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { DataGrid } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
 import { FacturaDocenteForm } from "@/components/FacturaDocenteForm";
@@ -12,8 +12,8 @@ import { PaymentDialog } from "@/components/PaymentDialog";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getCuentas, getAsientoById } from "@/lib/actions/asiento-actions";
-import { Filter, Search as SearchIcon } from "lucide-react";
 import { AsientoForm } from "@/components/AsientoForm";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
   const [mounted, setMounted] = useState(false);
@@ -32,7 +32,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
   const [isAsientoViewOpen, setIsAsientoViewOpen] = useState(false);
   const [isAsientoLoading, setIsAsientoLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | "pending" | "authorized" | "paid">("all");
-  
+
   const router = useRouter();
 
   React.useEffect(() => {
@@ -91,14 +91,14 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
   };
 
   const toggleSelection = (id: number) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
 
   const handleProcessPayment = () => {
     if (selectedIds.length === 0) return;
-    
+
     // Validar misma entidad
     const firstInvoice = initialData.find(f => f.id === selectedIds[0]);
     const sameEntity = selectedIds.every(id => {
@@ -163,8 +163,8 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
         const isFuture = habilitacion && habilitacion > today;
 
         return (
-          <input 
-            type="checkbox" 
+          <input
+            type="checkbox"
             checked={selectedIds.includes(f.id)}
             disabled={f.estado !== "Autorizado" || !!f.asientoPagoId || isFuture}
             onChange={() => toggleSelection(f.id)}
@@ -229,7 +229,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
         if (isPaid) {
           return (
             <div className="flex flex-col">
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   f.asientoPagoId && handleViewAsiento(f.asientoPagoId);
@@ -326,17 +326,15 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
             <button
               key={tab.id}
               onClick={() => setFilter(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                filter === tab.id
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filter === tab.id
                   ? "bg-primary text-white shadow-lg shadow-primary/20"
                   : "text-slate-500 hover:bg-slate-100"
-              }`}
+                }`}
             >
               <tab.icon className="size-3.5" />
               {tab.label}
-              <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] ${
-                filter === tab.id ? "bg-white/20" : "bg-slate-100 text-slate-400"
-              }`}>
+              <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] ${filter === tab.id ? "bg-white/20" : "bg-slate-100 text-slate-400"
+                }`}>
                 {initialData.filter(f => {
                   if (tab.id === "all") return true;
                   if (tab.id === "pending") return f.estado === "Autorizacion Pendiente" || !f.estado;
@@ -461,87 +459,25 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
         </motion.div>
       </Dialog>
 
-      {/* Confirmación de Eliminación */}
-      <Dialog
+      <ConfirmDialog
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
         title="Confirmar Eliminación"
-        maxWidth="max-w-md"
-      >
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="space-y-6"
-        >
-          <div className="flex items-start gap-4 p-4 bg-red-50 rounded-2xl border border-red-100">
-            <div className="size-10 rounded-xl bg-red-600 flex items-center justify-center text-white shrink-0 mt-1">
-              <AlertTriangle className="size-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-red-900">¿Eliminar esta factura?</h4>
-              <p className="text-xs text-red-700 leading-relaxed mt-1">
-                Esta acción borrará el registro de forma permanente. No se puede deshacer.
-              </p>
-            </div>
-          </div>
+        description="Esta acción borrará el registro de forma permanente. No se puede deshacer."
+        confirmText="Eliminar"
+        variant="danger"
+      />
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => setDeleteId(null)}
-              className="flex-1 px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={confirmDelete}
-              className="flex-1 px-6 py-3 bg-red-600 rounded-xl font-bold text-white shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
-            >
-              Eliminar
-            </button>
-          </div>
-        </motion.div>
-      </Dialog>
-
-      {/* Confirmación de Quitar Autorización */}
-      <Dialog
+      <ConfirmDialog
         isOpen={!!unauthId}
         onClose={() => setUnauthId(null)}
+        onConfirm={confirmUnauth}
         title="Quitar Autorización"
-        maxWidth="max-w-md"
-      >
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="space-y-6"
-        >
-          <div className="flex items-start gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-            <div className="size-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shrink-0 mt-1">
-              <XCircle className="size-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-amber-900">¿Revertir autorización?</h4>
-              <p className="text-xs text-amber-700 leading-relaxed mt-1">
-                La factura volverá al estado "Pendiente de Autorización".
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => setUnauthId(null)}
-              className="flex-1 px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={confirmUnauth}
-              className="flex-1 px-6 py-3 bg-amber-600 rounded-xl font-bold text-white shadow-lg shadow-amber-200 hover:bg-amber-700 transition-all"
-            >
-              Confirmar
-            </button>
-          </div>
-        </motion.div>
-      </Dialog>
+        description="La factura volverá al estado 'Pendiente de Autorización'."
+        confirmText="Confirmar"
+        variant="warning"
+      />
 
       <PaymentDialog
         isOpen={isPaymentDialogOpen}
@@ -561,7 +497,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
       >
         <div className="space-y-6">
           <p className="text-xs text-slate-500 font-medium">Asocie cada medio de pago con su cuenta contable correspondiente para la generación automática de asientos.</p>
-          
+
           <div className="space-y-4">
             {medios.map(m => (
               <div key={m.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">

@@ -1,24 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  CheckCircle2, 
-  Search, 
-  User, 
-  Hash, 
-  Calendar, 
+import {
+  X,
+  CheckCircle2,
+  Search,
+  User,
+  Calendar,
   CircleDollarSign,
-  AlertCircle,
   Loader2,
-  BookOpen,
-  Pencil
+  BookOpen
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getDocentes, createFacturaDocente, updateFacturaDocente } from '@/lib/actions/factura-docente-actions';
 import { getCuentas } from '@/lib/actions/asiento-actions';
 import { EntitySearchDialog } from './entidades/EntitySearchDialog';
 import { AccountSearchDialog } from './AccountSearchDialog';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface FacturaDocenteFormProps {
   onClose: () => void;
@@ -45,10 +43,10 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
   const [loading, setLoading] = useState(false);
   const [docentes, setDocentes] = useState<any[]>([]);
   const [cuentas, setCuentas] = useState<any[]>([]);
-  
+
   const [selectedDocente, setSelectedDocente] = useState<any>(null);
   const [isSearchingDocente, setIsSearchingDocente] = useState(false);
-  
+
   const [selectedCuenta, setSelectedCuenta] = useState<any>(null);
   const [isSearchingCuenta, setIsSearchingCuenta] = useState(false);
 
@@ -62,11 +60,13 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
     observaciones: ''
   });
 
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
   useEffect(() => {
     Promise.all([getDocentes(), getCuentas()]).then(([d, c]) => {
       setDocentes(d);
       setCuentas(c);
-      
+
       if (invoice) {
         setFormData({
           puntoVenta: invoice.puntoVenta,
@@ -95,22 +95,8 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedDocente) return toast.error("Debe seleccionar un docente.");
-    if (!selectedCuenta) return toast.error("Debe seleccionar una cuenta de gastos.");
-    if (!formData.puntoVenta || !formData.numero) return toast.error("Punto de venta y número son obligatorios.");
-    if (Number(formData.importe) <= 0) return toast.error("El importe debe ser mayor a cero.");
-
+  const executeSubmit = async () => {
     setLoading(true);
-
-    if (invoice && invoice.asientoPagoId && selectedCuenta.id !== invoice.cuentaGastosId) {
-      if (!confirm("Esta factura ya ha sido pagada. Al cambiar la cuenta de gastos, se modificará también el asiento contable del pago. ¿Desea continuar?")) {
-        setLoading(false);
-        return;
-      }
-    }
 
     const payload = {
       entidadId: selectedDocente.id,
@@ -124,7 +110,7 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
       observaciones: formData.observaciones
     };
 
-    const result = invoice 
+    const result = invoice
       ? await updateFacturaDocente(invoice.id, payload)
       : await createFacturaDocente(payload);
 
@@ -136,6 +122,22 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
     } else {
       toast.error(result.error);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedDocente) return toast.error("Debe seleccionar un docente.");
+    if (!selectedCuenta) return toast.error("Debe seleccionar una cuenta de gastos.");
+    if (!formData.puntoVenta || !formData.numero) return toast.error("Punto de venta y número son obligatorios.");
+    if (Number(formData.importe) <= 0) return toast.error("El importe debe ser mayor a cero.");
+
+    if (invoice && invoice.asientoPagoId && selectedCuenta.id !== invoice.cuentaGastosId) {
+      setShowConfirmDialog(true);
+      return;
+    }
+
+    await executeSubmit();
   };
 
   return (
@@ -175,10 +177,10 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
               </div>
             </button>
             {selectedDocente && (
-               <div className="mt-1 flex gap-2 ml-1 text-[10px] text-slate-400 font-medium">
-                 <span>DNI: {selectedDocente.nroDoc || '-'}</span>
-                 <span>CUIT: {selectedDocente.cuit || '-'}</span>
-               </div>
+              <div className="mt-1 flex gap-2 ml-1 text-[10px] text-slate-400 font-medium">
+                <span>DNI: {selectedDocente.nroDoc || '-'}</span>
+                <span>CUIT: {selectedDocente.cuit || '-'}</span>
+              </div>
             )}
           </div>
         </div>
@@ -216,7 +218,7 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
         </div>
 
         <div className="grid grid-cols-2 gap-6">
-           <div className="space-y-2">
+          <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha Emisión</label>
             <div className="relative">
               <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -336,6 +338,17 @@ export function FacturaDocenteForm({ onClose, onSuccess, invoice }: FacturaDocen
         onClose={() => setIsSearchingCuenta(false)}
         cuentas={cuentas}
         onSelect={setSelectedCuenta}
+      />
+
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        onClose={() => setShowConfirmDialog(false)}
+        onConfirm={executeSubmit}
+        title="Cambio de Imputación"
+        description="Esta factura ya ha sido pagada. Al cambiar la cuenta de gastos, se modificará también el asiento contable del pago. ¿Desea continuar?"
+        confirmText="Sí, continuar"
+        cancelText="No, cancelar"
+        variant="warning"
       />
     </div>
   );

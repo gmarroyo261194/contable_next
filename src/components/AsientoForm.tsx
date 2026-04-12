@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Trash2,
   Plus,
@@ -8,7 +8,6 @@ import {
   X,
   AlertCircle,
   XCircle,
-  Search,
   Loader2,
   FileSearch
 } from 'lucide-react';
@@ -228,17 +227,17 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight font-display">
-              {readOnly 
+              {readOnly
                 ? `Asiento #${asientoToEdit?.numero.toString().padStart(5, '0')}`
-                : asientoToEdit 
-                  ? `Editar Asiento #${asientoToEdit.numero.toString().padStart(5, '0')}` 
+                : asientoToEdit
+                  ? `Editar Asiento #${asientoToEdit.numero.toString().padStart(5, '0')}`
                   : 'Nuevo Asiento Contable'}
             </h1>
             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
-              {readOnly 
-                ? 'Consulta de registro' 
-                : asientoToEdit 
-                  ? 'Modificación de registro' 
+              {readOnly
+                ? 'Consulta de registro'
+                : asientoToEdit
+                  ? 'Modificación de registro'
                   : 'Manual Journal Entry'}
             </p>
           </div>
