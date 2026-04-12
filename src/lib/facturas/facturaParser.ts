@@ -99,11 +99,41 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
   }
 
   // 5. Importe Total
-  const totalMatch = text.match(/Importe Total:\s*\$\s*([\d\.,]+)/i);
-  if (totalMatch) {
-    const rawValue = totalMatch[1].replace(/\./g, '').replace(',', '.');
-    data.importeTotal = parseFloat(rawValue);
+  let foundTotal = 0;
+  const totalIndex = lines.findIndex(l => l.includes("Importe Total:"));
+
+  if (totalIndex !== -1) {
+    // Caso 1: Está en la misma línea
+    const sameLineMatch = lines[totalIndex].match(/Importe Total:.*?([\d\.,]+)/i);
+    if (sameLineMatch && sameLineMatch[1].includes(',')) {
+      const rawValue = sameLineMatch[1].replace(/\./g, '').replace(',', '.');
+      foundTotal = parseFloat(rawValue);
+    } 
+    
+    // Caso 2: Está en líneas anteriores (Típico en este generador)
+    if (!foundTotal) {
+      for (let i = totalIndex - 1; i >= Math.max(0, totalIndex - 5); i--) {
+        // Buscamos un número que parezca un importe (ej: 906571,14)
+        const match = lines[i].match(/^([\d\.]*,\d{2})$/);
+        if (match) {
+          const rawValue = match[1].replace(/\./g, '').replace(',', '.');
+          foundTotal = parseFloat(rawValue);
+          break;
+        }
+      }
+    }
   }
+
+  // Fallback: usar el regex original si lo anterior falla
+  if (!foundTotal) {
+    const totalMatch = text.match(/Importe Total:\s*\$\s*([\d\.,]+)/i);
+    if (totalMatch) {
+      const rawValue = totalMatch[1].replace(/\./g, '').replace(',', '.');
+      foundTotal = parseFloat(rawValue);
+    }
+  }
+
+  data.importeTotal = foundTotal;
 
   // 6. Mes y Año de Honorarios (Específico para estas facturas)
   // Ejemplo: "correspondiente al mes de JULIO de 2025"
