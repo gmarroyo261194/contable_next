@@ -103,6 +103,21 @@ export async function processPaymentDocente(ids: number[], data: {
       // 3. Crear Asiento
       const total = facturas.reduce((sum, f) => sum + Number(f.importe), 0);
       
+      // Agrupar facturas por cuenta de gastos para consolidar renglones en el asiento
+      const groupedByAccount = facturas.reduce((acc, f) => {
+        const cuentaId = f.cuentaGastosId;
+        if (!acc[cuentaId]) {
+          acc[cuentaId] = {
+            cuentaId,
+            importe: 0,
+            facturaNumeros: []
+          };
+        }
+        acc[cuentaId].importe += Number(f.importe);
+        acc[cuentaId].facturaNumeros.push(`${f.puntoVenta}-${f.numero}`);
+        return acc;
+      }, {} as Record<number, { cuentaId: number, importe: number, facturaNumeros: string[] }>);
+
       const lastAsiento = await tx.asiento.findFirst({
         where: { ejercicioId },
         orderBy: { numero: "desc" },
@@ -119,12 +134,12 @@ export async function processPaymentDocente(ids: number[], data: {
           createdBy: userEmail,
           renglones: {
             create: [
-              // Debe: Gastos (uno por factura)
-              ...facturas.map(f => ({
-                cuentaId: f.cuentaGastosId,
-                debe: f.importe,
+              // Debe: Gastos (Agrupados por cuenta)
+              ...Object.values(groupedByAccount).map(group => ({
+                cuentaId: group.cuentaId,
+                debe: group.importe,
                 haber: 0,
-                leyenda: `Facturas: ${facturas.map(fi => `${fi.puntoVenta}-${fi.numero}`).join(", ")}`,
+                leyenda: `Facturas: ${group.facturaNumeros.join(", ")}`,
                 monedaId: (session?.user as any)?.monedaId || 1, 
                 cotizacion: 1.0,
                 createdBy: userEmail,
