@@ -32,6 +32,7 @@ model Empresa {
   facturasDocentes      FacturaDocente[]
   mediosPago           MedioPago[]
   gestionesPago        GestionPago[]
+  centrosCosto         CentroCosto[]
 }
 
 model User {
@@ -178,6 +179,7 @@ model Cuenta {
   renglones   RenglonAsiento[]
   facturasDocentes FacturaDocente[]
   mediosPago      MedioPago[]
+  centrosCosto    CentroCostoCuenta[]
 
   @@unique([codigo, ejercicioId])
 }
@@ -532,4 +534,29 @@ model GestionPago {
   empresa           Empresa     @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
   ejercicio         Ejercicio   @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
   facturasDocentes  FacturaDocente[]
+}
+
+model CentroCosto {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  empresaId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  cuentas   CentroCostoCuenta[]
+
+  @@map("centros_costo")
+}
+
+model CentroCostoCuenta {
+  centroCostoId Int
+  cuentaId      Int
+  centroCosto   CentroCosto @relation(fields: [centroCostoId], references: [id], onDelete: Cascade)
+  cuenta        Cuenta      @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+
+  @@id([centroCostoId, cuentaId])
+  @@map("centro_costo_cuentas")
 }

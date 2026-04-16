@@ -15,7 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Receipt,
-  BadgeDollarSign
+  BadgeDollarSign,
+  Tags
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -30,6 +31,7 @@ const navItems = [
   { icon: Calendar, label: 'Ejercicios', href: '/ejercicios' },
   { icon: Users, label: 'Clientes/Proveedores', href: '/entidades' },
   { icon: Receipt, label: 'Documentos Proveedores', href: '/docprov' },
+  { icon: Tags, label: 'Centros de Costo', href: '/centros-costos' },
   { icon: ReceiptText, label: 'Facturas Docentes', href: '/facturas-docentes' },
   { icon: BarChart3, label: 'Reportes', href: '/reportes' },
   { icon: Settings, label: 'Ajustes', href: '/settings' },

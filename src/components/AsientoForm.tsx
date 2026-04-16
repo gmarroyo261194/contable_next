@@ -52,6 +52,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   // Load accounts once
   useEffect(() => {
@@ -381,50 +382,71 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
                       />
                     </td>
                     <td className="px-6 py-4">
-                      <input
-                        className="w-full border-none p-0 focus:ring-0 text-sm text-right text-slate-900 font-black placeholder-slate-100 bg-transparent"
-                        placeholder="0.00"
-                        type="number"
-                        step="0.01"
-                        disabled={readOnly}
-                        value={r.debe || ''}
-                        onChange={(e) => updateRenglon(r.id, { debe: parseFloat(e.target.value) || 0, haber: 0 })}
-                      />
+                      {readOnly ? (
+                        <div className={`text-sm text-right font-black whitespace-nowrap ${r.debe > 0 ? 'text-slate-900' : 'text-slate-200'}`}>
+                          {r.debe > 0 ? r.debe.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
+                        </div>
+                      ) : (
+                        <input
+                          className="w-full border-none p-0 focus:ring-0 text-sm text-right text-slate-900 font-black placeholder-slate-100 bg-transparent"
+                          placeholder="0,00"
+                          type="text"
+                          onFocus={() => setFocusedField(r.id + '-debe')}
+                          onBlur={() => setFocusedField(null)}
+                          value={focusedField === r.id + '-debe' 
+                            ? (r.debe === 0 ? '' : r.debe.toString()) 
+                            : r.debe.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value.replace(',', '.'));
+                            updateRenglon(r.id, { debe: isNaN(val) ? 0 : val, haber: 0 });
+                          }}
+                        />
+                      )}
                     </td>
                     <td className="px-6 py-4">
-                      <input
-                        className="w-full border-none p-0 focus:ring-0 text-sm text-right text-slate-900 font-black placeholder-slate-100 bg-transparent"
-                        placeholder="0.00"
-                        type="number"
-                        step="0.01"
-                        disabled={readOnly}
-                        value={r.haber || ''}
-                        onChange={(e) => updateRenglon(r.id, { haber: parseFloat(e.target.value) || 0, debe: 0 })}
-                        onKeyDown={(e) => {
-                          if (readOnly) return;
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            if (idx === renglones.length - 1) {
-                              // If it's the last line, add a new one with the same legend
-                              setRenglones([...renglones, {
-                                id: Math.random().toString(36).substr(2, 9),
-                                cuentaId: null,
-                                codigoDisplay: '',
-                                cuentaNombre: '',
-                                leyenda: r.leyenda, // Inherit legend
-                                debe: 0,
-                                haber: 0
-                              }]);
-                              setIsDirty(true);
+                      {readOnly ? (
+                        <div className={`text-sm text-right font-black whitespace-nowrap ${r.haber > 0 ? 'text-slate-900' : 'text-slate-200'}`}>
+                          {r.haber > 0 ? r.haber.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
+                        </div>
+                      ) : (
+                        <input
+                          className="w-full border-none p-0 focus:ring-0 text-sm text-right text-slate-900 font-black placeholder-slate-100 bg-transparent"
+                          placeholder="0,00"
+                          type="text"
+                          onFocus={() => setFocusedField(r.id + '-haber')}
+                          onBlur={() => setFocusedField(null)}
+                          value={focusedField === r.id + '-haber' 
+                            ? (r.haber === 0 ? '' : r.haber.toString()) 
+                            : r.haber.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value.replace(',', '.'));
+                            updateRenglon(r.id, { haber: isNaN(val) ? 0 : val, debe: 0 });
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (idx === renglones.length - 1) {
+                                // If it's the last line, add a new one with the same legend
+                                setRenglones([...renglones, {
+                                  id: Math.random().toString(36).substr(2, 9),
+                                  cuentaId: null,
+                                  codigoDisplay: '',
+                                  cuentaNombre: '',
+                                  leyenda: r.leyenda, // Inherit legend
+                                  debe: 0,
+                                  haber: 0
+                                }]);
+                                setIsDirty(true);
+                              }
+                              // Small delay to allow react to render the new row before focusing
+                              setTimeout(() => {
+                                const nextRowCode = document.querySelector(`tr:nth-child(${idx + 2}) input[data-row-id]`) as HTMLInputElement;
+                                nextRowCode?.focus();
+                              }, 50);
                             }
-                            // Small delay to allow react to render the new row before focusing
-                            setTimeout(() => {
-                              const nextRowCode = document.querySelector(`tr:nth-child(${idx + 2}) input[data-row-id]`) as HTMLInputElement;
-                              nextRowCode?.focus();
-                            }, 50);
-                          }
-                        }}
-                      />
+                          }}
+                        />
+                      )}
                     </td>
                     <td className="px-4 py-4">
                       {!readOnly && (
@@ -471,7 +493,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
               </h4>
               {!isCuadrado && (
                 <p className="text-red-500 text-[10px] font-bold">
-                  Diferencia: $ {diferencia.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  Diferencia: $ {diferencia.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               )}
             </div>
@@ -481,17 +503,17 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
           <div className="flex items-center gap-8 bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm">
             <div className="flex flex-col items-end">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Débito</span>
-              <span className="text-sm font-black text-slate-700">$ {totalDebe.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              <span className="text-sm font-black text-slate-700">$ {totalDebe.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="w-px h-8 bg-slate-100"></div>
             <div className="flex flex-col items-end">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Crédito</span>
-              <span className="text-sm font-black text-slate-700">$ {totalHaber.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              <span className="text-sm font-black text-slate-700">$ {totalHaber.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="w-px h-8 bg-slate-100"></div>
             <div className="flex flex-col items-end">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Balance</span>
-              <span className={`text-base font-black ${isCuadrado ? 'text-green-600' : 'text-slate-900'}`}>$ {diferencia.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              <span className={`text-base font-black ${isCuadrado ? 'text-green-600' : 'text-slate-900'}`}>$ {diferencia.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
         </div>

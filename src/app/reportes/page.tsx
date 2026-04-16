@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BookOpen, Scale } from 'lucide-react';
+import { BookOpen, Scale, Tags } from 'lucide-react';
 
 export default function ReportesPage() {
   return (
@@ -42,6 +42,24 @@ export default function ReportesPage() {
               <h3 className="text-xl font-bold text-slate-900 group-hover:text-primary transition-colors">Balance de Sumas y Saldos</h3>
               <p className="mt-2 text-sm text-slate-500 leading-relaxed">
                 Resumen general de todas las cuentas del plan, agrupando débitos, créditos y saldos finales jerárquicamente.
+              </p>
+            </div>
+          </div>
+        </Link>
+
+        {/* Nuevo Reporte de Centros de Costo */}
+        <Link 
+          href="/reportes/mayores-centro-costo"
+          className="group block p-6 bg-white border border-slate-200 rounded-2xl hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all"
+        >
+          <div className="flex items-start gap-4">
+            <div className="bg-amber-50 p-3 rounded-xl group-hover:bg-primary group-hover:text-white transition-colors text-amber-600">
+              <Tags className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 group-hover:text-primary transition-colors">Mayores por Centro de Costo</h3>
+              <p className="mt-2 text-sm text-slate-500 leading-relaxed">
+                Visualice el desglose de movimientos por cuenta y un consolidado final para un centro de costo específico.
               </p>
             </div>
           </div>

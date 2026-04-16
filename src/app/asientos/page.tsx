@@ -270,8 +270,8 @@ export default function AsientosPage() {
                       </div>
                       {/* <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{asiento.renglones.length} líneas</div> */}
                     </td>
-                    <td className="px-6 py-1 text-sm text-right font-black text-slate-900">$ {totalDebe.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                    <td className="px-6 py-1 text-sm text-right font-black text-slate-900">$ {totalHaber.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td className="px-6 py-1 text-sm text-right font-black text-slate-900">$ {totalDebe.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="px-6 py-1 text-sm text-right font-black text-slate-900">$ {totalHaber.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="px-6 py-1">
                       <div className="flex items-center justify-center gap-1 opacity-100">
                         {!isAnulacion ? (
