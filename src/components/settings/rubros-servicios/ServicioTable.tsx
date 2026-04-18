@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Edit2, ToggleLeft, ToggleRight, Plus, Wrench, Percent, Home, Building } from 'lucide-react';
+import { Edit2, ToggleLeft, ToggleRight, Plus, Wrench, Home, Building, Trash2 } from 'lucide-react';
 import { toggleServicio } from '@/lib/actions/servicio-actions';
 import { toast } from 'sonner';
 
@@ -9,9 +9,10 @@ interface ServicioTableProps {
   servicios: any[];
   onEdit: (servicio: any) => void;
   onAdd: () => void;
+  onDelete: (servicio: any) => void;
 }
 
-export function ServicioTable({ servicios, onEdit, onAdd }: ServicioTableProps) {
+export function ServicioTable({ servicios, onEdit, onAdd, onDelete }: ServicioTableProps) {
   const [loading, setLoading] = useState<number | null>(null);
 
   const handleToggle = async (id: number, currentStatus: boolean) => {
@@ -20,6 +21,7 @@ export function ServicioTable({ servicios, onEdit, onAdd }: ServicioTableProps) 
       await toggleServicio(id, !currentStatus);
       toast.success(`Servicio ${!currentStatus ? 'activado' : 'inhabilitado'} correctamente`);
     } catch (error) {
+      console.error(error);
       toast.error("Error al cambiar el estado del servicio");
     } finally {
       setLoading(null);
@@ -147,6 +149,13 @@ export function ServicioTable({ servicios, onEdit, onAdd }: ServicioTableProps) 
                           title={servicio.activo ? 'Inhabilitar' : 'Activar'}
                         >
                           {servicio.activo ? <ToggleRight className="size-5" /> : <ToggleLeft className="size-5" />}
+                        </button>
+                        <button
+                          onClick={() => onDelete(servicio)}
+                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="size-4" />
                         </button>
                       </div>
                     </td>

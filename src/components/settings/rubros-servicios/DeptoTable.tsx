@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Edit2, ToggleLeft, ToggleRight, Plus, Building } from 'lucide-react';
+import { Edit2, ToggleLeft, ToggleRight, Plus, Building, Trash2 } from 'lucide-react';
 import { Departamento } from '@prisma/client';
 import { toggleDepartamento } from '@/lib/actions/departamento-actions';
 import { toast } from 'sonner';
@@ -10,9 +10,10 @@ interface DeptoTableProps {
   departamentos: Departamento[];
   onEdit: (depto: Departamento) => void;
   onAdd: () => void;
+  onDelete: (depto: Departamento) => void;
 }
 
-export function DeptoTable({ departamentos, onEdit, onAdd }: DeptoTableProps) {
+export function DeptoTable({ departamentos, onEdit, onAdd, onDelete }: DeptoTableProps) {
   const [loading, setLoading] = useState<number | null>(null);
 
   const handleToggle = async (id: number, currentStatus: boolean) => {
@@ -84,6 +85,13 @@ export function DeptoTable({ departamentos, onEdit, onAdd }: DeptoTableProps) {
                         title={depto.activo ? 'Inhabilitar' : 'Activar'}
                       >
                         {depto.activo ? <ToggleRight className="size-5" /> : <ToggleLeft className="size-5" />}
+                      </button>
+                      <button
+                        onClick={() => onDelete(depto)}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="size-4" />
                       </button>
                     </div>
                   </td>

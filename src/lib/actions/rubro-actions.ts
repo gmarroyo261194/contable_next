@@ -51,3 +51,45 @@ export async function toggleRubro(id: number, activo: boolean) {
   revalidatePath("/settings/rubros-servicios");
   return JSON.parse(JSON.stringify(result));
 }
+
+/**
+ * Elimina un rubro de la base de datos si no tiene servicios asociados.
+ * @param {number} id - ID del rubro a eliminar.
+ * @throws {Error} Si el rubro tiene servicios asociados.
+ */
+export async function deleteRubro(id: number) {
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Buscamos los servicios asociados para borrar sus configs
+      const servicios = await tx.servicio.findMany({
+        where: { rubroId: id },
+        select: { id: true }
+      });
+      
+      const servicioIds = servicios.map(s => s.id);
+
+      if (servicioIds.length > 0) {
+        // 2. Borramos configs de los servicios del rubro
+        await tx.servicioConfig.deleteMany({
+          where: { servicioId: { in: servicioIds } }
+        });
+
+        // 3. Borramos los servicios del rubro
+        await tx.servicio.deleteMany({
+          where: { rubroId: id }
+        });
+      }
+
+      // 4. Borramos el rubro
+      return await tx.rubro.delete({
+        where: { id }
+      });
+    });
+
+    revalidatePath("/settings/rubros-servicios");
+    return { success: true, data: JSON.parse(JSON.stringify(result)) };
+  } catch (error: any) {
+    console.error("Error al eliminar rubro:", error);
+    return { success: false, error: "Error al eliminar el rubro y sus servicios dependientes." };
+  }
+}

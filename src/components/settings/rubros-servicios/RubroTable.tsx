@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Edit2, ToggleLeft, ToggleRight, Plus, Tag } from 'lucide-react';
+import { Edit2, ToggleLeft, ToggleRight, Plus, Tag, Trash2 } from 'lucide-react';
 import { Rubro } from '@prisma/client';
 import { toggleRubro } from '@/lib/actions/rubro-actions';
 import { toast } from 'sonner';
@@ -10,9 +10,10 @@ interface RubroTableProps {
   rubros: Rubro[];
   onEdit: (rubro: Rubro) => void;
   onAdd: () => void;
+  onDelete: (rubro: Rubro) => void;
 }
 
-export function RubroTable({ rubros, onEdit, onAdd }: RubroTableProps) {
+export function RubroTable({ rubros, onEdit, onAdd, onDelete }: RubroTableProps) {
   const [loading, setLoading] = useState<number | null>(null);
 
   const handleToggle = async (id: number, currentStatus: boolean) => {
@@ -84,6 +85,13 @@ export function RubroTable({ rubros, onEdit, onAdd }: RubroTableProps) {
                         title={rubro.activo ? 'Inhabilitar' : 'Activar'}
                       >
                         {rubro.activo ? <ToggleRight className="size-5" /> : <ToggleLeft className="size-5" />}
+                      </button>
+                      <button
+                        onClick={() => onDelete(rubro)}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="size-4" />
                       </button>
                     </div>
                   </td>

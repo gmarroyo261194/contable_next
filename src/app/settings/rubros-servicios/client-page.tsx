@@ -8,6 +8,11 @@ import { DeptoModal } from '@/components/settings/rubros-servicios/DeptoModal';
 import { ServicioTable } from '@/components/settings/rubros-servicios/ServicioTable';
 import { ServicioModal } from '@/components/settings/rubros-servicios/ServicioModal';
 import { Tag, Building, Wrench, Settings2 } from 'lucide-react';
+import { DeleteConfirmationModal } from '@/components/ui/DeleteConfirmationModal';
+import { deleteRubro } from '@/lib/actions/rubro-actions';
+import { deleteDepartamento } from '@/lib/actions/departamento-actions';
+import { deleteServicio } from '@/lib/actions/servicio-actions';
+import { toast } from 'sonner';
 
 interface RubrosServiciosClientProps {
   initialRubros: any[];
@@ -30,6 +35,48 @@ export function RubrosServiciosClient({
   const [rubroModal, setRubroModal] = useState<{ isOpen: boolean; data: any | null }>({ isOpen: false, data: null });
   const [deptoModal, setDeptoModal] = useState<{ isOpen: boolean; data: any | null }>({ isOpen: false, data: null });
   const [servicioModal, setServicioModal] = useState<{ isOpen: boolean; data: any | null }>({ isOpen: false, data: null });
+
+  // Delete state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    type: 'rubro' | 'depto' | 'servicio' | null;
+    id: number | null;
+    name: string;
+    loading: boolean;
+  }>({
+    isOpen: false,
+    type: null,
+    id: null,
+    name: '',
+    loading: false
+  });
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteModal.id || !deleteModal.type) return;
+    
+    setDeleteModal(prev => ({ ...prev, loading: true }));
+    try {
+      let result;
+      if (deleteModal.type === 'rubro') {
+        result = await deleteRubro(deleteModal.id);
+      } else if (deleteModal.type === 'depto') {
+        result = await deleteDepartamento(deleteModal.id);
+      } else if (deleteModal.type === 'servicio') {
+        result = await deleteServicio(deleteModal.id);
+      }
+
+      if (result?.success) {
+        toast.success(`${deleteModal.type?.charAt(0).toUpperCase()}${deleteModal.type?.slice(1)} eliminado correctamente`);
+        setDeleteModal({ isOpen: false, type: null, id: null, name: '', loading: false });
+      } else {
+        toast.error(result?.error || "Error al eliminar el registro");
+        setDeleteModal(prev => ({ ...prev, loading: false }));
+      }
+    } catch (error: any) {
+      toast.error("Ocurrió un error inesperado");
+      setDeleteModal(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
@@ -86,6 +133,7 @@ export function RubrosServiciosClient({
               servicios={initialServicios} 
               onEdit={(s) => setServicioModal({ isOpen: true, data: s })}
               onAdd={() => setServicioModal({ isOpen: true, data: null })}
+              onDelete={(s) => setDeleteModal({ isOpen: true, type: 'servicio', id: s.id, name: s.nombre, loading: false })}
             />
           )}
           {activeTab === 'rubros' && (
@@ -93,6 +141,7 @@ export function RubrosServiciosClient({
               rubros={initialRubros} 
               onEdit={(r) => setRubroModal({ isOpen: true, data: r })}
               onAdd={() => setRubroModal({ isOpen: true, data: null })}
+              onDelete={(r) => setDeleteModal({ isOpen: true, type: 'rubro', id: r.id, name: r.nombre, loading: false })}
             />
           )}
           {activeTab === 'departamentos' && (
@@ -100,6 +149,7 @@ export function RubrosServiciosClient({
               departamentos={initialDepartamentos} 
               onEdit={(d) => setDeptoModal({ isOpen: true, data: d })}
               onAdd={() => setDeptoModal({ isOpen: true, data: null })}
+              onDelete={(d) => setDeleteModal({ isOpen: true, type: 'depto', id: d.id, name: d.nombre, loading: false })}
             />
           )}
         </div>
@@ -124,6 +174,16 @@ export function RubrosServiciosClient({
         departamentos={initialDepartamentos}
         cuentas={cuentas}
         empresaId={empresaId}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={handleDeleteConfirm}
+        title={`¿Eliminar ${deleteModal.type === 'depto' ? 'departamento' : deleteModal.type}?`}
+        description={`¿Estás seguro que deseas eliminar "${deleteModal.name}"? Esta acción verificará primero si existen relaciones activas.`}
+        isLoading={deleteModal.loading}
       />
     </div>
   );

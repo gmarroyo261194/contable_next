@@ -145,3 +145,30 @@ export async function toggleServicio(id: number, activo: boolean) {
   revalidatePath("/settings/rubros-servicios");
   return JSON.parse(JSON.stringify(result));
 }
+
+/**
+ * Elimina un servicio si no tiene configuraciones asociadas en ninguna empresa.
+ * @param {number} id - ID del servicio.
+ * @throws {Error} Si el servicio tiene configuraciones de empresa asociadas.
+ */
+export async function deleteServicio(id: number) {
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Borramos las configuraciones de empresa asociadas al servicio
+      await tx.servicioConfig.deleteMany({
+        where: { servicioId: id }
+      });
+
+      // 2. Borramos el servicio
+      return await tx.servicio.delete({
+        where: { id }
+      });
+    });
+
+    revalidatePath("/settings/rubros-servicios");
+    return { success: true, data: JSON.parse(JSON.stringify(result)) };
+  } catch (error: any) {
+    console.error("Error al eliminar servicio:", error);
+    return { success: false, error: "Error al eliminar el servicio y sus configuraciones." };
+  }
+}

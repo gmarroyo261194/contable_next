@@ -51,3 +51,31 @@ export async function toggleDepartamento(id: number, activo: boolean) {
   revalidatePath("/settings/rubros-servicios");
   return JSON.parse(JSON.stringify(result));
 }
+
+/**
+ * Elimina un departamento si no tiene servicios asociados.
+ * @param {number} id - ID del departamento.
+ * @throws {Error} Si el departamento tiene servicios asociados.
+ */
+export async function deleteDepartamento(id: number) {
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Desligamos los servicios asociados (poniéndolos en null ya que es opcional)
+      await tx.servicio.updateMany({
+        where: { departamentoId: id },
+        data: { departamentoId: null }
+      });
+
+      // 2. Borramos el departamento
+      return await tx.departamento.delete({
+        where: { id }
+      });
+    });
+
+    revalidatePath("/settings/rubros-servicios");
+    return { success: true, data: JSON.parse(JSON.stringify(result)) };
+  } catch (error: any) {
+    console.error("Error al eliminar departamento:", error);
+    return { success: false, error: "Error al eliminar el departamento." };
+  }
+}
