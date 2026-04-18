@@ -3,17 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Dialog } from '@/components/Dialog';
-import { AccountSearchDialog } from '@/components/AccountSearchDialog';
+import { AccountSearchDialog, Account } from '@/components/AccountSearchDialog';
 import { upsertServicio } from '@/lib/actions/servicio-actions';
 import { toast } from 'sonner';
 import { Percent, Search, Landmark, Building2, Tag, Wrench } from 'lucide-react';
-
-interface Account {
-  id: number;
-  nombre: string;
-  codigo: string;
-  codigoCorto: number | null;
-}
 
 interface ServicioModalProps {
   isOpen: boolean;

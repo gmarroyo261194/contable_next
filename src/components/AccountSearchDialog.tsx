@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, X, Hash } from 'lucide-react';
 import { Dialog } from './Dialog';
 
-interface Account {
+export interface Account {
   id: number;
   codigo: string;
   codigoCorto: number | null;

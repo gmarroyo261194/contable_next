@@ -3,7 +3,7 @@
 import React from "react";
 import { Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Plus } from "lucide-react";
 
-interface Column<T> {
+export interface Column<T> {
   header: string;
   accessor?: keyof T;
   cell?: (item: T) => React.ReactNode;
@@ -11,7 +11,7 @@ interface Column<T> {
   className?: string;
 }
 
-interface DataGridProps<T> {
+export interface DataGridProps<T> {
   data: T[];
   columns: Column<T>[];
   actions?: (item: T) => React.ReactNode;

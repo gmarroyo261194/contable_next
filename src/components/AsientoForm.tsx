@@ -12,15 +12,8 @@ import {
   FileSearch
 } from 'lucide-react';
 import { createAsiento, updateAsiento, getCuentas } from '@/lib/actions/asiento-actions';
-import { AccountSearchDialog } from './AccountSearchDialog';
+import { AccountSearchDialog, Account } from './AccountSearchDialog';
 import { toast } from 'sonner';
-
-interface Account {
-  id: number;
-  codigo: string;
-  codigoCorto: number | null;
-  nombre: string;
-}
 
 interface Renglon {
   id: string; // temporary client-side id

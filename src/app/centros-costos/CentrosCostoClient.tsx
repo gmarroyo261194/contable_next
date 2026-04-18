@@ -2,18 +2,12 @@
 
 import React, { useState } from 'react';
 import { Plus, Pencil, Trash2, Tags, Hash, Search, X } from 'lucide-react';
-import { DataGrid } from "@/components/ui/DataGrid";
+import { DataGrid, Column } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { upsertCentroCosto, deleteCentroCosto } from "@/lib/actions/centro-costo-actions";
-import { AccountSearchDialog } from "@/components/AccountSearchDialog";
-
-interface Account {
-  id: number;
-  codigo: string;
-  nombre: string;
-}
+import { AccountSearchDialog, Account } from "@/components/AccountSearchDialog";
 
 interface CentroCosto {
   id: number;
@@ -97,7 +91,7 @@ export function CentrosCostoClient({
     }));
   };
 
-  const columns = [
+  const columns: Column<CentroCosto>[] = [
     {
       header: "Nombre",
       accessor: "nombre",

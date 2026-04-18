@@ -191,7 +191,7 @@ export async function importCuentas(rawRows: any[]) {
     }
 
   revalidatePath("/plan-cuentas");
-  return { success: true, count };
+  return { success: true, count, message: `Se importaron ${count} cuentas correctamente.` };
 }
 
 export async function importCuentasLegacy() {

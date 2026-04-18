@@ -166,7 +166,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
           <input
             type="checkbox"
             checked={selectedIds.includes(f.id)}
-            disabled={f.estado !== "Autorizado" || !!f.asientoPagoId || isFuture}
+            disabled={f.estado !== "Autorizado" || !!f.asientoPagoId || !!isFuture}
             onChange={() => toggleSelection(f.id)}
             className="size-4 rounded border-slate-300 text-primary focus:ring-primary disabled:opacity-20 disabled:cursor-not-allowed"
           />
