@@ -33,6 +33,7 @@ model Empresa {
   mediosPago           MedioPago[]
   gestionesPago        GestionPago[]
   centrosCosto         CentroCosto[]
+  serviciosConfig      ServicioConfig[]
 }
 
 model User {
@@ -180,6 +181,12 @@ model Cuenta {
   facturasDocentes FacturaDocente[]
   mediosPago      MedioPago[]
   centrosCosto    CentroCostoCuenta[]
+  
+  // Relaciones para Configuración de Servicios
+  serviciosFundImputar ServicioConfig[] @relation("CuentaFundacionImputar")
+  serviciosFundRetener ServicioConfig[] @relation("CuentaFundacionRetener")
+  serviciosDeptoImputar ServicioConfig[] @relation("CuentaDeptoImputar")
+  serviciosDeptoRetener ServicioConfig[] @relation("CuentaDeptoRetener")
 
   @@unique([codigo, ejercicioId])
 }
@@ -559,4 +566,78 @@ model CentroCostoCuenta {
 
   @@id([centroCostoId, cuentaId])
   @@map("centro_costo_cuentas")
+}
+
+model Rubro {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  activo    Boolean   @default(true)
+  servicios Servicio[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  @@map("rubros")
+}
+
+model Departamento {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  activo    Boolean   @default(true)
+  servicios Servicio[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  @@map("departamentos")
+}
+
+model Servicio {
+  id                     Int              @id @default(autoincrement())
+  nombre                 String           @unique
+  activo                 Boolean          @default(true)
+  rubroId                Int
+  rubro                  Rubro            @relation(fields: [rubroId], references: [id])
+  departamentoId         Int?
+  departamento           Departamento?    @relation(fields: [departamentoId], references: [id])
+  participacionFundacion Boolean          @default(false)
+  porcentajeFundacion    Decimal?         @db.Decimal(5, 2)
+  participacionDepto     Boolean          @default(false)
+  porcentajeDepto        Decimal?         @db.Decimal(5, 2)
+  configs                ServicioConfig[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  @@map("servicios")
+}
+
+model ServicioConfig {
+  id                       Int      @id @default(autoincrement())
+  servicioId               Int
+  empresaId                Int
+  cuentaFundacionImputarId Int?
+  cuentaFundacionRetenerId Int?
+  cuentaDeptoImputarId     Int?
+  cuentaDeptoRetenerId     Int?
+  servicio                 Servicio @relation(fields: [servicioId], references: [id])
+  empresa                  Empresa  @relation(fields: [empresaId], references: [id])
+  cuentaFundacionImputar   Cuenta?  @relation("CuentaFundacionImputar", fields: [cuentaFundacionImputarId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  cuentaFundacionRetener   Cuenta?  @relation("CuentaFundacionRetener", fields: [cuentaFundacionRetenerId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  cuentaDeptoImputar       Cuenta?  @relation("CuentaDeptoImputar", fields: [cuentaDeptoImputarId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  cuentaDeptoRetener       Cuenta?  @relation("CuentaDeptoRetener", fields: [cuentaDeptoRetenerId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  @@unique([servicioId, empresaId])
+  @@map("servicio_configs")
 }
