@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Coins, Shield, User, Bell, Globe, Database, Tag } from "lucide-react";
+import { Coins, Shield, User, Bell, Globe, Database, Tag, ArrowDownCircleIcon, ArrowRightLeft } from "lucide-react";
 
 const categories = [
   {
@@ -28,9 +28,9 @@ const categories = [
     disabled: false
   },
   {
-    title: "Tipos de Entidades",
-    description: "Configura categorías de clientes y proveedores",
-    icon: Tag,
+    title: "Personas Fisicas y Juridicas",
+    description: "Configura categorías de clientes, proveedores y docentes",
+    icon: User,
     href: "/settings/tipos-entidad",
     color: "bg-purple-50 text-purple-600",
     disabled: false
@@ -42,6 +42,22 @@ const categories = [
     href: "/settings/notifications",
     color: "bg-yellow-50 text-yellow-600",
     disabled: true
+  },
+  {
+    title: "Rubros y Servicios",
+    description: "Configuracion de rubros y servicios facturables y participaciones a fundacion y departamentos",
+    icon: Tag,
+    href: "/settings/rubros-servicios",
+    color: "bg-green-50 text-green-600",
+    disabled: false
+  },
+  {
+    title: "Integracion AFIP",
+    description: "Configuracion de la integracion con AFIP y sistema de facturacion electronica",
+    icon: ArrowRightLeft,
+    href: "/settings/integracion-afip",
+    color: "bg-blue-50 text-blue-600",
+    disabled: false
   }
 ];
 
@@ -58,11 +74,10 @@ export default function SettingsPage() {
           <Link
             key={cat.title}
             href={cat.disabled ? "#" : cat.href}
-            className={`group bg-white border border-slate-200 rounded-2xl p-6 transition-all duration-300 ${
-              cat.disabled 
-                ? "opacity-60 cursor-not-allowed" 
-                : "hover:shadow-md hover:border-primary/30"
-            }`}
+            className={`group bg-white border border-slate-200 rounded-2xl p-6 transition-all duration-300 ${cat.disabled
+              ? "opacity-60 cursor-not-allowed"
+              : "hover:shadow-md hover:border-primary/30"
+              }`}
           >
             <div className="flex items-center gap-4 mb-4">
               <div className={`size-12 rounded-xl flex items-center justify-center ${cat.color}`}>
