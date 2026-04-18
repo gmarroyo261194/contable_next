@@ -7,8 +7,9 @@ import { DeptoTable } from '@/components/settings/rubros-servicios/DeptoTable';
 import { DeptoModal } from '@/components/settings/rubros-servicios/DeptoModal';
 import { ServicioTable } from '@/components/settings/rubros-servicios/ServicioTable';
 import { ServicioModal } from '@/components/settings/rubros-servicios/ServicioModal';
-import { Tag, Building, Wrench, Settings2 } from 'lucide-react';
+import { Tag, Building, Wrench, Settings2, RefreshCw } from 'lucide-react';
 import { DeleteConfirmationModal } from '@/components/ui/DeleteConfirmationModal';
+import { SyncRubrosModal } from '@/components/settings/rubros-servicios/SyncRubrosModal';
 import { deleteRubro } from '@/lib/actions/rubro-actions';
 import { deleteDepartamento } from '@/lib/actions/departamento-actions';
 import { deleteServicio } from '@/lib/actions/servicio-actions';
@@ -35,6 +36,7 @@ export function RubrosServiciosClient({
   const [rubroModal, setRubroModal] = useState<{ isOpen: boolean; data: any | null }>({ isOpen: false, data: null });
   const [deptoModal, setDeptoModal] = useState<{ isOpen: boolean; data: any | null }>({ isOpen: false, data: null });
   const [servicioModal, setServicioModal] = useState<{ isOpen: boolean; data: any | null }>({ isOpen: false, data: null });
+  const [syncModal, setSyncModal] = useState(false);
 
   // Delete state
   const [deleteModal, setDeleteModal] = useState<{
@@ -82,11 +84,21 @@ export function RubrosServiciosClient({
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-xl">
-            <Settings2 className="w-6 h-6 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <Settings2 className="w-6 h-6 text-primary" />
+            </div>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Rubros y Servicios</h1>
           </div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Rubros y Servicios</h1>
+          {/* Botón de sincronización */}
+          <button
+            onClick={() => setSyncModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all shadow-sm"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Sincronizar PagosFundacion
+          </button>
         </div>
         <p className="text-slate-500 text-sm ml-11">Configuración global de rubros, departamentos y servicios con imputación por empresa.</p>
       </div>
@@ -174,6 +186,13 @@ export function RubrosServiciosClient({
         departamentos={initialDepartamentos}
         cuentas={cuentas}
         empresaId={empresaId}
+      />
+
+      {/* Sync Modal */}
+      <SyncRubrosModal
+        isOpen={syncModal}
+        onClose={() => setSyncModal(false)}
+        rubrosLocales={initialRubros.map((r: any) => r.nombre)}
       />
 
       {/* Delete Confirmation Modal */}

@@ -147,9 +147,9 @@ export async function toggleServicio(id: number, activo: boolean) {
 }
 
 /**
- * Elimina un servicio si no tiene configuraciones asociadas en ninguna empresa.
+ * Elimina un servicio y todas sus configuraciones de empresa en cascada.
  * @param {number} id - ID del servicio.
- * @throws {Error} Si el servicio tiene configuraciones de empresa asociadas.
+ * @returns {{ success: boolean, data?: any, error?: string }}
  */
 export async function deleteServicio(id: number) {
   try {
