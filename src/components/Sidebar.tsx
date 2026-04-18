@@ -14,9 +14,13 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Receipt,
   BadgeDollarSign,
-  Tags
+  Tags,
+  BookOpen,
+  GraduationCap
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -26,14 +30,36 @@ import { logout } from '@/lib/actions/auth-actions';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
   { icon: Building2, label: 'Empresas', href: '/empresas' },
-  { icon: ReceiptText, label: 'Asientos Contables', href: '/asientos' },
-  { icon: Network, label: 'Plan de Cuentas', href: '/plan-cuentas' },
-  { icon: Calendar, label: 'Ejercicios', href: '/ejercicios' },
-  { icon: Users, label: 'Clientes/Proveedores', href: '/entidades' },
-  { icon: Receipt, label: 'Documentos Proveedores', href: '/docprov' },
-  { icon: Tags, label: 'Centros de Costo', href: '/centros-costos' },
-  { icon: ReceiptText, label: 'Facturas Docentes', href: '/facturas-docentes' },
-  { icon: BarChart3, label: 'Reportes', href: '/reportes' },
+  {
+    icon: BookOpen,
+    label: 'Contabilidad',
+    href: '/contabilidad',
+    children: [
+      { icon: ReceiptText, label: 'Asientos Contables', href: '/asientos' },
+      { icon: Network, label: 'Plan de Cuentas', href: '/plan-cuentas' },
+      { icon: Calendar, label: 'Ejercicios', href: '/ejercicios' },
+      { icon: Tags, label: 'Centros de Costo', href: '/centros-costos' },
+      { icon: BarChart3, label: 'Reportes', href: '/reportes' },
+    ]
+  },
+  {
+    icon: GraduationCap,
+    label: 'Honorarios Docentes',
+    href: '/honorarios-docentes',
+    children: [
+      { icon: ReceiptText, label: 'Facturas Docentes', href: '/facturas-docentes' },
+    ]
+  },
+  {
+    icon: Users,
+    label: 'Clientes y Proveedores',
+    href: '/cliente-prov',
+    children: [
+      { icon: Users, label: 'Pers. Fisicas y Juridicas', href: '/entidades' },
+      { icon: Receipt, label: 'Facturas Recibidas', href: '/docprov' },
+      { icon: Receipt, label: 'Facturas Emitidas', href: '/doccli' },
+    ]
+  },
   { icon: Settings, label: 'Ajustes', href: '/settings' },
 ];
 
@@ -41,6 +67,15 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Contabilidad']);
+
+  const toggleMenu = (label: string) => {
+    setExpandedMenus(prev =>
+      prev.includes(label)
+        ? prev.filter(m => m !== label)
+        : [...prev, label]
+    );
+  };
 
   const userInitial = session?.user?.name
     ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -74,25 +109,71 @@ export function Sidebar() {
       {/* Navigation Links */}
       <nav className={`flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar`}>
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const hasChildren = item.children && item.children.length > 0;
+          const isExpanded = expandedMenus.includes(item.label);
+          const isActive = pathname === item.href || (hasChildren && item.children?.some(child => pathname === child.href));
+
           return (
-            <Link
-              key={item.label}
-              href={item.href}
-              title={isCollapsed ? item.label : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative ${isActive
-                ? 'bg-primary text-white shadow-md shadow-primary/20'
-                : 'text-slate-600 hover:bg-slate-100'
-                } ${isCollapsed ? 'justify-center' : ''}`}
-            >
-              <item.icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary'}`} />
-              {!isCollapsed && (
-                <span className="text-sm font-medium truncate">{item.label}</span>
+            <div key={item.label} className="space-y-1">
+              {hasChildren ? (
+                <button
+                  onClick={() => !isCollapsed && toggleMenu(item.label)}
+                  title={isCollapsed ? item.label : undefined}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative ${isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-slate-600 hover:bg-slate-100'
+                    } ${isCollapsed ? 'justify-center' : ''}`}
+                >
+                  <item.icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-primary'}`} />
+                  {!isCollapsed && (
+                    <>
+                      <span className="text-sm font-medium truncate flex-1 text-left">{item.label}</span>
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </>
+                  )}
+                  {isCollapsed && isActive && (
+                    <div className="absolute left-0 w-1 h-6 bg-primary rounded-r-full" />
+                  )}
+                </button>
+              ) : (
+                <Link
+                  href={item.href || '#'}
+                  title={isCollapsed ? item.label : undefined}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative ${pathname === item.href
+                    ? 'bg-primary text-white shadow-md shadow-primary/20'
+                    : 'text-slate-600 hover:bg-slate-100'
+                    } ${isCollapsed ? 'justify-center' : ''}`}
+                >
+                  <item.icon className={`w-5 h-5 shrink-0 ${pathname === item.href ? 'text-white' : 'text-slate-400 group-hover:text-primary'}`} />
+                  {!isCollapsed && (
+                    <span className="text-sm font-medium truncate">{item.label}</span>
+                  )}
+                  {isCollapsed && pathname === item.href && (
+                    <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full" />
+                  )}
+                </Link>
               )}
-              {isCollapsed && isActive && (
-                <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full" />
+
+              {hasChildren && isExpanded && !isCollapsed && (
+                <div className="ml-9 space-y-1 border-l border-slate-100 pl-2">
+                  {item.children?.map((child) => {
+                    const isChildActive = pathname === child.href;
+                    return (
+                      <Link
+                        key={child.label}
+                        href={child.href}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${isChildActive
+                          ? 'text-primary font-semibold'
+                          : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                          }`}
+                      >
+                        <span className="text-sm">{child.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
               )}
-            </Link>
+            </div>
           );
         })}
       </nav>
