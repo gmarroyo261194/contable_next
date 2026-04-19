@@ -16,6 +16,7 @@ import {
   SquaresExclude,
   Search
 } from 'lucide-react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Dialog } from '@/components/Dialog';
 import { AsientoForm } from '@/components/AsientoForm';
 import { getAsientos, anularAsiento, getAsientoById } from '@/lib/actions/asiento-actions';
@@ -26,23 +27,40 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 type SortOrder = 'asc' | 'desc';
 
 export default function AsientosPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [asientos, setAsientos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
 
-  // Pagination & Sorting State
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<number | 'all'>(10);
-  const [sortBy, setSortBy] = useState('numero');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  // Read from URL Search Params
+  const page = Number(searchParams.get('page')) || 1;
+  const pageSize = searchParams.get('pageSize') === 'all' ? 'all' : Number(searchParams.get('pageSize')) || 10;
+  const sortBy = searchParams.get('sortBy') || 'numero';
+  const sortOrder = (searchParams.get('sortOrder') as SortOrder) || 'desc';
+  const searchTerm = searchParams.get('search') || '';
+
+  const [localSearch, setLocalSearch] = useState(searchTerm);
   const [selectedAsiento, setSelectedAsiento] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Confirm Dialog State
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [asientoToAnular, setAsientoToAnular] = useState<any>(null);
+
+  const updateFilters = useCallback((newParams: Record<string, string | number | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value === null || value === '') {
+        params.delete(key);
+      } else {
+        params.set(key, String(value));
+      }
+    });
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   const fetchAsientos = useCallback(async () => {
     setLoading(true);
@@ -52,7 +70,7 @@ export default function AsientosPage() {
         pageSize,
         sortBy,
         sortOrder,
-        search: debouncedSearch
+        search: searchTerm
       });
       setAsientos(result.data);
       setTotal(result.total);
@@ -61,7 +79,7 @@ export default function AsientosPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, sortBy, sortOrder, debouncedSearch]);
+  }, [page, pageSize, sortBy, sortOrder, searchTerm]);
 
   useEffect(() => {
     fetchAsientos();
@@ -69,11 +87,12 @@ export default function AsientosPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-      setPage(1); // Reset page on search
+      if (localSearch !== searchTerm) {
+        updateFilters({ search: localSearch, page: 1 });
+      }
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [localSearch, searchTerm, updateFilters]);
 
   const handleEdit = (asiento: any) => {
     setSelectedAsiento(asiento);
@@ -131,13 +150,12 @@ export default function AsientosPage() {
   };
 
   const handleSort = (column: string) => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortOrder('asc');
-    }
-    setPage(1); // Reset to first page on sort
+    const newOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
+    updateFilters({ 
+      sortBy: column, 
+      sortOrder: newOrder, 
+      page: 1 
+    });
   };
 
   const SortIcon = ({ column }: { column: string }) => {
@@ -191,8 +209,7 @@ export default function AsientosPage() {
             value={pageSize}
             onChange={(e) => {
               const val = e.target.value;
-              setPageSize(val === 'all' ? 'all' : Number(val));
-              setPage(1);
+              updateFilters({ pageSize: val, page: 1 });
             }}
           >
             <option value={5}>5</option>
@@ -208,8 +225,8 @@ export default function AsientosPage() {
             <input 
               type="text" 
               placeholder="Buscar por descripción, leyenda, número, importe o fecha (DD/MM/YYYY)..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
             />
           </div>
@@ -355,14 +372,14 @@ export default function AsientosPage() {
             <div className="flex items-center gap-2">
               <button
                 disabled={page === 1}
-                onClick={() => setPage(p => p - 1)}
+                onClick={() => updateFilters({ page: page - 1 })}
                 className="p-2 border border-slate-200 rounded-xl hover:bg-white disabled:opacity-30 transition-all font-bold text-slate-600 shadow-sm"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 disabled={page === totalPages}
-                onClick={() => setPage(p => p + 1)}
+                onClick={() => updateFilters({ page: page + 1 })}
                 className="p-2 border border-slate-200 rounded-xl hover:bg-white disabled:opacity-30 transition-all font-bold text-slate-600 shadow-sm"
               >
                 <ChevronRight className="w-4 h-4" />
