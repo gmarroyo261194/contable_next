@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { 
-  FileText, 
-  RefreshCw, 
-  Search, 
-  Filter, 
-  ChevronLeft, 
+import {
+  FileText,
+  RefreshCw,
+  Search,
+  Filter,
+  ChevronLeft,
   ChevronRight,
   MoreVertical,
   CheckCircle2,
@@ -18,12 +18,15 @@ import { SyncFacturasModal } from "@/components/asientos/SyncFacturasModal";
 import { getDocumentosClientes } from "@/lib/actions/sync-facturas-actions";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
+import { X } from "lucide-react";
 
 export default function DocumentosClientesPage() {
   const [documentos, setDocumentos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedDocForItems, setSelectedDocForItems] = useState<any | null>(null);
 
   const loadDocumentos = useCallback(async () => {
     setLoading(true);
@@ -41,7 +44,7 @@ export default function DocumentosClientesPage() {
     loadDocumentos();
   }, [loadDocumentos]);
 
-  const filteredDocs = documentos.filter(doc => 
+  const filteredDocs = documentos.filter(doc =>
     doc.entidad?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     doc.numero?.includes(searchTerm) ||
     doc.tipo?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -52,8 +55,8 @@ export default function DocumentosClientesPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-4 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        
+      <div className="w-full mx-auto space-y-4">
+
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -66,7 +69,7 @@ export default function DocumentosClientesPage() {
               Administra y sincroniza comprobantes externos para su contabilización.
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsModalOpen(true)}
@@ -93,7 +96,7 @@ export default function DocumentosClientesPage() {
                   focus:ring-2 focus:ring-indigo-100 outline-none transition-all font-medium"
               />
             </div>
-            
+
             <button className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all">
               <Filter className="w-4 h-4" />
               Filtros
@@ -119,20 +122,29 @@ export default function DocumentosClientesPage() {
                 <thead>
                   <tr className="bg-slate-50/50">
                     <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Fecha</th>
+                    <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Cobro</th>
                     <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Cliente</th>
+                    <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Servicio</th>
                     <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Comprobante</th>
                     <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Total</th>
-                    <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Contabilización</th>
-                    <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Acciones</th>
+                    <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Estado</th>
+                    <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {filteredDocs.map((doc) => (
                     <tr key={doc.id} className="group hover:bg-slate-50/80 transition-all duration-200">
-                      <td className="px-6 py-5 whitespace-nowrap">
+                      <td className="px-6 py-2 whitespace-nowrap">
                         <div className="text-slate-700 font-bold">{format(new Date(doc.fecha), 'dd/MM/yyyy')}</div>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-6 py-2 whitespace-nowrap">
+                        {doc.fechaPago ? (
+                          <div className="text-indigo-600 font-bold">{format(new Date(doc.fechaPago), 'dd/MM/yyyy')}</div>
+                        ) : (
+                          <div className="text-slate-300 text-xs italic">Pendiente</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-2">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
                             <User className="w-4 h-4" />
@@ -143,42 +155,55 @@ export default function DocumentosClientesPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        <div className="font-black text-slate-700">{doc.numero}</div>
-                        <div className="text-[10px] text-indigo-500 font-bold uppercase">{doc.tipo}</div>
+                      <td className="px-6 py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-indigo-400" />
+                          <div className="text-sm font-bold text-slate-700 italic truncate max-w-[150px]">
+                            {doc.servicio?.nombre || 'General'}
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap text-right">
+                      <td className="px-6 py-2 whitespace-nowrap">
+                        <div className="font-black text-slate-700">{doc.numero}</div>
+                        <div className="text-[10px] text-indigo-500 font-black uppercase">
+                          {getTipoComprobanteNombre(doc.tipo)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-2 whitespace-nowrap text-right">
                         <div className="text-lg font-black text-slate-900 tracking-tight">
                           {fmtImporte(doc.montoTotal)}
                         </div>
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap text-center">
+                      <td className="px-6 py-2 whitespace-nowrap text-center">
                         {doc.asientoId ? (
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
                             <CheckCircle2 className="w-4 h-4" />
-                            <span className="text-xs font-black uppercase">Asiento {doc.asiento?.numero}</span>
+                            <span className="text-[10px] font-black uppercase">Asiento {doc.asiento?.numero}</span>
                           </div>
                         ) : (
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
                             <Clock className="w-4 h-4" />
-                            <span className="text-xs font-black uppercase text-[10px]">Pendiente</span>
+                            <span className="text-[10px] font-black uppercase">Pendiente</span>
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
+                      <td className="px-6 py-2 whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            title="Ver Items"
+                            onClick={() => setSelectedDocForItems(doc)}
+                          >
+                            <FileText className="w-5 h-5" />
+                          </button>
                           {!doc.asientoId && (
                             <button
-                              className="text-indigo-600 hover:text-indigo-800 text-xs font-black flex items-center gap-1 uppercase tracking-tighter"
-                              onClick={() => {/* Próximo paso: Implementar contabilización */}}
+                              className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-indigo-700 transition-all"
+                              onClick={() => {/* Próximo paso: Implementar contabilización */ }}
                             >
                               Contabilizar
-                              <ArrowRight className="w-3.5 h-3.5" />
                             </button>
                           )}
-                          <button className="p-2 text-slate-300 hover:text-slate-600 transition-colors">
-                            <MoreVertical className="w-5 h-5" />
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -190,13 +215,74 @@ export default function DocumentosClientesPage() {
         </div>
       </div>
 
-      <SyncFacturasModal 
-        isOpen={isModalOpen} 
+      <SyncFacturasModal
+        isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           loadDocumentos();
-        }} 
+        }}
       />
+
+      {/* Modal de Detalles de Ítems */}
+      {selectedDocForItems && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-xl font-black text-slate-800">Detalle de Factura</h3>
+                <p className="text-xs text-slate-500 font-bold uppercase">{selectedDocForItems.numero} - {selectedDocForItems.entidad?.nombre}</p>
+              </div>
+              <button
+                onClick={() => setSelectedDocForItems(null)}
+                className="p-2 hover:bg-white rounded-xl transition-all text-slate-400 hover:text-slate-600 shadow-sm"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-0 max-h-[60vh] overflow-y-auto">
+              <table className="w-full text-left">
+                <thead className="sticky top-0 bg-white border-b border-slate-50">
+                  <tr>
+                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Descripción</th>
+                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cant.</th>
+                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Unitario</th>
+                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {selectedDocForItems.items?.map((item: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4 text-sm font-medium text-slate-700">{item.descripcion}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-slate-600 text-center">{Number(item.cantidad)}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-slate-600 text-right">{fmtImporte(Number(item.precioUnitario))}</td>
+                      <td className="px-6 py-4 text-sm font-black text-slate-900 text-right">{fmtImporte(Number(item.importeTotal))}</td>
+                    </tr>
+                  ))}
+                  {(!selectedDocForItems.items || selectedDocForItems.items.length === 0) && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-10 text-center text-slate-400 italic">No hay detalles registrados para este comprobante.</td>
+                    </tr>
+                  )}
+                </tbody>
+                <tfoot className="bg-slate-50/50 font-black">
+                  <tr>
+                    <td colSpan={3} className="px-6 py-4 text-right text-slate-500 uppercase text-xs tracking-widest">Total Comprobante</td>
+                    <td className="px-6 py-4 text-right text-lg text-indigo-600">{fmtImporte(Number(selectedDocForItems.montoTotal))}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setSelectedDocForItems(null)}
+                className="px-6 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 transition-all shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

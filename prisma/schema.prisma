@@ -281,7 +281,10 @@ model DocumentoClientes {
   iva        Decimal  @db.Decimal(18, 2)
   entidadId  Int
   empresaId  Int
+  servicioId Int?
+  rubroId    Int?
   asientoId  Int?
+  fechaPago  DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   createdBy  String?
@@ -289,6 +292,21 @@ model DocumentoClientes {
   asiento    Asiento? @relation("AsientoADocumentoCli", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   empresa    Empresa  @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
   entidad    Entidad  @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
+  servicio   Servicio? @relation(fields: [servicioId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  rubro      Rubro?    @relation(fields: [rubroId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  items      DocumentoClientesItem[]
+}
+
+model DocumentoClientesItem {
+  id                 Int               @id @default(autoincrement())
+  documentoClienteId Int
+  descripcion        String            @db.NVarChar(4000)
+  cantidad           Decimal           @db.Decimal(18, 4)
+  precioUnitario     Decimal           @db.Decimal(18, 2)
+  importeTotal       Decimal           @db.Decimal(18, 2)
+  documento          DocumentoClientes @relation(fields: [documentoClienteId], references: [id], onDelete: Cascade)
+
+  @@map("documento_clientes_items")
 }
 
 model PedidosPagos {
@@ -573,6 +591,7 @@ model Rubro {
   nombre    String    @unique
   activo    Boolean   @default(true)
   servicios Servicio[]
+  documentosClientes DocumentoClientes[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -609,6 +628,7 @@ model Servicio {
   participacionDepto     Boolean          @default(false)
   porcentajeDepto        Decimal?         @db.Decimal(5, 2)
   configs                ServicioConfig[]
+  documentosClientes     DocumentoClientes[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

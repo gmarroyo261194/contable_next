@@ -20,6 +20,7 @@ import { getFacturasExternasPendientes, syncFacturasSeleccionadas, FacturaExtern
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
 
 interface SyncFacturasModalProps {
   isOpen: boolean;
@@ -251,19 +252,27 @@ export function SyncFacturasModal({ isOpen, onClose }: SyncFacturasModalProps) {
                             <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
                               <div className="col-span-1">
                                 <span className="text-xs text-slate-400 font-bold uppercase block">Fecha</span>
-                                <span className="text-sm font-semibold text-slate-700">
-                                  {format(new Date(f.fecha), 'dd MMM yyyy', { locale: es })}
+                                <span className="text-sm font-semibold text-slate-700 text-[10px] md:text-sm">
+                                  {format(new Date(f.fecha), 'dd/MM/yy')}
                                 </span>
                               </div>
-                              <div className="col-span-1 md:col-span-2">
+                              <div className="col-span-1 md:col-span-1">
+                                <span className="text-xs text-slate-400 font-bold uppercase block">Comprobante</span>
+                                <span className="text-[11px] font-black text-indigo-600 block">
+                                  {getTipoComprobanteNombre(f.tipo)}
+                                </span>
+                                <span className="text-[10px] font-mono text-slate-400">
+                                  {`${String(f.puntoVenta).padStart(4, '0')}-${String(f.numero).padStart(8, '0')}`}
+                                </span>
+                              </div>
+                              <div className="col-span-1 md:col-span-1">
                                 <span className="text-xs text-slate-400 font-bold uppercase block">Cliente</span>
-                                <div className="flex items-center gap-2">
-                                  <User className="w-3.5 h-3.5 text-slate-400" />
-                                  <span className="text-sm font-bold text-slate-800 truncate" title={f.clienteNombre}>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-bold text-slate-800 truncate" title={f.clienteNombre}>
                                     {f.clienteNombre}
                                   </span>
                                 </div>
-                                <span className="text-[10px] text-slate-400 font-mono">{f.clienteDoc}</span>
+                                <span className="text-[9px] text-slate-400 font-mono">{f.clienteDoc}</span>
                               </div>
                               <div className="col-span-1 text-right">
                                 <span className="text-xs text-slate-400 font-bold uppercase block">Importe</span>
