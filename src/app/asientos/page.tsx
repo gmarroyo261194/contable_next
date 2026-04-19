@@ -394,7 +394,6 @@ export default function AsientosPage() {
         onClose={() => {
           setIsDialogOpen(false);
           setSelectedAsiento(null);
-          fetchAsientos();
         }}
         hideHeader
         noPadding
@@ -408,7 +407,6 @@ export default function AsientosPage() {
           onClose={() => {
             setIsDialogOpen(false);
             setSelectedAsiento(null);
-            fetchAsientos();
           }}
         />
       </Dialog>
