@@ -13,7 +13,8 @@ import {
   ArrowUp,
   ArrowDown,
   Printer,
-  SquaresExclude
+  SquaresExclude,
+  Search
 } from 'lucide-react';
 import { Dialog } from '@/components/Dialog';
 import { AsientoForm } from '@/components/AsientoForm';
@@ -36,6 +37,8 @@ export default function AsientosPage() {
   const [sortBy, setSortBy] = useState('numero');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedAsiento, setSelectedAsiento] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Confirm Dialog State
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -48,7 +51,8 @@ export default function AsientosPage() {
         page,
         pageSize,
         sortBy,
-        sortOrder
+        sortOrder,
+        search: debouncedSearch
       });
       setAsientos(result.data);
       setTotal(result.total);
@@ -57,11 +61,19 @@ export default function AsientosPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, sortBy, sortOrder]);
+  }, [page, pageSize, sortBy, sortOrder, debouncedSearch]);
 
   useEffect(() => {
     fetchAsientos();
   }, [fetchAsientos]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1); // Reset page on search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const handleEdit = (asiento: any) => {
     setSelectedAsiento(asiento);
@@ -190,6 +202,18 @@ export default function AsientosPage() {
             <option value="all">Todos</option>
           </select>
         </div>
+        <div className="flex items-center gap-4 flex-1 max-w-md ml-8">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Buscar por descripción, leyenda, número, importe o fecha (DD/MM/YYYY)..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+            />
+          </div>
+        </div>
         <div className="text-xs font-black text-slate-400 uppercase tracking-widest">
           Total: <span className="text-slate-900">{total}</span> asientos
         </div>
@@ -219,8 +243,7 @@ export default function AsientosPage() {
                 >
                   <div className="flex items-center">Concepto / Descripción <SortIcon column="descripcion" /></div>
                 </th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Débito</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Crédito</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Importe</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Acciones</th>
               </tr>
             </thead>
@@ -268,10 +291,10 @@ export default function AsientosPage() {
                           <span className="bg-red-100 text-red-600 text-[10px] font-black px-1.5 py-0.5 rounded-md uppercase">Anulado</span>
                         )}
                       </div>
-                      {/* <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{asiento.renglones.length} líneas</div> */}
                     </td>
-                    <td className="px-6 py-1 text-sm text-right font-black text-slate-900">$ {totalDebe.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="px-6 py-1 text-sm text-right font-black text-slate-900">$ {totalHaber.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="px-6 py-1 text-sm text-right font-black text-slate-900">
+                      $ {totalDebe.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
                     <td className="px-6 py-1">
                       <div className="flex items-center justify-center gap-1 opacity-100">
                         {!isAnulacion ? (

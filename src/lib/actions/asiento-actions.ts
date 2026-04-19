@@ -37,7 +37,8 @@ export async function getAsientos(params: {
   page?: number, 
   pageSize?: number | 'all',
   sortBy?: string,
-  sortOrder?: 'asc' | 'desc'
+  sortOrder?: 'asc' | 'desc',
+  search?: string
 } = {}) {
   const session = await auth();
   const ejercicioId = (session?.user as any)?.ejercicioId;
@@ -48,11 +49,60 @@ export async function getAsientos(params: {
     page = 1, 
     pageSize = 10, 
     sortBy = 'numero', 
-    sortOrder = 'desc' 
+    sortOrder = 'desc',
+    search = ''
   } = params;
 
   const skip = pageSize === 'all' ? 0 : (page - 1) * Number(pageSize);
   const take = pageSize === 'all' ? undefined : Number(pageSize);
+
+  // Construir filtros
+  let where: any = { ejercicioId };
+  
+  if (search) {
+    const searchConditions: any[] = [
+      { descripcion: { contains: search } },
+      {
+        renglones: {
+          some: {
+            leyenda: { contains: search }
+          }
+        }
+      }
+    ];
+
+    // Intentar buscar por número exacto si el search es numérico
+    const searchNum = parseFloat(search.replace(',', '.'));
+    if (!isNaN(searchNum)) {
+      searchConditions.push({ numero: Math.floor(searchNum) });
+      searchConditions.push({
+        renglones: {
+          some: {
+            OR: [
+              { debe: searchNum },
+              { haber: searchNum }
+            ]
+          }
+        }
+      });
+    }
+
+    // Intentar buscar por fecha si el formato coincide
+    // Formato esperado: DD/MM/YYYY o YYYY-MM-DD
+    const dateRegex = /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/;
+    const match = search.match(dateRegex);
+    if (match) {
+      const day = parseInt(match[1]);
+      const month = parseInt(match[2]);
+      const year = parseInt(match[3]);
+      const searchDate = new Date(year, month - 1, day);
+      if (!isNaN(searchDate.getTime())) {
+        searchConditions.push({ fecha: searchDate });
+      }
+    }
+
+    where.OR = searchConditions;
+  }
 
   // Validador de columnas para ordenamiento
   const validSortColumns = ['fecha', 'numero', 'descripcion'];
@@ -60,7 +110,7 @@ export async function getAsientos(params: {
 
   const [asientos, total] = await Promise.all([
     db.asiento.findMany({
-      where: { ejercicioId },
+      where,
       include: {
         renglones: {
           include: {
@@ -75,7 +125,7 @@ export async function getAsientos(params: {
       skip,
       take,
     }),
-    db.asiento.count({ where: { ejercicioId } })
+    db.asiento.count({ where })
   ]);
 
   // Serialización para Client Components
