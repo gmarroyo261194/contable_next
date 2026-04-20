@@ -195,14 +195,9 @@ export default function DocumentosClientesPage() {
                         <div className="text-slate-700 font-bold text-xs">{format(new Date(doc.fecha), 'dd/MM/yyyy')}</div>
                       </td>
                       <td className="px-4 py-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 shrink-0">
-                            <User className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <div className="font-bold text-slate-900 text-sm truncate max-w-[250px]">{doc.entidad?.nombre}</div>
-                            <div className="text-[10px] text-slate-400 font-mono">{doc.entidad?.cuit || doc.entidad?.nroDoc}</div>
-                          </div>
+                        <div>
+                          <div className="font-bold text-slate-900 text-sm truncate max-w-[280px]">{doc.entidad?.nombre}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">{doc.entidad?.cuit || doc.entidad?.nroDoc}</div>
                         </div>
                       </td>
                       <td className="px-4 py-2">
