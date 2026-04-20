@@ -349,25 +349,30 @@ export async function parseFacturaEmitidaPDF(formData: FormData) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const extractedData = await parseFacturaPDF(buffer);
 
-    // Intentar buscar al cliente por CUIT del RECEPTOR o Emisor (fallback)
-    const entidad = await prisma.entidad.findFirst({
-      where: {
-        OR: [
-          { cuit: extractedData.cuitReceptor },
-          { cuit: extractedData.cuitEmisor }
-        ].filter(q => !!q.cuit),
-        empresaId
-      }
-    });
+    // Ignorar el CUIT de la fundación (emisor) si fuera extraído como receptor por error
+    const RECEPTOR_CUIT_CLEAN = extractedData.cuitReceptor?.replace(/\D/g, "");
+    const CUIT_FUNDACION = "30640431373";
 
-    // Si encontramos la entidad en el sistema, priorizamos su nombre/razón social
-    // ya que la extracción por OCR del PDF puede ser inexacta.
+    let entidad = null;
+
+    if (RECEPTOR_CUIT_CLEAN && RECEPTOR_CUIT_CLEAN !== CUIT_FUNDACION && RECEPTOR_CUIT_CLEAN.length === 11) {
+      // Generar versión con guiones para la búsqueda (XX-XXXXXXXX-X)
+      const formattedCuit = `${RECEPTOR_CUIT_CLEAN.slice(0, 2)}-${RECEPTOR_CUIT_CLEAN.slice(2, 10)}-${RECEPTOR_CUIT_CLEAN.slice(10)}`;
+      
+      entidad = await prisma.entidad.findFirst({
+        where: {
+          empresaId,
+          OR: [
+            { cuit: RECEPTOR_CUIT_CLEAN },
+            { cuit: formattedCuit }
+          ]
+        }
+      });
+    }
+
+    // Si encontramos la entidad en el sistema, confirmamos su nombre/razón social
     if (entidad) {
-      if (extractedData.cuitReceptor && entidad.cuit === extractedData.cuitReceptor) {
-        extractedData.nombreReceptor = entidad.nombre;
-      } else if (extractedData.cuitEmisor && entidad.cuit === extractedData.cuitEmisor) {
-        extractedData.nombreEmisor = entidad.nombre;
-      }
+      extractedData.nombreReceptor = entidad.nombre;
     }
 
     return {
