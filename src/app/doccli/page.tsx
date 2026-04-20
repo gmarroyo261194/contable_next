@@ -14,9 +14,12 @@ import {
   Clock,
   ArrowRight,
   User,
+  FileUp,
+  Trash2,
 } from "lucide-react";
 import { SyncFacturasModal } from "@/components/asientos/SyncFacturasModal";
-import { getDocumentosClientes } from "@/lib/actions/sync-facturas-actions";
+import ImportarFacturaPDFModal from "@/components/asientos/ImportarFacturaPDFModal";
+import { getDocumentosClientes, deleteDocumentoCliente } from "@/lib/actions/sync-facturas-actions";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
@@ -27,6 +30,7 @@ export default function DocumentosClientesPage() {
   const [documentos, setDocumentos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDocForItems, setSelectedDocForItems] = useState<any | null>(null);
   const { data: session } = useSession();
@@ -60,11 +64,29 @@ export default function DocumentosClientesPage() {
     doc.numero?.includes(searchTerm) ||
     doc.tipo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  const handleDelete = async (id: number) => {
+    if (!confirm("¿Está seguro de que desea eliminar esta factura físicamente? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    try {
+      const res = await deleteDocumentoCliente(id);
+      if (res.error) {
+        alert(res.error);
+      } else {
+        loadDocumentos();
+      }
+    } catch (error) {
+      alert("Error al intentar eliminar la factura.");
+    }
+  };
 
   const fmtImporte = (n: number) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n);
 
   return (
+    <>
     <div className="min-h-screen bg-[#F8FAFC] p-4 lg:p-8">
       <div className="w-full mx-auto space-y-4">
 
@@ -82,6 +104,15 @@ export default function DocumentosClientesPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsPdfModalOpen(true)}
+              className="group flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-2xl
+                hover:bg-indigo-50 border border-indigo-100 transition-all shadow-md active:scale-95 font-bold"
+            >
+              <FileUp className="w-5 h-5 text-indigo-500" />
+              Importar PDF
+            </button>
+
             <button
               onClick={() => setIsModalOpen(true)}
               className="group flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl
@@ -208,12 +239,21 @@ export default function DocumentosClientesPage() {
                             <FileText className="w-5 h-5" />
                           </button>
                           {!doc.asientoId && (
-                            <button
-                              className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-indigo-700 transition-all"
-                              onClick={() => {/* Próximo paso: Implementar contabilización */ }}
-                            >
-                              Contabilizar
-                            </button>
+                            <>
+                              <button
+                                className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-indigo-700 transition-all"
+                                onClick={() => {/* Próximo paso: Implementar contabilización */ }}
+                              >
+                                Contabilizar
+                              </button>
+                              <button
+                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                title="Eliminar Factura"
+                                onClick={() => handleDelete(doc.id)}
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
@@ -222,9 +262,18 @@ export default function DocumentosClientesPage() {
                 </tbody>
               </table>
             )}
-          </div>
         </div>
       </div>
+    </div>
+
+      <ImportarFacturaPDFModal
+        isOpen={isPdfModalOpen}
+        onClose={() => {
+          setIsPdfModalOpen(false);
+          loadDocumentos();
+        }}
+        empresaId={Number(session?.user?.empresaId)}
+      />
 
       <SyncFacturasModal
         isOpen={isModalOpen}
@@ -295,5 +344,6 @@ export default function DocumentosClientesPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

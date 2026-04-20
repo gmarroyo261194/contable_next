@@ -1,9 +1,11 @@
 "use server";
+import { Trash2 } from "lucide-react";
 
 import dbFacturacion from "@/lib/dbFacturacion";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { parseFacturaPDF } from "@/lib/facturas/facturaParser";
 
 export interface FacturaExterna {
   id: number;
@@ -329,4 +331,177 @@ export async function getDefaultEjercicio(empresaId: number) {
     orderBy: { inicio: 'desc' }
   });
   return ej ? ej.id : null;
+}
+
+/**
+ * Procesa un PDF de factura emitida para extraer sus datos.
+ */
+export async function parseFacturaEmitidaPDF(formData: FormData) {
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+  if (!session || !empresaId) return { error: "No autorizado." };
+
+  const file = formData.get("file") as File;
+  if (!file) return { error: "No se ha proporcionado ningún archivo." };
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const extractedData = await parseFacturaPDF(buffer);
+
+    // Intentar buscar al cliente por CUIT del RECEPTOR o Emisor (fallback)
+    const entidad = await prisma.entidad.findFirst({
+      where: {
+        OR: [
+          { cuit: extractedData.cuitReceptor },
+          { cuit: extractedData.cuitEmisor }
+        ],
+        empresaId
+      }
+    });
+
+    return {
+      success: true,
+      data: extractedData,
+      entidad: entidad ? JSON.parse(JSON.stringify(entidad)) : null
+    };
+  } catch (error: any) {
+    console.error("Error al procesar PDF:", error);
+    return { error: error.message || "Error al procesar el archivo PDF." };
+  }
+}
+
+/**
+ * Guarda una factura importada manualmente desde PDF.
+ */
+export async function saveFacturaImportada(data: {
+  tipo: string;
+  numero: string;
+  fecha: string;
+  montoTotal: number;
+  entidadId?: number;
+  nuevaEntidad?: { nombre: string; cuit: string };
+  rubroId: number;
+  servicioId: number;
+  items?: { descripcion: string; cantidad: number; precioUnitario: number; importeTotal: number }[];
+}) {
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+  const userEmail = session?.user?.email;
+
+  if (!empresaId) return { error: "No hay empresa activa." };
+
+  // Obtener ejercicio activo
+  const ejercicioId = await getDefaultEjercicio(empresaId);
+  if (!ejercicioId) return { error: "No hay un ejercicio contable activo para esta empresa." };
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      let finalEntidadId = data.entidadId;
+
+      if (!finalEntidadId && data.nuevaEntidad) {
+        // Buscar si ya existe por CUIT antes de crear
+        let ent = await tx.entidad.findFirst({
+          where: { cuit: data.nuevaEntidad.cuit, empresaId }
+        });
+
+        if (!ent) {
+          // Obtener o crear Tipo CLIENTE
+          let tipoCliente = await tx.tipoEntidad.findFirst({ where: { nombre: "CLIENTE" } });
+          if (!tipoCliente) {
+            tipoCliente = await tx.tipoEntidad.create({ data: { nombre: "CLIENTE" } });
+          }
+
+          ent = await tx.entidad.create({
+            data: {
+              nombre: data.nuevaEntidad.nombre,
+              cuit: data.nuevaEntidad.cuit,
+              tipoId: tipoCliente.id,
+              empresaId,
+              createdBy: userEmail
+            }
+          });
+        }
+        finalEntidadId = ent.id;
+      }
+
+      if (!finalEntidadId) throw new Error("Debe seleccionar o crear una entidad.");
+
+      const factura = await tx.documentoClientes.create({
+        data: {
+          tipo: data.tipo,
+          numero: data.numero,
+          fecha: new Date(data.fecha),
+          montoTotal: data.montoTotal,
+          iva: 0,
+          entidadId: finalEntidadId,
+          empresaId,
+          ejercicioId,
+          servicioId: data.servicioId,
+          rubroId: data.rubroId,
+          createdBy: userEmail,
+          items: data.items ? {
+            create: data.items.map(item => ({
+              descripcion: item.descripcion,
+              cantidad: item.cantidad,
+              precioUnitario: item.precioUnitario,
+              importeTotal: item.importeTotal
+            }))
+          } : undefined
+        }
+      });
+
+      revalidatePath("/doccli");
+      return { success: true, data: JSON.parse(JSON.stringify(factura)) };
+    });
+  } catch (error: any) {
+    console.error("Error al guardar factura importada:", error);
+    return { error: error.message || "Error al guardar el comprobante." };
+  }
+}
+
+/**
+ * Elimina físicamente un documento de cliente si no está contabilizado.
+ */
+export async function deleteDocumentoCliente(id: number) {
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+  if (!session || !empresaId) return { error: "No autorizado." };
+
+  try {
+    const doc = await prisma.documentoClientes.findUnique({
+      where: { id, empresaId },
+      select: { asientoId: true }
+    });
+
+    if (!doc) return { error: "Documento no encontrado." };
+    if (doc.asientoId) return { error: "No se puede eliminar un documento ya contabilizado." };
+
+    await prisma.documentoClientes.delete({
+      where: { id }
+    });
+
+    revalidatePath("/doccli");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error al eliminar documento:", error);
+    return { error: "No se pudo eliminar el documento debido a dependencias o error de servidor." };
+  }
+}
+
+/**
+ * Server action para enviar un PDF directamente al backend y procesarlo con pdf-parse
+ */
+export async function parseFacturaPdfAction(formData: FormData) {
+  try {
+    const file = formData.get("file") as File;
+    if (!file) throw new Error("No se adjuntó archivo.");
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    // Se invoca el parser desde el backend Node.js, donde funciona correctamente
+    const result = await parseFacturaPDF(buffer);
+    
+    return { success: true, data: result };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Error al procesar el PDF en el servidor." };
+  }
 }
