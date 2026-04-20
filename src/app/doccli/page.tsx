@@ -229,13 +229,13 @@ export default function DocumentosClientesPage() {
                         </div>
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap">
-                        <div className="font-black text-slate-700 text-sm">{doc.numero}</div>
-                        <div className="text-[9px] text-indigo-500 font-black uppercase">
+                        <div className="font-black text-slate-700 text-xs">{doc.numero}</div>
+                        <div className="text-[9px] text-indigo-500 font-black uppercase mt-0.5">
                           {getTipoComprobanteNombre(doc.tipo)}
                         </div>
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap text-right">
-                        <div className="text-base font-black text-slate-900 tracking-tight">
+                        <div className="text-sm font-black text-slate-900 tracking-tight">
                           {fmtImporte(doc.montoTotal)}
                         </div>
                       </td>
