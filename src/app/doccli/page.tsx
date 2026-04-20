@@ -192,7 +192,7 @@ export default function DocumentosClientesPage() {
                   {filteredDocs.map((doc) => (
                     <tr key={doc.id} className="group hover:bg-slate-50/80 transition-all duration-200">
                       <td className="px-4 py-2 whitespace-nowrap">
-                        <div className="text-slate-700 font-bold text-sm">{format(new Date(doc.fecha), 'dd/MM/yyyy')}</div>
+                        <div className="text-slate-700 font-bold text-xs">{format(new Date(doc.fecha), 'dd/MM/yyyy')}</div>
                       </td>
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-2">
