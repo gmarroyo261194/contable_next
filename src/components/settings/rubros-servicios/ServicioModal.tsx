@@ -148,7 +148,7 @@ export function ServicioModal({
       onClose={onClose} 
       title={servicio ? 'Editar Servicio' : 'Nuevo Servicio'}
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-[550px] max-w-full">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-[850px] max-w-full">
         {/* Basic Info */}
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2 space-y-2">
@@ -162,13 +162,13 @@ export function ServicioModal({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5 col-span-2 md:col-span-1">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
               <Tag className="w-3 h-3" /> Rubro
             </label>
             <select
               {...register('rubroId', { required: 'Debe seleccionar un rubro' })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-hidden transition-all"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-hidden transition-all"
             >
               <option value="">Seleccionar...</option>
               {rubros.map(r => (
@@ -177,13 +177,13 @@ export function ServicioModal({
             </select>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5 col-span-2 md:col-span-1">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
               <Building2 className="w-3 h-3" /> Departamento
             </label>
             <select
               {...register('departamentoId')}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-hidden transition-all"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-hidden transition-all"
             >
               <option value="">Ninguno</option>
               {departamentos.map(d => (
@@ -194,8 +194,8 @@ export function ServicioModal({
         </div>
 
         {/* Cuenta de Ingresos */}
-        <div className="p-4 rounded-2xl border border-indigo-100 bg-indigo-50/30 shadow-xs">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="p-3 rounded-2xl border border-indigo-100 bg-indigo-50/30 shadow-xs">
+          <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-indigo-100 rounded-lg">
               <Landmark className="w-4 h-4 text-indigo-600" />
             </div>
@@ -209,7 +209,7 @@ export function ServicioModal({
             <button
               type="button"
               onClick={() => openAccountSelector('cuentaIngresosId')}
-              className="w-full flex items-center justify-between px-4 py-3 bg-white border border-indigo-100 rounded-xl text-sm text-slate-600 hover:bg-indigo-50 transition-colors shadow-xs"
+              className="w-full flex items-center justify-between px-3 py-2 bg-white border border-indigo-100 rounded-xl text-sm text-slate-600 hover:bg-indigo-50 transition-colors shadow-xs"
             >
               <span className="truncate font-medium">{getAccountName(watchIngresos)}</span>
               <Search className="size-4 text-slate-400 shrink-0" />
@@ -217,118 +217,121 @@ export function ServicioModal({
           </div>
         </div>
 
-        {/* Participación Fundación */}
-        <div className={`p-4 rounded-2xl border transition-all ${watchFundacion ? 'bg-green-50/30 border-green-100 shadow-sm' : 'bg-slate-50/50 border-slate-100'}`}>
-          <div className="flex items-center gap-3 mb-4">
-            <input
-              {...register('participacionFundacion')}
-              type="checkbox"
-              className="size-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
-            />
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-slate-700">Participación Fundación</span>
-              <span className="text-[10px] text-slate-500">¿Se aplica retención para la Fundación?</span>
+        {/* Participación Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Participación Fundación */}
+          <div className={`p-4 rounded-2xl border transition-all h-full ${watchFundacion ? 'bg-green-50/30 border-green-100 shadow-sm' : 'bg-slate-50/50 border-slate-100'}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <input
+                {...register('participacionFundacion')}
+                type="checkbox"
+                className="size-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
+              />
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-slate-700">Participación Fundación</span>
+                <span className="text-[10px] text-slate-500">¿Se aplica retención?</span>
+              </div>
             </div>
+
+            {watchFundacion && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-400">Porcentaje</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      {...register('porcentajeFundacion', { min: 0, max: 100 })}
+                      className="w-full bg-white border border-green-100 rounded-xl pl-4 pr-10 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-hidden"
+                    />
+                    <Percent className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-green-500" />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-400 text-green-700/70">Cuenta a Imputar</label>
+                    <button
+                      type="button"
+                      onClick={() => openAccountSelector('cuentaFundacionImputarId')}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-white border border-green-100 rounded-xl text-[11px] text-slate-600 hover:bg-green-50 transition-colors"
+                    >
+                      <span className="truncate">{getAccountName(watchFundImputar)}</span>
+                      <Search className="size-3.5 text-slate-400 shrink-0" />
+                    </button>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-400 text-green-700/70">Cuenta a Retener</label>
+                    <button
+                      type="button"
+                      onClick={() => openAccountSelector('cuentaFundacionRetenerId')}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-white border border-green-100 rounded-xl text-[11px] text-slate-600 hover:bg-green-50 transition-colors"
+                    >
+                      <span className="truncate">{getAccountName(watchFundRetener)}</span>
+                      <Search className="size-3.5 text-slate-400 shrink-0" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {watchFundacion && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-400">Porcentaje Fundación</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="0.01"
-                    {...register('porcentajeFundacion', { min: 0, max: 100 })}
-                    className="w-full bg-white border border-green-100 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-green-500 outline-hidden"
-                  />
-                  <Percent className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-green-500" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400">Cuenta a Imputar</label>
-                  <button
-                    type="button"
-                    onClick={() => openAccountSelector('cuentaFundacionImputarId')}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-white border border-green-100 rounded-xl text-xs text-slate-600 hover:bg-green-50 transition-colors"
-                  >
-                    <span className="truncate">{getAccountName(watchFundImputar)}</span>
-                    <Search className="size-3.5 text-slate-400 shrink-0" />
-                  </button>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400">Cuenta a Retener</label>
-                  <button
-                    type="button"
-                    onClick={() => openAccountSelector('cuentaFundacionRetenerId')}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-white border border-green-100 rounded-xl text-xs text-slate-600 hover:bg-green-50 transition-colors"
-                  >
-                    <span className="truncate">{getAccountName(watchFundRetener)}</span>
-                    <Search className="size-3.5 text-slate-400 shrink-0" />
-                  </button>
-                </div>
+          {/* Participación Departamento */}
+          <div className={`p-4 rounded-2xl border transition-all h-full ${watchDepto ? 'bg-blue-50/30 border-blue-100 shadow-sm' : 'bg-slate-50/50 border-slate-100'}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <input
+                {...register('participacionDepto')}
+                type="checkbox"
+                className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-slate-700">Participación Departamento</span>
+                <span className="text-[10px] text-slate-500">¿Se aplica retención?</span>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Participación Departamento */}
-        <div className={`p-4 rounded-2xl border transition-all ${watchDepto ? 'bg-blue-50/30 border-blue-100 shadow-sm' : 'bg-slate-50/50 border-slate-100'}`}>
-          <div className="flex items-center gap-3 mb-4">
-            <input
-              {...register('participacionDepto')}
-              type="checkbox"
-              className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-            />
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-slate-700">Participación Departamento</span>
-              <span className="text-[10px] text-slate-500">¿Se aplica retención para el Departamento?</span>
-            </div>
+            {watchDepto && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-400">Porcentaje</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      {...register('porcentajeDepto', { min: 0, max: 100 })}
+                      className="w-full bg-white border border-blue-100 rounded-xl pl-4 pr-10 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-hidden"
+                    />
+                    <Percent className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-blue-500" />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-400 text-blue-700/70">Cuenta a Imputar</label>
+                    <button
+                      type="button"
+                      onClick={() => openAccountSelector('cuentaDeptoImputarId')}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-white border border-blue-100 rounded-xl text-[11px] text-slate-600 hover:bg-blue-50 transition-colors"
+                    >
+                      <span className="truncate">{getAccountName(watchDeptoImputar)}</span>
+                      <Search className="size-3.5 text-slate-400 shrink-0" />
+                    </button>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-400 text-blue-700/70">Cuenta a Retener</label>
+                    <button
+                      type="button"
+                      onClick={() => openAccountSelector('cuentaDeptoRetenerId')}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-white border border-blue-100 rounded-xl text-[11px] text-slate-600 hover:bg-blue-50 transition-colors"
+                    >
+                      <span className="truncate">{getAccountName(watchDeptoRetener)}</span>
+                      <Search className="size-3.5 text-slate-400 shrink-0" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-
-          {watchDepto && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-400">Porcentaje Departamento</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="0.01"
-                    {...register('porcentajeDepto', { min: 0, max: 100 })}
-                    className="w-full bg-white border border-blue-100 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-hidden"
-                  />
-                  <Percent className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-blue-500" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400">Cuenta a Imputar</label>
-                  <button
-                    type="button"
-                    onClick={() => openAccountSelector('cuentaDeptoImputarId')}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-white border border-blue-100 rounded-xl text-xs text-slate-600 hover:bg-blue-50 transition-colors"
-                  >
-                    <span className="truncate">{getAccountName(watchDeptoImputar)}</span>
-                    <Search className="size-3.5 text-slate-400 shrink-0" />
-                  </button>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400">Cuenta a Retener</label>
-                  <button
-                    type="button"
-                    onClick={() => openAccountSelector('cuentaDeptoRetenerId')}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-white border border-blue-100 rounded-xl text-xs text-slate-600 hover:bg-blue-50 transition-colors"
-                  >
-                    <span className="truncate">{getAccountName(watchDeptoRetener)}</span>
-                    <Search className="size-3.5 text-slate-400 shrink-0" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
