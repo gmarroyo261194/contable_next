@@ -355,10 +355,20 @@ export async function parseFacturaEmitidaPDF(formData: FormData) {
         OR: [
           { cuit: extractedData.cuitReceptor },
           { cuit: extractedData.cuitEmisor }
-        ],
+        ].filter(q => !!q.cuit),
         empresaId
       }
     });
+
+    // Si encontramos la entidad en el sistema, priorizamos su nombre/razón social
+    // ya que la extracción por OCR del PDF puede ser inexacta.
+    if (entidad) {
+      if (extractedData.cuitReceptor && entidad.cuit === extractedData.cuitReceptor) {
+        extractedData.nombreReceptor = entidad.nombre;
+      } else if (extractedData.cuitEmisor && entidad.cuit === extractedData.cuitEmisor) {
+        extractedData.nombreEmisor = entidad.nombre;
+      }
+    }
 
     return {
       success: true,
