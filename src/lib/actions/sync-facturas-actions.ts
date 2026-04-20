@@ -16,6 +16,7 @@ export interface FacturaExterna {
   clienteDoc: string;
   importeTotal: number;
   servicioId: number;
+  servicioNombre?: string;
   rubroId: number;
   fechaPago: string | null;
 }
@@ -51,9 +52,11 @@ export async function getFacturasExternasPendientes(): Promise<FacturaExterna[]>
         c.FechaPago,
         cl.Nombre as ClienteNombre,
         cl.Identificacion as ClienteDoc,
+        s.Nombre as ServicioNombre,
         (SELECT SUM(ImporteTotal) FROM ItemsComprobantes WHERE ComprobanteId = c.Id) as ImporteTotal
       FROM Comprobantes c
       INNER JOIN Clientes cl ON cl.Id = c.ClienteId
+      LEFT JOIN Servicios s ON s.Id = c.ServicioId
       WHERE c.EstadoId = 2
       ORDER BY c.CreatedAt DESC
     `);
@@ -76,6 +79,7 @@ export async function getFacturasExternasPendientes(): Promise<FacturaExterna[]>
       clienteDoc: row.ClienteDoc,
       importeTotal: Number(row.ImporteTotal || 0),
       servicioId: Number(row.ServicioId),
+      servicioNombre: row.ServicioNombre,
       rubroId: Number(row.RubroId),
       fechaPago: row.FechaPago ? row.FechaPago.toISOString() : null
     }));
@@ -164,18 +168,26 @@ async function ensureServicioExists(tx: any, servicioId: number) {
  * Sincroniza un conjunto de facturas seleccionadas.
  * Crea automáticamente las entidades (clientes) omitiendo duplicados.
  */
-export async function syncFacturasSeleccionadas(facturas: FacturaExterna[]) {
+export async function syncFacturasSeleccionadas(facturas: FacturaExterna[], ejercicioId: number) {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
   const userEmail = session?.user?.email;
 
   if (!empresaId) return { success: false, error: "No hay empresa activa." };
+  if (!ejercicioId) return { success: false, error: "No hay ejercicio seleccionado." };
   if (facturas.length === 0) return { success: true, syncedCount: 0 };
 
   try {
     let syncedCount = 0;
 
     await prisma.$transaction(async (tx) => {
+      // 0. Asegurar que existe el tipo "CLIENTE" y obtener su ID
+      let tipoCliente = await tx.tipoEntidad.findFirst({ where: { nombre: "CLIENTE" } });
+      if (!tipoCliente) {
+        tipoCliente = await tx.tipoEntidad.create({ data: { nombre: "CLIENTE" } });
+      }
+      const tipoClienteId = tipoCliente.id;
+
       for (const fact of facturas) {
         // 1. Asegurar la existencia de la Entidad (Cliente)
         let entidad = await tx.entidad.findFirst({
@@ -194,7 +206,7 @@ export async function syncFacturasSeleccionadas(facturas: FacturaExterna[]) {
             data: {
               nombre: fact.clienteNombre,
               cuit: fact.clienteDoc,
-              tipoId: 1002, // CLIENTE
+              tipoId: tipoClienteId,
               empresaId,
               createdBy: userEmail
             }
@@ -232,6 +244,7 @@ export async function syncFacturasSeleccionadas(facturas: FacturaExterna[]) {
               iva: 0,
               entidadId: entidad.id,
               empresaId,
+              ejercicioId,
               servicioId: effectiveServicioId,
               rubroId: effectiveRubroId,
               asientoId: null,
@@ -266,14 +279,17 @@ export async function syncFacturasSeleccionadas(facturas: FacturaExterna[]) {
 /**
  * Obtiene los documentos de clientes locales para la empresa activa.
  */
-export async function getDocumentosClientes() {
+export async function getDocumentosClientes(ejercicioId: number | null) {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
 
-  if (!empresaId) return [];
+  if (!empresaId || !ejercicioId) return [];
 
   const docs = await prisma.documentoClientes.findMany({
-    where: { empresaId },
+    where: { 
+      empresaId,
+      ejercicioId
+    },
     include: {
       entidad: true,
       servicio: {
@@ -302,4 +318,15 @@ export async function getDocumentosClientes() {
       importeTotal: Number(item.importeTotal)
     }))
   }));
+}
+
+/**
+ * Obtiene el ejercicio activo por defecto para una empresa.
+ */
+export async function getDefaultEjercicio(empresaId: number) {
+  const ej = await prisma.ejercicio.findFirst({
+    where: { empresaId, cerrado: false },
+    orderBy: { inicio: 'desc' }
+  });
+  return ej ? ej.id : null;
 }

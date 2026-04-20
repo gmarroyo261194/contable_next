@@ -59,8 +59,8 @@ export function EjercicioForm({ initialData, onClose, onSuccess }: EjercicioForm
     try {
       const payload = {
         numero: parseInt(data.numero),
-        inicio: new Date(data.inicio + "T00:00:00"),
-        fin: new Date(data.fin + "T23:59:59"),
+        inicio: new Date(data.inicio + "T00:00:00Z"),
+        fin: new Date(data.fin + "T00:00:00Z"),
         cerrado: data.cerrado === "true" || data.cerrado === true,
       };
 

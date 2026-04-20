@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "sonner";
+import { StoreInitializer } from "@/components/providers/StoreInitializer";
 
 export default async function RootLayout({
   children,
@@ -28,6 +29,7 @@ export default async function RootLayout({
       <body className="font-sans antialiased text-slate-900 bg-slate-50">
         <Toaster position="top-right" richColors />
         <AuthProvider>
+          <StoreInitializer />
           {isAuthenticated ? (
             <div className="flex min-h-screen">
               <Sidebar />

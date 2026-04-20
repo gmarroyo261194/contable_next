@@ -1,26 +1,25 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   RefreshCw,
   X,
   Database,
-  Check,
   CheckSquare,
   Square,
   Wifi,
   WifiOff,
   Clock,
-  AlertTriangle,
   FileText,
-  User,
+  Search,
 } from "lucide-react";
 import { getFacturasExternasPendientes, syncFacturasSeleccionadas, FacturaExterna } from "@/lib/actions/sync-facturas-actions";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
+import { useAppStore } from "@/store/useAppStore";
 
 interface SyncFacturasModalProps {
   isOpen: boolean;
@@ -36,6 +35,11 @@ export function SyncFacturasModal({ isOpen, onClose }: SyncFacturasModalProps) {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastSync, setLastSync] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data: session } = useSession();
+  const { ejercicioId: storeEjercicioId } = useAppStore();
+
+  const ejercicioId = storeEjercicioId || (session?.user as any)?.ejercicioId;
 
   const loadFacturas = useCallback(async () => {
     setLoading(true);
@@ -68,12 +72,25 @@ export function SyncFacturasModal({ isOpen, onClose }: SyncFacturasModalProps) {
     });
   };
 
+  const filteredFacturas = facturasExternas.filter(f =>
+    f.clienteNombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (f.servicioNombre || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const toggleAll = () => {
-    if (selected.size === facturasExternas.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(facturasExternas.map((f) => f.id)));
-    }
+    const allFilteredVisible = filteredFacturas.every(f => selected.has(f.id));
+
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allFilteredVisible) {
+        // Deselect all that are currently visible in filtered list
+        filteredFacturas.forEach(f => next.delete(f.id));
+      } else {
+        // Select all that are currently visible in filtered list
+        filteredFacturas.forEach(f => next.add(f.id));
+      }
+      return next;
+    });
   };
 
   const handleSync = async () => {
@@ -84,8 +101,13 @@ export function SyncFacturasModal({ isOpen, onClose }: SyncFacturasModalProps) {
 
     setSyncing(true);
     try {
+      if (!ejercicioId) {
+        toast.error("No se detectó un ejercicio activo. Por favor, seleccione uno o reinicie sesión.");
+        setSyncing(false);
+        return;
+      }
       const seleccionadas = facturasExternas.filter(f => selected.has(f.id));
-      const result = await syncFacturasSeleccionadas(seleccionadas);
+      const result = await syncFacturasSeleccionadas(seleccionadas, ejercicioId);
 
       if (result.success) {
         const ts = new Date().toLocaleString("es-AR");
@@ -121,20 +143,20 @@ export function SyncFacturasModal({ isOpen, onClose }: SyncFacturasModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-[2px] z-[100]"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-[2px] z-100"
           />
 
-          <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none p-4">
+          <div className="fixed inset-0 z-110 flex items-center justify-center pointer-events-none p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.92, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ type: "spring", damping: 28, stiffness: 380 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden pointer-events-auto border border-slate-100 flex flex-col max-h-[90vh]"
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-7xl overflow-hidden pointer-events-auto border border-slate-100 flex flex-col max-h-[90vh]"
             >
-              <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500" />
+              <div className="h-1.5 bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500" />
 
-              <div className="p-6 pb-4 border-b border-slate-100 flex-shrink-0">
+              <div className="p-6 pb-4 border-b border-slate-100 shrink-0">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-50 rounded-2xl">
@@ -177,6 +199,26 @@ export function SyncFacturasModal({ isOpen, onClose }: SyncFacturasModalProps) {
                     Recargar
                   </button>
                 </div>
+
+                {/* Search Filter */}
+                <div className="mt-4 relative group">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="Filtrar por cliente o servicio..."
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-slate-400 font-medium"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm("")}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto">
@@ -196,44 +238,43 @@ export function SyncFacturasModal({ isOpen, onClose }: SyncFacturasModalProps) {
                       Intentar nuevamente
                     </button>
                   </div>
-                ) : facturasExternas.length === 0 ? (
+                ) : filteredFacturas.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 gap-3 text-center p-6">
-                    <div className="p-3 bg-emerald-50 rounded-2xl">
-                      <Check className="w-8 h-8 text-emerald-500" />
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <Search className="w-8 h-8 text-slate-300" />
                     </div>
-                    <p className="text-sm font-bold text-slate-700">¡Todo al día!</p>
-                    <p className="text-xs text-slate-500">No se encontraron nuevos comprobantes pagados para sincronizar.</p>
+                    <p className="text-sm font-bold text-slate-700">No hay coincidencias</p>
+                    <p className="text-xs text-slate-500">Prueba con otro cliente o nombre de servicio.</p>
                   </div>
                 ) : (
                   <>
                     <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3 sticky top-0 z-10 backdrop-blur-sm">
                       <button onClick={toggleAll} className="flex items-center gap-2.5 text-sm font-bold text-slate-700 hover:text-slate-900 transition-colors">
-                        {allSelected ? (
+                        {filteredFacturas.length > 0 && filteredFacturas.every(f => selected.has(f.id)) ? (
                           <CheckSquare className="w-5 h-5 text-blue-600" />
-                        ) : someSelected ? (
+                        ) : filteredFacturas.some(f => selected.has(f.id)) ? (
                           <div className="w-5 h-5 rounded border-2 border-blue-400 bg-blue-100 flex items-center justify-center">
                             <div className="w-2.5 h-0.5 bg-blue-600 rounded" />
                           </div>
                         ) : (
                           <Square className="w-5 h-5 text-slate-400" />
                         )}
-                        {allSelected ? "Deseleccionar todos" : "Seleccionar todos"}
+                        {filteredFacturas.every(f => selected.has(f.id)) ? "Deseleccionar visibles" : "Seleccionar visibles"}
                       </button>
                       <span className="ml-auto text-xs text-slate-400 font-medium">
-                        {facturasExternas.length} comprobantes encontrados
+                        {filteredFacturas.length} de {facturasExternas.length} encontrados
                       </span>
                     </div>
 
                     <div className="divide-y divide-slate-50">
-                      {facturasExternas.map((f) => {
+                      {filteredFacturas.map((f) => {
                         const isChecked = selected.has(f.id);
 
                         return (
                           <label
                             key={f.id}
-                            className={`flex items-center gap-4 px-6 py-4 cursor-pointer transition-all ${
-                              isChecked ? "bg-blue-50/30" : "hover:bg-slate-50"
-                            }`}
+                            className={`flex items-center gap-4 px-6 py-4 cursor-pointer transition-all ${isChecked ? "bg-blue-50/30" : "hover:bg-slate-50"
+                              }`}
                           >
                             <input
                               type="checkbox"
@@ -249,7 +290,7 @@ export function SyncFacturasModal({ isOpen, onClose }: SyncFacturasModalProps) {
                               )}
                             </div>
 
-                            <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+                            <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-5 gap-4 items-center">
                               <div className="col-span-1">
                                 <span className="text-xs text-slate-400 font-bold uppercase block">Fecha</span>
                                 <span className="text-sm font-semibold text-slate-700 text-[10px] md:text-sm">
@@ -272,7 +313,13 @@ export function SyncFacturasModal({ isOpen, onClose }: SyncFacturasModalProps) {
                                     {f.clienteNombre}
                                   </span>
                                 </div>
-                                <span className="text-[9px] text-slate-400 font-mono">{f.clienteDoc}</span>
+                                <span className="text-[9px] text-slate-400 font-mono italic">{f.clienteDoc}</span>
+                              </div>
+                              <div className="col-span-1 md:col-span-1">
+                                <span className="text-xs text-slate-400 font-bold uppercase block">Servicio</span>
+                                <span className="text-xs font-bold text-blue-600 truncate block">
+                                  {f.servicioNombre || "Gral"}
+                                </span>
                               </div>
                               <div className="col-span-1 text-right">
                                 <span className="text-xs text-slate-400 font-bold uppercase block">Importe</span>

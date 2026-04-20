@@ -39,10 +39,24 @@ export const authConfig = {
           if (ue) activeEmpresa = ue.empresa;
         }
 
+        let finalEjercicioId = selectedEjercicioId;
         let activeEjercicioNombre = "";
-        if (selectedEjercicioId) {
-          const ej = await (db as any).ejercicio.findUnique({ where: { id: selectedEjercicioId } });
-          if (ej) activeEjercicioNombre = ej.numero.toString();
+
+        if (activeEmpresa) {
+          if (finalEjercicioId) {
+            const ej = await (db as any).ejercicio.findUnique({ where: { id: finalEjercicioId } });
+            if (ej) activeEjercicioNombre = ej.numero.toString();
+          } else {
+            // Auto-seleccionar el primer ejercicio abierto de la empresa
+            const firstEj = await (db as any).ejercicio.findFirst({
+              where: { empresaId: activeEmpresa.id, cerrado: false },
+              orderBy: { inicio: 'desc' }
+            });
+            if (firstEj) {
+              finalEjercicioId = firstEj.id;
+              activeEjercicioNombre = firstEj.numero.toString();
+            }
+          }
         }
 
         return {
@@ -53,7 +67,7 @@ export const authConfig = {
           permissions: Array.from(new Set(permissions)),
           empresaId: activeEmpresa?.id,
           empresaNombre: activeEmpresa?.nombre,
-          ejercicioId: selectedEjercicioId,
+          ejercicioId: finalEjercicioId,
           ejercicioNombre: activeEjercicioNombre,
         };
       },
@@ -63,8 +77,18 @@ export const authConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const isPublicPage = nextUrl.pathname === "/" || nextUrl.pathname === "/login" || nextUrl.pathname === "/register";
+      const isSetupPage = nextUrl.pathname === "/setup";
+      const hasEmpresa = !!(auth?.user as any)?.empresaId;
       
       if (!isLoggedIn && !isPublicPage) {
+        return Response.redirect(new URL("/", nextUrl));
+      }
+
+      if (isLoggedIn && !hasEmpresa && !isSetupPage && !isPublicPage) {
+        return Response.redirect(new URL("/setup", nextUrl));
+      }
+
+      if (isLoggedIn && hasEmpresa && isSetupPage) {
         return Response.redirect(new URL("/", nextUrl));
       }
       

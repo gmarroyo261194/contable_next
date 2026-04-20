@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import {
   FileText,
   RefreshCw,
@@ -20,6 +21,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
 import { X } from "lucide-react";
+import { useAppStore } from "@/store/useAppStore";
 
 export default function DocumentosClientesPage() {
   const [documentos, setDocumentos] = useState<any[]>([]);
@@ -27,18 +29,27 @@ export default function DocumentosClientesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDocForItems, setSelectedDocForItems] = useState<any | null>(null);
+  const { data: session } = useSession();
+  const { ejercicioId: storeEjercicioId } = useAppStore();
+
+  const ejercicioId = storeEjercicioId || (session?.user as any)?.ejercicioId;
 
   const loadDocumentos = useCallback(async () => {
+    if (!ejercicioId) {
+      setDocumentos([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const data = await getDocumentosClientes();
+      const data = await getDocumentosClientes(ejercicioId);
       setDocumentos(data);
     } catch (error) {
       console.error("Error loading documentos:", error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [ejercicioId]);
 
   useEffect(() => {
     loadDocumentos();

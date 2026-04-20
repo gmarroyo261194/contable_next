@@ -20,6 +20,7 @@ model Empresa {
   updatedAt             DateTime               @updatedAt
   createdBy             String?
   updatedBy             String?
+  centrosCosto          CentroCosto[]
   cuentas               Cuenta[]
   documentosClientes    DocumentoClientes[]
   documentosProveedores DocumentoProveedores[]
@@ -27,13 +28,12 @@ model Empresa {
   moneda                Moneda                 @relation("EmpresaMoneda", fields: [monedaId], references: [id], onUpdate: NoAction)
   usuarios              EmpresaUsuario[]
   entidades             Entidad[]
+  facturasDocentes      FacturaDocente[]
+  gestionesPago         GestionPago[]
+  mediosPago            MedioPago[]
   pagos                 Pagos[]
   pedidosPagos          PedidosPagos[]
-  facturasDocentes      FacturaDocente[]
-  mediosPago           MedioPago[]
-  gestionesPago        GestionPago[]
-  centrosCosto         CentroCosto[]
-  serviciosConfig      ServicioConfig[]
+  serviciosConfig       ServicioConfig[]
 }
 
 model User {
@@ -139,79 +139,79 @@ model VerificationToken {
 }
 
 model Ejercicio {
-  id           Int            @id @default(autoincrement())
-  numero       Int
-  inicio       DateTime
-  fin          DateTime
-  cerrado      Boolean        @default(false)
-  empresaId    Int
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  createdBy    String?
-  updatedBy    String?
-  asientos     Asiento[]
-  cuentas      Cuenta[]
-  empresa      Empresa        @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
-  pagos        Pagos[]
-  pedidosPagos PedidosPagos[]
+  id            Int            @id @default(autoincrement())
+  numero        Int
+  inicio        DateTime
+  fin           DateTime
+  cerrado       Boolean        @default(false)
+  empresaId     Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  createdBy     String?
+  updatedBy     String?
+  asientos      Asiento[]
+  cuentas       Cuenta[]
+  empresa       Empresa        @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
   gestionesPago GestionPago[]
+  pagos         Pagos[]
+  pedidosPagos  PedidosPagos[]
+  docProveedores DocumentoProveedores[]
+  docClientes    DocumentoClientes[]
 
   @@unique([numero, empresaId])
 }
 
 model Cuenta {
-  id          Int              @id @default(autoincrement())
-  codigo      String
-  codigoCorto Int?
-  nombre      String
-  tipo        String
-  padreId     Int?
-  empresaId   Int
-  ejercicioId Int
-  imputable   Boolean          @default(true)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  createdBy   String?
-  updatedBy   String?
-  ejercicio   Ejercicio        @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
-  empresa     Empresa          @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
-  padre       Cuenta?          @relation("Jerarquia", fields: [padreId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  hijos       Cuenta[]         @relation("Jerarquia")
-  renglones   RenglonAsiento[]
-  facturasDocentes FacturaDocente[]
-  mediosPago      MedioPago[]
-  centrosCosto    CentroCostoCuenta[]
-  
-  // Relaciones para Configuración de Servicios
-  serviciosFundImputar ServicioConfig[] @relation("CuentaFundacionImputar")
-  serviciosFundRetener ServicioConfig[] @relation("CuentaFundacionRetener")
-  serviciosDeptoImputar ServicioConfig[] @relation("CuentaDeptoImputar")
-  serviciosDeptoRetener ServicioConfig[] @relation("CuentaDeptoRetener")
+  id                    Int                 @id @default(autoincrement())
+  codigo                String
+  codigoCorto           Int?
+  nombre                String
+  tipo                  String
+  padreId               Int?
+  empresaId             Int
+  ejercicioId           Int
+  imputable             Boolean             @default(true)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  createdBy             String?
+  updatedBy             String?
+  centrosCosto          CentroCostoCuenta[]
+  ejercicio             Ejercicio           @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
+  empresa               Empresa             @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  padre                 Cuenta?             @relation("Jerarquia", fields: [padreId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hijos                 Cuenta[]            @relation("Jerarquia")
+  facturasDocentes      FacturaDocente[]
+  mediosPago            MedioPago[]
+  renglones             RenglonAsiento[]
+  serviciosDeptoImputar ServicioConfig[]    @relation("CuentaDeptoImputar")
+  serviciosDeptoRetener ServicioConfig[]    @relation("CuentaDeptoRetener")
+  serviciosFundImputar  ServicioConfig[]    @relation("CuentaFundacionImputar")
+  serviciosFundRetener  ServicioConfig[]    @relation("CuentaFundacionRetener")
 
   @@unique([codigo, ejercicioId])
 }
 
 model Asiento {
-  id          Int                    @id @default(autoincrement())
-  numero      Int
-  fecha       DateTime
-  descripcion String
-  ejercicioId Int
-  anulaAId    Int?
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
-  createdBy   String?
-  updatedBy   String?
-  anulaA      Asiento?               @relation("Reversion", fields: [anulaAId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  anulaciones Asiento[]              @relation("Reversion")
-  ejercicio   Ejercicio              @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
-  docClientes DocumentoClientes[]    @relation("AsientoADocumentoCli")
-  documentos  DocumentoProveedores[] @relation("AsientoADocumentoProv")
-  pagos       Pagos[]
-  renglones   RenglonAsiento[]
-  facturasDocentes FacturaDocente[]
-  pagosGestion     GestionPago[] @relation("AsientoDePago")
-  anulacionesGestion GestionPago[] @relation("AsientoDeAnulacion")
+  id                 Int                    @id @default(autoincrement())
+  numero             Int
+  fecha              DateTime
+  descripcion        String
+  ejercicioId        Int
+  anulaAId           Int?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  createdBy          String?
+  updatedBy          String?
+  anulaA             Asiento?               @relation("Reversion", fields: [anulaAId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  anulaciones        Asiento[]              @relation("Reversion")
+  ejercicio          Ejercicio              @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
+  docClientes        DocumentoClientes[]    @relation("AsientoADocumentoCli")
+  documentos         DocumentoProveedores[] @relation("AsientoADocumentoProv")
+  facturasDocentes   FacturaDocente[]
+  anulacionesGestion GestionPago[]          @relation("AsientoDeAnulacion")
+  pagosGestion       GestionPago[]          @relation("AsientoDePago")
+  pagos              Pagos[]
+  renglones          RenglonAsiento[]
 }
 
 model RenglonAsiento {
@@ -236,65 +236,69 @@ model Entidad {
   id                 Int                    @id @default(autoincrement())
   nombre             String
   cuit               String?
-  nroDoc             String?
-  email              String? 
-  telefono           String? 
   tipoId             Int
   empresaId          Int
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   createdBy          String?
   updatedBy          String?
+  email              String?
+  nroDoc             String?
+  telefono           String?
   documentosClientes DocumentoClientes[]
   documentos         DocumentoProveedores[]
-  facturasDocentes   FacturaDocente[]
-  pagosGestion       GestionPago[]
   empresa            Empresa                @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
   tipo               TipoEntidad            @relation(fields: [tipoId], references: [id], onUpdate: NoAction)
+  facturasDocentes   FacturaDocente[]
+  pagosGestion       GestionPago[]
 }
 
 model DocumentoProveedores {
-  id         Int      @id @default(autoincrement())
-  tipo       String
-  numero     String
-  fecha      DateTime
-  montoTotal Decimal  @db.Decimal(18, 2)
-  iva        Decimal  @db.Decimal(18, 2)
-  entidadId  Int
-  empresaId  Int
-  asientoId  Int?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  createdBy  String?
-  updatedBy  String?
-  asiento    Asiento? @relation("AsientoADocumentoProv", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  empresa    Empresa  @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
-  entidad    Entidad  @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
+  id          Int       @id @default(autoincrement())
+  tipo        String
+  numero      String
+  fecha       DateTime
+  montoTotal  Decimal   @db.Decimal(18, 2)
+  iva         Decimal   @db.Decimal(18, 2)
+  entidadId   Int
+  empresaId   Int
+  ejercicioId Int
+  asientoId   Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  asiento     Asiento?  @relation("AsientoADocumentoProv", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ejercicio   Ejercicio @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
+  empresa     Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  entidad     Entidad   @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
 }
 
 model DocumentoClientes {
-  id         Int      @id @default(autoincrement())
-  tipo       String
-  numero     String
-  fecha      DateTime
-  montoTotal Decimal  @db.Decimal(18, 2)
-  iva        Decimal  @db.Decimal(18, 2)
-  entidadId  Int
-  empresaId  Int
-  servicioId Int?
-  rubroId    Int?
-  asientoId  Int?
-  fechaPago  DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  createdBy  String?
-  updatedBy  String?
-  asiento    Asiento? @relation("AsientoADocumentoCli", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  empresa    Empresa  @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
-  entidad    Entidad  @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
-  servicio   Servicio? @relation(fields: [servicioId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  rubro      Rubro?    @relation(fields: [rubroId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  items      DocumentoClientesItem[]
+  id          Int                     @id @default(autoincrement())
+  tipo        String
+  numero      String
+  fecha       DateTime
+  montoTotal  Decimal                 @db.Decimal(18, 2)
+  iva         Decimal                 @db.Decimal(18, 2)
+  entidadId   Int
+  empresaId   Int
+  ejercicioId Int
+  asientoId   Int?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  rubroId     Int?
+  servicioId  Int?
+  fechaPago   DateTime?
+  items       DocumentoClientesItem[]
+  asiento     Asiento?                @relation("AsientoADocumentoCli", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ejercicio   Ejercicio               @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
+  empresa     Empresa                 @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  entidad     Entidad                 @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
+  rubro       Rubro?                  @relation(fields: [rubroId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  servicio    Servicio?               @relation(fields: [servicioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model DocumentoClientesItem {
@@ -488,90 +492,86 @@ model LogProcesamiento {
 }
 
 model FacturaDocente {
-  id              Int      @id @default(autoincrement())
-  entidadId       Int
-  puntoVenta      String   @db.NVarChar(5)
-  numero          String   @db.NVarChar(8)
-  fecha           DateTime @db.Date
-  importe         Decimal  @db.Decimal(18, 2)
-  anioHonorarios  Int
-  mesHonorarios   Int      // 1-12
-  cuentaGastosId  Int
-  observaciones   String?  @db.NVarChar(4000)
-  asientoPagoId   Int?
-  empresaId       Int
-  estado            String    @default("Autorizacion Pendiente") @db.NVarChar(30)
-  fechaAutorizado   DateTime?
-  usuarioAutorizado String?   @db.NVarChar(100)
-  fechaHabilitacionPago DateTime? @db.Date
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  createdBy         String?
-  updatedBy         String?
-
-  entidad           Entidad   @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
-  cuentaGastos      Cuenta    @relation(fields: [cuentaGastosId], references: [id], onUpdate: NoAction)
-  asientoPago       Asiento?  @relation(fields: [asientoPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  empresa           Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
-  gestionPagoId     Int?
-  gestionPago       GestionPago? @relation(fields: [gestionPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                    Int          @id @default(autoincrement())
+  entidadId             Int
+  puntoVenta            String       @db.NVarChar(5)
+  numero                String       @db.NVarChar(8)
+  fecha                 DateTime     @db.Date
+  importe               Decimal      @db.Decimal(18, 2)
+  anioHonorarios        Int
+  mesHonorarios         Int
+  cuentaGastosId        Int
+  observaciones         String?      @db.NVarChar(4000)
+  asientoPagoId         Int?
+  empresaId             Int
+  createdAt             DateTime     @default(now(), map: "DF__FacturaDo__creat__4A4E069C")
+  updatedAt             DateTime     @updatedAt
+  createdBy             String?
+  updatedBy             String?
+  estado                String       @default("Autorizacion Pendiente") @db.NVarChar(30)
+  fechaAutorizado       DateTime?
+  usuarioAutorizado     String?      @db.NVarChar(100)
+  fechaHabilitacionPago DateTime?    @db.Date
+  gestionPagoId         Int?
+  asientoPago           Asiento?     @relation(fields: [asientoPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cuentaGastos          Cuenta       @relation(fields: [cuentaGastosId], references: [id], onUpdate: NoAction)
+  empresa               Empresa      @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  entidad               Entidad      @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
+  gestionPago           GestionPago? @relation(fields: [gestionPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([entidadId, puntoVenta, numero], name: "UQ_DocenteFactura")
 }
 
 model MedioPago {
-  id        Int      @id @default(autoincrement())
+  id        Int           @id @default(autoincrement())
   nombre    String
   cuentaId  Int?
   empresaId Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime      @default(now(), map: "DF__MedioPago__creat__51EF2864")
+  updatedAt DateTime      @updatedAt
   createdBy String?
   updatedBy String?
-
-  cuenta    Cuenta?   @relation(fields: [cuentaId], references: [id], onUpdate: NoAction)
-  empresa   Empresa  @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
   pagos     GestionPago[]
+  cuenta    Cuenta?       @relation(fields: [cuentaId], references: [id], onUpdate: NoAction)
+  empresa   Empresa       @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
 }
 
 model GestionPago {
-  id                Int       @id @default(autoincrement())
-  fecha             DateTime
-  importeTotal      Decimal   @db.Decimal(18, 2)
-  entidadId         Int
-  asientoId         Int
-  medioPagoId       Int
-  observaciones     String?   @db.NVarChar(4000)
-  anulado           Boolean   @default(false)
-  fechaAnulacion    DateTime?
+  id                 Int              @id @default(autoincrement())
+  fecha              DateTime
+  importeTotal       Decimal          @db.Decimal(18, 2)
+  entidadId          Int
+  asientoId          Int
+  medioPagoId        Int
+  observaciones      String?          @db.NVarChar(4000)
+  anulado            Boolean          @default(false)
+  fechaAnulacion     DateTime?
   asientoAnulacionId Int?
-  empresaId         Int
-  ejercicioId       Int
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  createdBy         String?
-  updatedBy         String?
-
-  entidad           Entidad     @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
-  asiento           Asiento     @relation("AsientoDePago", fields: [asientoId], references: [id], onUpdate: NoAction)
-  asientoAnulacion  Asiento?    @relation("AsientoDeAnulacion", fields: [asientoAnulacionId], references: [id], onUpdate: NoAction)
-  medioPago         MedioPago   @relation(fields: [medioPagoId], references: [id], onUpdate: NoAction)
-  empresa           Empresa     @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
-  ejercicio         Ejercicio   @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
-  facturasDocentes  FacturaDocente[]
+  empresaId          Int
+  ejercicioId        Int
+  createdAt          DateTime         @default(now(), map: "DF__GestionPa__creat__55BFB948")
+  updatedAt          DateTime         @updatedAt
+  createdBy          String?
+  updatedBy          String?
+  facturasDocentes   FacturaDocente[]
+  asientoAnulacion   Asiento?         @relation("AsientoDeAnulacion", fields: [asientoAnulacionId], references: [id], onUpdate: NoAction)
+  asiento            Asiento          @relation("AsientoDePago", fields: [asientoId], references: [id], onUpdate: NoAction)
+  ejercicio          Ejercicio        @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
+  empresa            Empresa          @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  entidad            Entidad          @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
+  medioPago          MedioPago        @relation(fields: [medioPagoId], references: [id], onUpdate: NoAction)
 }
 
 model CentroCosto {
-  id        Int      @id @default(autoincrement())
+  id        Int                 @id @default(autoincrement())
   nombre    String
   empresaId Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
   createdBy String?
   updatedBy String?
-
-  empresa   Empresa  @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
   cuentas   CentroCostoCuenta[]
+  empresa   Empresa             @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
 
   @@map("centros_costo")
 }
@@ -587,53 +587,50 @@ model CentroCostoCuenta {
 }
 
 model Rubro {
-  id        Int       @id @default(autoincrement())
-  nombre    String    @unique
-  activo    Boolean   @default(true)
-  servicios Servicio[]
+  id                 Int                 @id @default(autoincrement())
+  nombre             String              @unique
+  activo             Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  createdBy          String?
+  updatedAt          DateTime            @updatedAt
+  updatedBy          String?
   documentosClientes DocumentoClientes[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  createdBy String?
-  updatedBy String?
+  servicios          Servicio[]
 
   @@map("rubros")
 }
 
 model Departamento {
-  id        Int       @id @default(autoincrement())
-  nombre    String    @unique
-  activo    Boolean   @default(true)
-  servicios Servicio[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int        @id @default(autoincrement())
+  nombre    String     @unique
+  activo    Boolean    @default(true)
+  createdAt DateTime   @default(now())
   createdBy String?
+  updatedAt DateTime   @updatedAt
   updatedBy String?
+  servicios Servicio[]
 
   @@map("departamentos")
 }
 
 model Servicio {
-  id                     Int              @id @default(autoincrement())
-  nombre                 String           @unique
-  activo                 Boolean          @default(true)
+  id                     Int                 @id @default(autoincrement())
+  nombre                 String              @unique
+  activo                 Boolean             @default(true)
   rubroId                Int
-  rubro                  Rubro            @relation(fields: [rubroId], references: [id])
   departamentoId         Int?
-  departamento           Departamento?    @relation(fields: [departamentoId], references: [id])
-  participacionFundacion Boolean          @default(false)
-  porcentajeFundacion    Decimal?         @db.Decimal(5, 2)
-  participacionDepto     Boolean          @default(false)
-  porcentajeDepto        Decimal?         @db.Decimal(5, 2)
-  configs                ServicioConfig[]
+  participacionFundacion Boolean             @default(false)
+  porcentajeFundacion    Decimal?            @db.Decimal(5, 2)
+  participacionDepto     Boolean             @default(false)
+  porcentajeDepto        Decimal?            @db.Decimal(5, 2)
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  createdBy              String?
+  updatedBy              String?
   documentosClientes     DocumentoClientes[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  createdBy String?
-  updatedBy String?
+  configs                ServicioConfig[]
+  departamento           Departamento?       @relation(fields: [departamentoId], references: [id])
+  rubro                  Rubro               @relation(fields: [rubroId], references: [id])
 
   @@map("servicios")
 }
@@ -646,17 +643,16 @@ model ServicioConfig {
   cuentaFundacionRetenerId Int?
   cuentaDeptoImputarId     Int?
   cuentaDeptoRetenerId     Int?
-  servicio                 Servicio @relation(fields: [servicioId], references: [id])
+  createdAt                DateTime @default(now())
+  createdBy                String?
+  updatedAt                DateTime @updatedAt
+  updatedBy                String?
+  cuentaDeptoImputar       Cuenta?  @relation("CuentaDeptoImputar", fields: [cuentaDeptoImputarId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cuentaDeptoRetener       Cuenta?  @relation("CuentaDeptoRetener", fields: [cuentaDeptoRetenerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cuentaFundacionImputar   Cuenta?  @relation("CuentaFundacionImputar", fields: [cuentaFundacionImputarId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cuentaFundacionRetener   Cuenta?  @relation("CuentaFundacionRetener", fields: [cuentaFundacionRetenerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   empresa                  Empresa  @relation(fields: [empresaId], references: [id])
-  cuentaFundacionImputar   Cuenta?  @relation("CuentaFundacionImputar", fields: [cuentaFundacionImputarId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  cuentaFundacionRetener   Cuenta?  @relation("CuentaFundacionRetener", fields: [cuentaFundacionRetenerId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  cuentaDeptoImputar       Cuenta?  @relation("CuentaDeptoImputar", fields: [cuentaDeptoImputarId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  cuentaDeptoRetener       Cuenta?  @relation("CuentaDeptoRetener", fields: [cuentaDeptoRetenerId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  createdBy String?
-  updatedBy String?
+  servicio                 Servicio @relation(fields: [servicioId], references: [id])
 
   @@unique([servicioId, empresaId])
   @@map("servicio_configs")
