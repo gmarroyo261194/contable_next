@@ -42,9 +42,17 @@ export default function RegistrarPagoModal({
 
   useEffect(() => {
     if (isOpen && documento) {
-      // Por defecto hoy y el total del documento
-      setFechaPago(new Date().toISOString().split('T')[0]);
-      setMontoPagado(documento.montoTotal.toString());
+      if (documento.fechaPago) {
+        setFechaPago(new Date(documento.fechaPago).toISOString().split('T')[0]);
+      } else {
+        setFechaPago(new Date().toISOString().split('T')[0]);
+      }
+      
+      if (documento.montoPagado) {
+        setMontoPagado(documento.montoPagado.toString());
+      } else {
+        setMontoPagado(documento.montoTotal.toString());
+      }
     }
   }, [isOpen, documento]);
 

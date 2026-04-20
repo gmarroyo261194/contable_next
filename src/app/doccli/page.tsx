@@ -261,25 +261,17 @@ export default function DocumentosClientesPage() {
                           >
                             <FileText className="w-5 h-5" />
                           </button>
-                          {!doc.fechaPago && (
-                             <button
-                               className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all"
-                               title="Marcar como paga"
-                               onClick={() => {
-                                 setSelectedDocForPago(doc);
-                                 setIsPagoModalOpen(true);
-                               }}
-                             >
-                               <DollarSign className="w-5 h-5" />
-                             </button>
-                           )}
-                           {!doc.asientoId && (
+                          {!doc.asientoId && (
                             <>
                               <button
-                                className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-indigo-700 transition-all"
-                                onClick={() => {/* Próximo paso: Implementar contabilización */ }}
+                                className="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-all"
+                                title="Registrar Cobro"
+                                onClick={() => {
+                                  setSelectedDocForPago(doc);
+                                  setIsPagoModalOpen(true);
+                                }}
                               >
-                                Contabilizar
+                                <DollarSign className="w-5 h-5" />
                               </button>
                               <button
                                 className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
