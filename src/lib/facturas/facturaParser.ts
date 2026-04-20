@@ -249,41 +249,36 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
 
         // Matches line starting with amounts or ending with amounts
         const matchStartsNums = line.match(/^([\d\.,]+)\s+([A-Za-z]+)\s+([\d\.,]+)/);
+        // El regex para AFIP debe ser estricto: Descripción + Cantidad + Unidad + P.Unit + %Bonif + I.Bonif + Subtotal
+        // Buscamos que termine con al menos 4-5 bloques numéricos con formato de moneda (X.XXX,XX)
         const matchEndsNums = line.match(/(.*?)\s+([\d\.,]+)\s+([A-Za-z]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)$/);
         
         if (matchEndsNums) {
-            // E.g: "Servicio Limpieza 1,00 unidades 1000,00 1000,00 0,00 0,00"
-            const cant = parseFloat(matchEndsNums[2].replace(/\./g, "").replace(",", "."));
+            const rawCant = matchEndsNums[2].replace(/\./g, "").replace(",", ".");
+            const cant = parseFloat(rawCant);
             const um = matchEndsNums[3];
             const precioUnit = parseFloat(matchEndsNums[4].replace(/\./g, "").replace(",", "."));
             
-            const descPart = (currentDesc + " " + matchEndsNums[1]).trim();
-            data.items.push({
-                descripcion: descPart,
-                cantidad: cant,
-                unidades: um,
-                precioUnitario: precioUnit,
-                importeTotal: cant * precioUnit
-            });
-            currentDesc = ""; // Reset
-        } else if (matchStartsNums) {
-            // E.g: "1,00 unidades 4105060,03 4105060,03 0,00 0,00"
-            const cant = parseFloat(matchStartsNums[1].replace(/\./g, "").replace(",", "."));
-            const um = matchStartsNums[2];
-            const precioUnit = parseFloat(matchStartsNums[3].replace(/\./g, "").replace(",", "."));
-            
-            data.items.push({
-                descripcion: currentDesc.trim() || "Ítem sin detalle",
-                cantidad: cant,
-                unidades: um,
-                precioUnitario: precioUnit,
-                importeTotal: cant * precioUnit
-            });
-            currentDesc = ""; // Reset
-        } else {
-            // Es parte de la descripción, la acumulamos.
-            currentDesc += (currentDesc ? " " : "") + line;
+            // Validación: la cantidad en facturas de servicios suele ser pequeña o tener coma. 
+            // Si es un número gigante (pedido) sin coma decimal original, es probable que sea descripción.
+            const looksLikeId = !matchEndsNums[2].includes(",") && cant > 1000000;
+
+            if (!looksLikeId) {
+              const descPart = (currentDesc + " " + matchEndsNums[1]).trim();
+              data.items.push({
+                  descripcion: descPart,
+                  cantidad: cant,
+                  unidades: um,
+                  precioUnitario: precioUnit,
+                  importeTotal: cant * precioUnit
+              });
+              currentDesc = ""; // Reset
+              continue;
+            }
         }
+        
+        // Si no es una línea de valores, es parte de la descripción (o basura que limpiaremos después)
+        currentDesc += (currentDesc ? " " : "") + line;
       }
       
       // Si quedó una descripción sin procesar, la guardamos
