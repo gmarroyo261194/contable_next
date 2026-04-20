@@ -180,7 +180,6 @@ export default function DocumentosClientesPage() {
                 <thead>
                   <tr className="bg-slate-50/50">
                     <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Fecha</th>
-                    <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Cobro</th>
                     <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Cliente</th>
                     <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Servicio</th>
                     <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Comprobante</th>
@@ -195,27 +194,13 @@ export default function DocumentosClientesPage() {
                       <td className="px-4 py-2 whitespace-nowrap">
                         <div className="text-slate-700 font-bold text-sm">{format(new Date(doc.fecha), 'dd/MM/yyyy')}</div>
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        {doc.fechaPago ? (
-                          <>
-                            <div className="text-indigo-600 font-bold text-sm">{format(new Date(doc.fechaPago), 'dd/MM/yyyy')}</div>
-                            {doc.montoPagado && (
-                              <div className="text-[10px] font-black text-emerald-600">
-                                $ {new Intl.NumberFormat('es-AR').format(Number(doc.montoPagado))}
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="text-slate-300 text-xs italic">Pendiente</div>
-                        )}
-                      </td>
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 shrink-0">
                             <User className="w-3.5 h-3.5" />
                           </div>
                           <div>
-                            <div className="font-bold text-slate-900 text-sm truncate max-w-[150px]">{doc.entidad?.nombre}</div>
+                            <div className="font-bold text-slate-900 text-sm truncate max-w-[250px]">{doc.entidad?.nombre}</div>
                             <div className="text-[10px] text-slate-400 font-mono">{doc.entidad?.cuit || doc.entidad?.nroDoc}</div>
                           </div>
                         </div>
@@ -223,7 +208,7 @@ export default function DocumentosClientesPage() {
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                          <div className="text-[13px] font-bold text-slate-700 italic truncate max-w-[120px]">
+                          <div className="text-[13px] font-bold text-slate-700 italic truncate max-w-[200px]">
                             {doc.servicio?.nombre || 'General'}
                           </div>
                         </div>
