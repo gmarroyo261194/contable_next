@@ -337,16 +337,20 @@ export async function getDefaultEjercicio(empresaId: number) {
 /**
  * Procesa un PDF de factura emitida para extraer sus datos.
  */
-export async function parseFacturaEmitidaPDF(formData: FormData) {
-  const session = await auth();
-  const empresaId = (session?.user as any)?.empresaId;
-  if (!session || !empresaId) return { error: "No autorizado." };
-
-  const file = formData.get("file") as File;
-  if (!file) return { error: "No se ha proporcionado ningún archivo." };
-
+/**
+ * Server action para enviar un PDF directamente al backend y procesarlo con pdf-parse
+ */
+export async function parseFacturaPdfAction(formData: FormData) {
   try {
+    const session = await auth();
+    const empresaId = (session?.user as any)?.empresaId;
+    if (!session || !empresaId) return { success: false, error: "No autorizado o sin empresa activa." };
+
+    const file = formData.get("file") as File;
+    if (!file) throw new Error("No se adjuntó archivo.");
+
     const buffer = Buffer.from(await file.arrayBuffer());
+    // Se invoca el parser desde el backend Node.js, donde funciona correctamente
     const extractedData = await parseFacturaPDF(buffer);
 
     // Ignorar el CUIT de la fundación (emisor) si fuera extraído como receptor por error
@@ -359,7 +363,7 @@ export async function parseFacturaEmitidaPDF(formData: FormData) {
       // Generar versión con guiones para la búsqueda (XX-XXXXXXXX-X)
       const formattedCuit = `${RECEPTOR_CUIT_CLEAN.slice(0, 2)}-${RECEPTOR_CUIT_CLEAN.slice(2, 10)}-${RECEPTOR_CUIT_CLEAN.slice(10)}`;
       
-      entidad = await prisma.entidad.findFirst({
+      entidad = await txPrisma().entidad.findFirst({
         where: {
           empresaId,
           OR: [
@@ -374,17 +378,20 @@ export async function parseFacturaEmitidaPDF(formData: FormData) {
     if (entidad) {
       extractedData.nombreReceptor = entidad.nombre;
     }
-
-    return {
-      success: true,
+    
+    return { 
+      success: true, 
       data: extractedData,
       entidad: entidad ? JSON.parse(JSON.stringify(entidad)) : null
     };
   } catch (error: any) {
     console.error("Error al procesar PDF:", error);
-    return { error: error.message || "Error al procesar el archivo PDF." };
+    return { success: false, error: error.message || "Error al procesar el PDF en el servidor." };
   }
 }
+
+// Helper para evitar problemas de tipos con tx en findFirst si se usara transacción (opcional)
+const txPrisma = () => prisma;
 
 /**
  * Guarda una factura importada manualmente desde PDF.
@@ -507,20 +514,6 @@ export async function deleteDocumentoCliente(id: number) {
 /**
  * Server action para enviar un PDF directamente al backend y procesarlo con pdf-parse
  */
-export async function parseFacturaPdfAction(formData: FormData) {
-  try {
-    const file = formData.get("file") as File;
-    if (!file) throw new Error("No se adjuntó archivo.");
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-    // Se invoca el parser desde el backend Node.js, donde funciona correctamente
-    const result = await parseFacturaPDF(buffer);
-    
-    return { success: true, data: result };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Error al procesar el PDF en el servidor." };
-  }
-}
 
 /**
  * Registra el pago (cobro) de un documento de cliente y genera los asientos contables correspondientes.
