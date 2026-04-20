@@ -7,17 +7,20 @@ import {
   DollarSign, 
   CheckCircle2, 
   Loader2,
-  Receipt
+  Receipt,
+  Search
 } from "lucide-react";
 import { format } from "date-fns";
 import { registrarPagoDocumento } from "@/lib/actions/sync-facturas-actions";
 import { toast } from "sonner";
+import { AccountSearchDialog } from "@/components/AccountSearchDialog";
 
 interface RegistrarPagoModalProps {
   isOpen: boolean;
   onClose: () => void;
   documento: any; // El documento a pagar
   onSuccess?: () => void;
+  cuentas: any[];
 }
 
 /**
@@ -28,11 +31,14 @@ export default function RegistrarPagoModal({
   isOpen,
   onClose,
   documento,
-  onSuccess
+  onSuccess,
+  cuentas
 }: RegistrarPagoModalProps) {
   const [loading, setLoading] = useState(false);
   const [fechaPago, setFechaPago] = useState("");
   const [montoPagado, setMontoPagado] = useState<string>("");
+  const [selectedCuenta, setSelectedCuenta] = useState<any | null>(null);
+  const [isAccountSelectorOpen, setIsAccountSelectorOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && documento) {
@@ -51,12 +57,14 @@ export default function RegistrarPagoModal({
     try {
       if (!fechaPago) throw new Error("Debe ingresar la fecha de pago.");
       if (!montoPagado || parseFloat(montoPagado) <= 0) throw new Error("Debe ingresar un monto válido.");
+      if (!selectedCuenta) throw new Error("Debe seleccionar una cuenta contable para el cobro.");
 
       const result = await registrarPagoDocumento(
         documento.id,
         new Date(fechaPago),
-        parseFloat(montoPagado)
-      );
+        parseFloat(montoPagado),
+        selectedCuenta.id
+      ) as any;
 
       if (result.error) throw new Error(result.error);
 
@@ -147,6 +155,33 @@ export default function RegistrarPagoModal({
                     Por defecto se sugiere el total del documento.
                 </p>
             </div>
+
+            {/* Cuenta Contable (HABER) */}
+            <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Search className="w-3 h-3 text-indigo-500" />
+                    Cuenta Contable (HABER)
+                </label>
+                <div className="relative group">
+                    <button
+                        type="button"
+                        onClick={() => setIsAccountSelectorOpen(true)}
+                        className={`w-full text-left bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold transition-all border-b-2 hover:border-indigo-300 ${
+                            selectedCuenta ? "text-indigo-600 border-indigo-200 bg-indigo-50/10" : "text-slate-400"
+                        }`}
+                    >
+                        {selectedCuenta ? (
+                            <div className="flex flex-col">
+                                <span className="text-[10px] text-indigo-400 font-black uppercase leading-tight">{selectedCuenta.codigo}</span>
+                                <span className="truncate">{selectedCuenta.nombre}</span>
+                            </div>
+                        ) : (
+                            "Seleccione cuenta de cobro (Ej: Caja, Banco...)"
+                        )}
+                    </button>
+                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors pointer-events-none" />
+                </div>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-2">
@@ -174,6 +209,16 @@ export default function RegistrarPagoModal({
           </div>
         </form>
       </div>
+
+      <AccountSearchDialog 
+        isOpen={isAccountSelectorOpen}
+        onClose={() => setIsAccountSelectorOpen(false)}
+        cuentas={cuentas}
+        onSelect={(cuenta) => {
+            setSelectedCuenta(cuenta);
+            setIsAccountSelectorOpen(false);
+        }}
+      />
     </div>
   );
 }

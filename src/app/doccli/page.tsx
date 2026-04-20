@@ -21,6 +21,7 @@ import RegistrarPagoModal from "@/components/asientos/RegistrarPagoModal";
 import { SyncFacturasModal } from "@/components/asientos/SyncFacturasModal";
 import ImportarFacturaPDFModal from "@/components/asientos/ImportarFacturaPDFModal";
 import { getDocumentosClientes, deleteDocumentoCliente } from "@/lib/actions/sync-facturas-actions";
+import { getCuentas } from "@/lib/actions/asiento-actions";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
@@ -29,6 +30,7 @@ import { useAppStore } from "@/store/useAppStore";
 
 export default function DocumentosClientesPage() {
   const [documentos, setDocumentos] = useState<any[]>([]);
+  const [cuentas, setCuentas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
@@ -58,9 +60,20 @@ export default function DocumentosClientesPage() {
     }
   }, [ejercicioId]);
 
+  const loadCuentas = useCallback(async () => {
+    if (!ejercicioId) return;
+    try {
+      const data = await getCuentas();
+      setCuentas(data);
+    } catch (error) {
+      console.error("Error loading cuentas:", error);
+    }
+  }, [ejercicioId]);
+
   useEffect(() => {
     loadDocumentos();
-  }, [loadDocumentos]);
+    loadCuentas();
+  }, [loadDocumentos, loadCuentas]);
 
   const filteredDocs = documentos.filter(doc =>
     doc.entidad?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -373,6 +386,7 @@ export default function DocumentosClientesPage() {
         }}
         documento={selectedDocForPago}
         onSuccess={loadDocumentos}
+        cuentas={cuentas}
       />
     </div>
     </>

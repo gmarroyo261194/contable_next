@@ -508,24 +508,188 @@ export async function parseFacturaPdfAction(formData: FormData) {
 }
 
 /**
- * Registra el pago (cobro) de un documento de cliente.
+ * Registra el pago (cobro) de un documento de cliente y genera los asientos contables correspondientes.
  */
-export async function registrarPagoDocumento(id: number, fechaPago: Date, montoPagado: number) {
+export async function registrarPagoDocumento(id: number, fechaPago: Date, montoPagado: number, cuentaHaberId: number) {
   try {
     const session = await auth();
     const empresaId = (session?.user as any)?.empresaId;
-    if (!empresaId) throw new Error("No hay empresa activa en la sesión.");
+    const ejercicioId = (session?.user as any)?.ejercicioId;
+    const userEmail = session?.user?.email;
 
-    await prisma.documentoClientes.update({
-      where: { id, empresaId },
-      data: {
-        fechaPago,
-        montoPagado
+    if (!empresaId || !ejercicioId) throw new Error("No hay empresa o ejercicio activo en la sesión.");
+
+    return await prisma.$transaction(async (tx) => {
+      // 1. Obtener el documento con su servicio y configuración
+      const doc = await tx.documentoClientes.findUnique({
+        where: { id, empresaId },
+        include: {
+          servicio: {
+            include: {
+              configs: {
+                where: { empresaId }
+              }
+            }
+          }
+        }
+      }) as any;
+
+      if (!doc) throw new Error("Documento no encontrado.");
+      if (!doc.servicioId || !doc.servicio?.configs?.[0]) {
+        throw new Error("El servicio asociado no tiene una configuración contable definida para esta empresa.");
       }
-    });
 
-    revalidatePath("/doccli");
-    return { success: true };
+      const config = doc.servicio.configs[0];
+      if (!config.cuentaIngresosId) {
+        throw new Error("El servicio no tiene configurada una cuenta de ingresos (DEBE).");
+      }
+
+      // Limpiar número de factura para la referencia (quitar ceros a la izquierda)
+      // Formato esperado: "0001-00001234" -> "1-1234"
+      const docNumeroLimpio = doc.numero.split('-').map((part: string) => parseInt(part, 10).toString()).join('-');
+
+      // 2. Generar Asiento de Cobro (Principal)
+      const lastAsiento = await tx.asiento.findFirst({
+        where: { ejercicioId },
+        orderBy: { numero: "desc" },
+        select: { numero: true },
+      });
+      let nextNumero = (lastAsiento?.numero ?? 0) + 1;
+
+      // Obtener moneda base de la empresa
+      const empresa = await tx.empresa.findUnique({
+        where: { id: empresaId },
+        select: { monedaId: true }
+      });
+      const monedaId = empresa?.monedaId || 1;
+
+      const asientoCobro = await tx.asiento.create({
+        data: {
+          numero: nextNumero++,
+          fecha: fechaPago,
+          descripcion: `Pago Factura ${docNumeroLimpio}`,
+          ejercicioId,
+          createdBy: userEmail,
+          renglones: {
+            create: [
+              {
+                cuentaId: config.cuentaIngresosId,
+                debe: montoPagado,
+                haber: 0,
+                leyenda: `Factura ${docNumeroLimpio}`,
+                monedaId,
+                cotizacion: 1.0,
+                createdBy: userEmail,
+              },
+              {
+                cuentaId: cuentaHaberId,
+                debe: 0,
+                haber: montoPagado,
+                leyenda: `Cobro Factura ${docNumeroLimpio}`,
+                monedaId,
+                cotizacion: 1.0,
+                createdBy: userEmail,
+              }
+            ]
+          }
+        }
+      });
+
+      // 3. Asiento Fundación (si aplica)
+      if (doc.servicio.participacionFundacion && doc.servicio.porcentajeFundacion) {
+        if (!config.cuentaFundacionImputarId || !config.cuentaFundacionRetenerId) {
+          throw new Error("Faltan cuentas configuradas para la participación de Fundación.");
+        }
+
+        const importeFundacion = Number(montoPagado) * (Number(doc.servicio.porcentajeFundacion) / 100);
+
+        await tx.asiento.create({
+          data: {
+            numero: nextNumero++,
+            fecha: fechaPago,
+            descripcion: `Fundación Univer. Tecnologica (${doc.servicio.porcentajeFundacion}%) - Factura ${docNumeroLimpio}`,
+            ejercicioId,
+            createdBy: userEmail,
+            renglones: {
+              create: [
+                {
+                  cuentaId: config.cuentaFundacionImputarId,
+                  debe: importeFundacion,
+                  haber: 0,
+                  leyenda: `Part. Fundación - Fac. ${docNumeroLimpio}`,
+                  monedaId,
+                  cotizacion: 1.0,
+                  createdBy: userEmail,
+                },
+                {
+                  cuentaId: config.cuentaFundacionRetenerId,
+                  debe: 0,
+                  haber: importeFundacion,
+                  leyenda: `Part. Fundación - Fac. ${docNumeroLimpio}`,
+                  monedaId,
+                  cotizacion: 1.0,
+                  createdBy: userEmail,
+                }
+              ]
+            }
+          }
+        });
+      }
+
+      // 4. Asiento Departamento (si aplica)
+      if (doc.servicio.participacionDepto && doc.servicio.porcentajeDepto) {
+        if (!config.cuentaDeptoImputarId || !config.cuentaDeptoRetenerId) {
+          throw new Error("Faltan cuentas configuradas para la participación de Departamento.");
+        }
+
+        const importeDepto = Number(montoPagado) * (Number(doc.servicio.porcentajeDepto) / 100);
+
+        await tx.asiento.create({
+          data: {
+            numero: nextNumero++,
+            fecha: fechaPago,
+            descripcion: `Participación ${doc.servicio.porcentajeDepto}% a Departamentos - Factura ${docNumeroLimpio}`,
+            ejercicioId,
+            createdBy: userEmail,
+            renglones: {
+              create: [
+                {
+                  cuentaId: config.cuentaDeptoImputarId,
+                  debe: importeDepto,
+                  haber: 0,
+                  leyenda: `Part. Depto - Fac. ${docNumeroLimpio}`,
+                  monedaId,
+                  cotizacion: 1.0,
+                  createdBy: userEmail,
+                },
+                {
+                  cuentaId: config.cuentaDeptoRetenerId,
+                  debe: 0,
+                  haber: importeDepto,
+                  leyenda: `Part. Depto - Fac. ${docNumeroLimpio}`,
+                  monedaId,
+                  cotizacion: 1.0,
+                  createdBy: userEmail,
+                }
+              ]
+            }
+          }
+        });
+      }
+
+      // 5. Actualizar Documento
+      await tx.documentoClientes.update({
+        where: { id, empresaId },
+        data: {
+          fechaPago,
+          montoPagado,
+          asientoId: asientoCobro.id, // Vinculamos el asiento principal
+          updatedBy: userEmail
+        }
+      });
+
+      return { success: true };
+    });
   } catch (error: any) {
     console.error("Error al registrar pago:", error);
     return { error: error.message || "Error al registrar el pago." };
