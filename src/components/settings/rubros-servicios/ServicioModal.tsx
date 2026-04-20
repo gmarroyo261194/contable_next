@@ -250,7 +250,7 @@ export function ServicioModal({
 
                 <div className="space-y-3">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 text-green-700/70">Cuenta a Imputar</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 text-green-700/70">Cuenta DEBE</label>
                     <button
                       type="button"
                       onClick={() => openAccountSelector('cuentaFundacionImputarId')}
@@ -261,7 +261,7 @@ export function ServicioModal({
                     </button>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 text-green-700/70">Cuenta a Retener</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 text-green-700/70">Cuenta HABER</label>
                     <button
                       type="button"
                       onClick={() => openAccountSelector('cuentaFundacionRetenerId')}
@@ -307,7 +307,7 @@ export function ServicioModal({
 
                 <div className="space-y-3">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 text-blue-700/70">Cuenta a Imputar</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 text-blue-700/70">Cuenta DEBE</label>
                     <button
                       type="button"
                       onClick={() => openAccountSelector('cuentaDeptoImputarId')}
@@ -318,7 +318,7 @@ export function ServicioModal({
                     </button>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 text-blue-700/70">Cuenta a Retener</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 text-blue-700/70">Cuenta HABER</label>
                     <button
                       type="button"
                       onClick={() => openAccountSelector('cuentaDeptoRetenerId')}
