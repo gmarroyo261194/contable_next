@@ -292,6 +292,7 @@ model DocumentoClientes {
   rubroId     Int?
   servicioId  Int?
   fechaPago   DateTime?
+  montoPagado Decimal?                @db.Decimal(18, 2)
   items       DocumentoClientesItem[]
   asiento     Asiento?                @relation("AsientoADocumentoCli", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ejercicio   Ejercicio               @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)

@@ -17,13 +17,14 @@ import {
   FileUp,
   Trash2,
 } from "lucide-react";
+import RegistrarPagoModal from "@/components/asientos/RegistrarPagoModal";
 import { SyncFacturasModal } from "@/components/asientos/SyncFacturasModal";
 import ImportarFacturaPDFModal from "@/components/asientos/ImportarFacturaPDFModal";
 import { getDocumentosClientes, deleteDocumentoCliente } from "@/lib/actions/sync-facturas-actions";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
-import { X } from "lucide-react";
+import { X, DollarSign } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 
 export default function DocumentosClientesPage() {
@@ -31,8 +32,10 @@ export default function DocumentosClientesPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [isPagoModalOpen, setIsPagoModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDocForItems, setSelectedDocForItems] = useState<any | null>(null);
+  const [selectedDocForPago, setSelectedDocForPago] = useState<any | null>(null);
   const { data: session } = useSession();
   const { ejercicioId: storeEjercicioId } = useAppStore();
 
@@ -181,7 +184,14 @@ export default function DocumentosClientesPage() {
                       </td>
                       <td className="px-6 py-2 whitespace-nowrap">
                         {doc.fechaPago ? (
-                          <div className="text-indigo-600 font-bold">{format(new Date(doc.fechaPago), 'dd/MM/yyyy')}</div>
+                          <>
+                            <div className="text-indigo-600 font-bold">{format(new Date(doc.fechaPago), 'dd/MM/yyyy')}</div>
+                            {doc.montoPagado && (
+                              <div className="text-[10px] font-black text-emerald-600">
+                                $ {new Intl.NumberFormat('es-AR').format(Number(doc.montoPagado))}
+                              </div>
+                            )}
+                          </>
                         ) : (
                           <div className="text-slate-300 text-xs italic">Pendiente</div>
                         )}
@@ -238,7 +248,19 @@ export default function DocumentosClientesPage() {
                           >
                             <FileText className="w-5 h-5" />
                           </button>
-                          {!doc.asientoId && (
+                          {!doc.fechaPago && (
+                             <button
+                               className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all"
+                               title="Marcar como paga"
+                               onClick={() => {
+                                 setSelectedDocForPago(doc);
+                                 setIsPagoModalOpen(true);
+                               }}
+                             >
+                               <DollarSign className="w-5 h-5" />
+                             </button>
+                           )}
+                           {!doc.asientoId && (
                             <>
                               <button
                                 className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-indigo-700 transition-all"
@@ -343,6 +365,15 @@ export default function DocumentosClientesPage() {
           </div>
         </div>
       )}
+      <RegistrarPagoModal 
+        isOpen={isPagoModalOpen}
+        onClose={() => {
+          setIsPagoModalOpen(false);
+          setSelectedDocForPago(null);
+        }}
+        documento={selectedDocForPago}
+        onSuccess={loadDocumentos}
+      />
     </div>
     </>
   );

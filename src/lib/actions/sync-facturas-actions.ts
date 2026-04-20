@@ -313,6 +313,7 @@ export async function getDocumentosClientes(ejercicioId: number | null) {
     montoTotal: Number(doc.montoTotal),
     iva: Number(doc.iva),
     fechaPago: doc.fechaPago,
+    montoPagado: doc.montoPagado ? Number(doc.montoPagado) : null,
     items: doc.items.map(item => ({
       ...item,
       cantidad: Number(item.cantidad),
@@ -503,5 +504,30 @@ export async function parseFacturaPdfAction(formData: FormData) {
     return { success: true, data: result };
   } catch (error: any) {
     return { success: false, error: error.message || "Error al procesar el PDF en el servidor." };
+  }
+}
+
+/**
+ * Registra el pago (cobro) de un documento de cliente.
+ */
+export async function registrarPagoDocumento(id: number, fechaPago: Date, montoPagado: number) {
+  try {
+    const session = await auth();
+    const empresaId = (session?.user as any)?.empresaId;
+    if (!empresaId) throw new Error("No hay empresa activa en la sesión.");
+
+    await prisma.documentoClientes.update({
+      where: { id, empresaId },
+      data: {
+        fechaPago,
+        montoPagado
+      }
+    });
+
+    revalidatePath("/doccli");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error al registrar pago:", error);
+    return { error: error.message || "Error al registrar el pago." };
   }
 }
