@@ -94,6 +94,49 @@ export default function ImportarFacturaPDFModal({
     }
   };
 
+  const handleItemChange = (idx: number, field: string, value: any) => {
+    if (!extractedData) return;
+    const newItems = [...extractedData.items];
+    const item = { ...newItems[idx] };
+    
+    if (field === 'cantidad') item.cantidad = parseFloat(value) || 0;
+    else if (field === 'precioUnitario') item.precioUnitario = parseFloat(value) || 0;
+    else if (field === 'descripcion') item.descripcion = value;
+    
+    // Recalcular subtotal
+    item.importeTotal = item.cantidad * item.precioUnitario;
+    newItems[idx] = item;
+    
+    // Recalcular total de la factura basándose en los items
+    const newTotal = newItems.reduce((acc, curr) => acc + curr.importeTotal, 0);
+    
+    setExtractedData({ 
+      ...extractedData, 
+      items: newItems,
+      importeTotal: newTotal 
+    });
+  };
+
+  const removeItem = (idx: number) => {
+    if (!extractedData) return;
+    const newItems = extractedData.items.filter((_, i) => i !== idx);
+    const newTotal = newItems.reduce((acc, curr) => acc + curr.importeTotal, 0);
+    setExtractedData({ ...extractedData, items: newItems, importeTotal: newTotal });
+  };
+
+  const addItem = () => {
+    if (!extractedData) return;
+    const newItem = {
+      descripcion: "Nuevo ítem",
+      cantidad: 1,
+      unidades: "unidades",
+      precioUnitario: 0,
+      importeTotal: 0
+    };
+    const newItems = [...extractedData.items, newItem];
+    setExtractedData({ ...extractedData, items: newItems });
+  };
+
   const handleSave = async () => {
     if (!extractedData || !selectedRubroId || !selectedServicioId) {
       setError("Por favor completa el rubro y servicio asociados.");
@@ -249,35 +292,94 @@ export default function ImportarFacturaPDFModal({
               </div>
 
               {/* Items Section */}
-              {extractedData.items && extractedData.items.length > 0 && (
-                <div className="space-y-3 pb-2 animate-in fade-in slide-in-from-top-2">
+              <div className="space-y-4 pb-2 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center justify-between">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <FileText className="w-3.5 h-3.5" /> Detalle de ítems extraídos
+                    <FileText className="w-3.5 h-3.5" /> Detalle de ítems (Editable)
                   </h4>
-                  <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-xs bg-slate-50/30">
-                    <table className="w-full text-left bg-white text-[11px]">
-                      <thead>
-                        <tr className="bg-slate-50/80 border-b border-slate-100 font-black text-slate-400 uppercase tracking-tighter">
-                          <th className="px-4 py-2">Descripción / Producto / Servicio</th>
-                          <th className="px-4 py-2 text-center">Cant.</th>
-                          <th className="px-4 py-2 text-right">Subtotal</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {extractedData.items.map((item: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-indigo-50/20 transition-colors">
-                            <td className="px-4 py-2 text-slate-700 font-medium leading-relaxed italic">{item.descripcion}</td>
-                            <td className="px-4 py-2 text-center text-slate-500 font-mono">{item.cantidad.toFixed(2)}</td>
-                            <td className="px-4 py-2 text-right font-black text-slate-900 font-mono">
+                  <button 
+                    onClick={addItem}
+                    className="text-[10px] font-black text-indigo-600 uppercase hover:text-indigo-700 flex items-center gap-1.5 transition-colors"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" /> Agregar ítem
+                  </button>
+                </div>
+                
+                <div className="border border-slate-100 rounded-3xl overflow-hidden shadow-xs bg-slate-50/30">
+                  <table className="w-full text-left bg-white text-[11px]">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-100 font-black text-slate-400 uppercase tracking-tighter">
+                        <th className="px-5 py-3">Descripción / Producto / Servicio</th>
+                        <th className="px-5 py-3 text-center w-24">Cant.</th>
+                        <th className="px-5 py-3 text-right w-32">P. Unitario</th>
+                        <th className="px-5 py-3 text-right w-32">Subtotal</th>
+                        <th className="px-5 py-3 w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {extractedData.items && extractedData.items.length > 0 ? (
+                        extractedData.items.map((item: any, idx: number) => (
+                          <tr key={idx} className="group hover:bg-indigo-50/10 transition-colors">
+                            <td className="px-5 py-3">
+                              <textarea
+                                value={item.descripcion}
+                                onChange={(e) => handleItemChange(idx, 'descripcion', e.target.value)}
+                                className="w-full bg-transparent border-none focus:ring-0 p-0 text-slate-700 font-medium italic resize-none leading-relaxed placeholder:text-slate-300"
+                                rows={2}
+                              />
+                            </td>
+                            <td className="px-5 py-3">
+                              <input
+                                type="number"
+                                value={item.cantidad}
+                                onChange={(e) => handleItemChange(idx, 'cantidad', e.target.value)}
+                                className="w-full bg-slate-50/50 border-none rounded-lg px-2 py-1.5 text-center font-mono text-slate-600 focus:bg-white focus:ring-1 focus:ring-indigo-100 outline-none transition-all"
+                              />
+                            </td>
+                            <td className="px-5 py-3">
+                              <div className="flex items-center gap-1 bg-slate-50/50 rounded-lg px-2 py-1.5 focus-within:bg-white focus-within:ring-1 focus-within:ring-indigo-100 transition-all">
+                                <span className="text-slate-400">$</span>
+                                <input
+                                  type="number"
+                                  value={item.precioUnitario}
+                                  onChange={(e) => handleItemChange(idx, 'precioUnitario', e.target.value)}
+                                  className="w-full bg-transparent border-none p-0 text-right font-mono text-slate-600 focus:ring-0 outline-none"
+                                />
+                              </div>
+                            </td>
+                            <td className="px-5 py-3 text-right font-black text-slate-900 font-mono">
                               {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(item.importeTotal)}
                             </td>
+                            <td className="px-5 py-3">
+                              <button 
+                                onClick={() => removeItem(idx)}
+                                className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </td>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="px-5 py-8 text-center text-slate-400 font-medium italic">
+                            No se detectaron ítems. Haz clic en "Agregar ítem" para cargar uno manualmente.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                    <tfoot className="bg-slate-50/50 font-black">
+                      <tr>
+                        <td colSpan={3} className="px-5 py-4 text-right text-slate-500 uppercase tracking-widest text-[10px]">Importe Total Estimado</td>
+                        <td className="px-5 py-4 text-right text-indigo-600 text-sm font-mono">
+                          {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(extractedData.importeTotal)}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
-              )}
+              </div>
 
               {/* Required Selection */}
               <div className="space-y-5 p-1">
