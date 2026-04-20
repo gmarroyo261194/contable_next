@@ -54,37 +54,58 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
     textoCompleto: text
   };
 
-  // 1. Letra del Comprobante y Tipo (FACTURA A, B, C, FCE, etc.)
+  // 1. Letra del Comprobante y Tipo (CÓDIGOS INTERNOS AFIP)
   const codMatch = text.match(/C[ÓO]D\.\s*(\d+)/i);
   if (codMatch) {
     const code = codMatch[1];
-    const mapCodes: Record<string, { letra: string, nombre: string }> = {
-      '001': { letra: 'A', nombre: 'Factura A' },
-      '006': { letra: 'B', nombre: 'Factura B' },
-      '011': { letra: 'C', nombre: 'Factura C' },
-      '201': { letra: 'A', nombre: 'Factura de Crédito Electrónica MiPyMEs (FCE) A' },
-      '206': { letra: 'B', nombre: 'Factura de Crédito Electrónica MiPyMEs (FCE) B' },
-      '211': { letra: 'C', nombre: 'Factura de Crédito Electrónica MiPyMEs (FCE) C' },
+    data.tipoComprobante = parseInt(code, 10).toString(); // Guardar el Nro interno numérico como string (ej. "211")
+    const mapCodes: Record<string, { letra: string }> = {
+      '001': { letra: 'A' },
+      '006': { letra: 'B' },
+      '011': { letra: 'C' },
+      '019': { letra: 'E' },
+      '201': { letra: 'A' },
+      '206': { letra: 'B' },
+      '211': { letra: 'C' },
     };
     if (mapCodes[code]) {
       data.letra = mapCodes[code].letra;
-      data.tipoComprobante = mapCodes[code].nombre;
     }
   }
 
   if (!data.tipoComprobante) {
-    const tipoMatch = text.match(/(FACTURA|NOTA DE D[ÉE]BITO|NOTA DE CR[ÉE]DITO)\s+([A-CM])/i);
+    const tipoMatch = text.match(/(FACTURA|NOTA DE D[ÉE]BITO|NOTA DE CR[ÉE]DITO)\s+([A-CE])/i);
     if (tipoMatch) {
       data.letra = tipoMatch[2].toUpperCase();
-      data.tipoComprobante = `${tipoMatch[1].toUpperCase()} ${data.letra}`;
+      const tipo = tipoMatch[1].toUpperCase();
+      // Map back to codes if possible
+      if (tipo === 'FACTURA' && data.letra === 'A') data.tipoComprobante = '1';
+      else if (tipo === 'FACTURA' && data.letra === 'B') data.tipoComprobante = '6';
+      else if (tipo === 'FACTURA' && data.letra === 'C') data.tipoComprobante = '11';
+      else if (tipo === 'FACTURA' && data.letra === 'E') data.tipoComprobante = '19';
+      else data.tipoComprobante = `${tipo} ${data.letra}`; // Fallback textual
     }
   }
 
   // 2. Punto de venta y Número
-  const nroMatch = text.match(/Punto de Venta[:\s]+(\d+).*?Comp\. Nro[:\s]+(\d+)/i);
-  if (nroMatch) {
-    data.puntoVenta = nroMatch[1].padStart(5, '0');
-    data.numero = nroMatch[2].padStart(8, '0');
+  // El número de factura en AFIP puede desarmarse si el PDF se lee por columnas (ej: "Pto Venta Nro Comp 00005 00000087").
+  // Por lo tanto, buscamos con ".*?" (difuso) para tolerar que haya texto estorbo o que estén desordenados.
+  const ptoSearch = text.match(/(?:(?:Punto|Pto\.?)\s*de\s*Venta|Venta).*?\b(\d{4,5})\b/i);
+  const nroSearch = text.match(/(?:Comp\.?\s*Nro|Nro\.?|Nº).*?\b(\d{8})\b/i);
+
+  if (ptoSearch && ptoSearch[1]) {
+    data.puntoVenta = ptoSearch[1].padStart(5, '0');
+  }
+  if (nroSearch && nroSearch[1]) {
+    data.numero = nroSearch[1];
+  }
+
+  // DIAGNÓSTICO: Si aún no extrajo el punto de venta o número, volcar el texto para análisis
+  if (!data.puntoVenta || !data.numero) {
+    try {
+      require('fs').writeFileSync('d:/contable_next/debug_pdf_text.txt', text);
+      console.log("[FacturaParser] Nro no detectado. Texto volcado a debug_pdf_text.txt");
+    } catch(e) {}
   }
 
   // 3. CUIT Emisor
@@ -222,6 +243,9 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
         // Ignorar basura del encabezado de la tabla AFIP
         if (line.includes("Opción de Transferencia") || line.includes("CBU del Emisor") || line.includes("Fecha de Vto. para el pago")) continue;
         if (/Subtotal/i.test(line) || /^[\d\.,]+$/.test(line)) continue; // ignore stray numbers
+        
+        const textUpper = line.toUpperCase().trim();
+        if (textUpper.includes("FUNDACION UNIVERSIDAD") || textUpper.includes("REGIONAL MENDOZA") || textUpper === "MENDOZA" || textUpper === "FUNDACION" || textUpper === "UNIVERSIDAD") continue;
 
         // Matches line starting with amounts or ending with amounts
         const matchStartsNums = line.match(/^([\d\.,]+)\s+([A-Za-z]+)\s+([\d\.,]+)/);

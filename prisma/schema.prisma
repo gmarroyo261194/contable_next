@@ -187,6 +187,7 @@ model Cuenta {
   serviciosDeptoRetener ServicioConfig[]    @relation("CuentaDeptoRetener")
   serviciosFundImputar  ServicioConfig[]    @relation("CuentaFundacionImputar")
   serviciosFundRetener  ServicioConfig[]    @relation("CuentaFundacionRetener")
+  serviciosIngresos     ServicioConfig[]    @relation("CuentaIngresos")
 
   @@unique([codigo, ejercicioId])
 }
@@ -644,6 +645,7 @@ model ServicioConfig {
   cuentaFundacionRetenerId Int?
   cuentaDeptoImputarId     Int?
   cuentaDeptoRetenerId     Int?
+  cuentaIngresosId         Int?
   createdAt                DateTime @default(now())
   createdBy                String?
   updatedAt                DateTime @updatedAt
@@ -652,6 +654,7 @@ model ServicioConfig {
   cuentaDeptoRetener       Cuenta?  @relation("CuentaDeptoRetener", fields: [cuentaDeptoRetenerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   cuentaFundacionImputar   Cuenta?  @relation("CuentaFundacionImputar", fields: [cuentaFundacionImputarId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   cuentaFundacionRetener   Cuenta?  @relation("CuentaFundacionRetener", fields: [cuentaFundacionRetenerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cuentaIngresos           Cuenta?  @relation("CuentaIngresos", fields: [cuentaIngresosId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   empresa                  Empresa  @relation(fields: [empresaId], references: [id])
   servicio                 Servicio @relation(fields: [servicioId], references: [id])
 

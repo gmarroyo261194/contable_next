@@ -230,7 +230,8 @@ export function ServicioTable({ servicios, onEdit, onAdd, onDelete }: ServicioTa
                   config.cuentaFundacionImputarId && 
                   config.cuentaFundacionRetenerId && 
                   config.cuentaDeptoImputarId && 
-                  config.cuentaDeptoRetenerId;
+                  config.cuentaDeptoRetenerId &&
+                  config.cuentaIngresosId;
 
                 return (
                   <tr key={servicio.id} className="hover:bg-slate-50/80 transition-colors group">
@@ -283,10 +284,17 @@ export function ServicioTable({ servicios, onEdit, onAdd, onDelete }: ServicioTa
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-black uppercase ${
-                        hasFullConfig ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {hasFullConfig ? 'OK' : 'Incompleto'}
+                      <div className="flex flex-col items-center gap-1">
+                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-black uppercase ${
+                          hasFullConfig ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {hasFullConfig ? 'OK' : 'Incompleto'}
+                        </div>
+                        {config?.cuentaIngresos && (
+                          <span className="text-[9px] text-indigo-500 font-bold truncate max-w-[120px]" title={`Ingresos: ${config.cuentaIngresos.nombre}`}>
+                            INC: {config.cuentaIngresos.codigo}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">

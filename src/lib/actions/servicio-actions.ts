@@ -27,6 +27,9 @@ export async function getServicios(empresaId: number) {
           },
           cuentaDeptoRetener: {
             select: { id: true, nombre: true, codigo: true, codigoCorto: true }
+          },
+          cuentaIngresos: {
+            select: { id: true, nombre: true, codigo: true, codigoCorto: true }
           }
         }
       }
@@ -57,6 +60,7 @@ export async function upsertServicio(data: {
     cuentaFundacionRetenerId?: number | null;
     cuentaDeptoImputarId?: number | null;
     cuentaDeptoRetenerId?: number | null;
+    cuentaIngresosId?: number | null;
   }
 }) {
   const { 
@@ -117,13 +121,15 @@ export async function upsertServicio(data: {
           cuentaFundacionImputarId: config.cuentaFundacionImputarId,
           cuentaFundacionRetenerId: config.cuentaFundacionRetenerId,
           cuentaDeptoImputarId: config.cuentaDeptoImputarId,
-          cuentaDeptoRetenerId: config.cuentaDeptoRetenerId
+          cuentaDeptoRetenerId: config.cuentaDeptoRetenerId,
+          cuentaIngresosId: config.cuentaIngresosId
         },
         update: {
           cuentaFundacionImputarId: config.cuentaFundacionImputarId,
           cuentaFundacionRetenerId: config.cuentaFundacionRetenerId,
           cuentaDeptoImputarId: config.cuentaDeptoImputarId,
-          cuentaDeptoRetenerId: config.cuentaDeptoRetenerId
+          cuentaDeptoRetenerId: config.cuentaDeptoRetenerId,
+          cuentaIngresosId: config.cuentaIngresosId
         }
       });
     }

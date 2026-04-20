@@ -14,9 +14,13 @@ export function getTipoComprobanteNombre(tipo: string): string {
     "11": "FC Factura C",
     "12": "ND Nota de Débito C",
     "13": "NC Nota de Crédito C",
+    "17": "Recibo C",
     "19": "FC Factura E",
     "20": "ND Nota de Débito E",
     "21": "NC Nota de Crédito E",
+    "201": "FCE MiPyMEs A",
+    "206": "FCE MiPyMEs B",
+    "211": "FCE MiPyMEs C",
   };
 
   return mapeo[tipo] || `Tipo ${tipo}`;

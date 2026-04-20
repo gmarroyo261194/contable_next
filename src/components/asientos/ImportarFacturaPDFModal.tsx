@@ -22,6 +22,7 @@ import { saveFacturaImportada, parseFacturaPdfAction } from "@/lib/actions/sync-
 
 import { getRubros } from "@/lib/actions/rubro-actions";
 import { getServicios } from "@/lib/actions/servicio-actions";
+import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
 
 interface ImportarFacturaPDFModalProps {
   isOpen: boolean;
@@ -104,7 +105,7 @@ export default function ImportarFacturaPDFModal({
 
     try {
       const payload = {
-        tipo: extractedData.tipoComprobante || `FACTURA ${extractedData.letra || 'C'}`,
+        tipo: extractedData.tipoComprobante || '11', // Defaults to Factura C if code is unknown
         numero: `${extractedData.puntoVenta}-${extractedData.numero}`,
         fecha: extractedData.fechaEmision,
         montoTotal: extractedData.importeTotal,
@@ -204,7 +205,9 @@ export default function ImportarFacturaPDFModal({
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-500 font-bold">Tipo:</span>
-                      <span className="text-slate-900 font-black px-2 py-1 bg-white rounded-lg border border-slate-100">{extractedData.letra} - {extractedData.tipoComprobante}</span>
+                      <span className="text-slate-900 font-black px-2 py-1 bg-white rounded-lg border border-slate-100 uppercase text-xs">
+                        {extractedData.tipoComprobante ? getTipoComprobanteNombre(extractedData.tipoComprobante) : `FACTURA ${extractedData.letra || 'C'}`}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-500 font-bold">Número:</span>

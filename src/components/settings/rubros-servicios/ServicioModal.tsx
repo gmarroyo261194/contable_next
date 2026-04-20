@@ -22,7 +22,8 @@ type AccountSelectorField =
   | 'cuentaFundacionImputarId' 
   | 'cuentaFundacionRetenerId' 
   | 'cuentaDeptoImputarId' 
-  | 'cuentaDeptoRetenerId';
+  | 'cuentaDeptoRetenerId'
+  | 'cuentaIngresosId';
 
 export function ServicioModal({ 
   isOpen, 
@@ -52,6 +53,7 @@ export function ServicioModal({
       porcentajeDepto: 0,
       cuentaDeptoImputarId: null,
       cuentaDeptoRetenerId: null,
+      cuentaIngresosId: null,
     }
   });
 
@@ -63,6 +65,7 @@ export function ServicioModal({
   const watchFundRetener = watch('cuentaFundacionRetenerId');
   const watchDeptoImputar = watch('cuentaDeptoImputarId');
   const watchDeptoRetener = watch('cuentaDeptoRetenerId');
+  const watchIngresos = watch('cuentaIngresosId');
 
   useEffect(() => {
     if (servicio) {
@@ -80,6 +83,7 @@ export function ServicioModal({
         porcentajeDepto: Number(servicio.porcentajeDepto || 0),
         cuentaDeptoImputarId: config.cuentaDeptoImputarId,
         cuentaDeptoRetenerId: config.cuentaDeptoRetenerId,
+        cuentaIngresosId: config.cuentaIngresosId,
       });
     } else {
       reset({
@@ -95,6 +99,7 @@ export function ServicioModal({
         porcentajeDepto: 0,
         cuentaDeptoImputarId: null,
         cuentaDeptoRetenerId: null,
+        cuentaIngresosId: null,
       });
     }
   }, [servicio, reset]);
@@ -117,6 +122,7 @@ export function ServicioModal({
           cuentaFundacionRetenerId: data.participacionFundacion ? data.cuentaFundacionRetenerId : null,
           cuentaDeptoImputarId: data.participacionDepto ? data.cuentaDeptoImputarId : null,
           cuentaDeptoRetenerId: data.participacionDepto ? data.cuentaDeptoRetenerId : null,
+          cuentaIngresosId: data.cuentaIngresosId,
         }
       });
       toast.success(servicio ? 'Servicio actualizado' : 'Servicio creado');
@@ -184,6 +190,30 @@ export function ServicioModal({
                 <option key={d.id} value={d.id}>{d.nombre}</option>
               ))}
             </select>
+          </div>
+        </div>
+
+        {/* Cuenta de Ingresos */}
+        <div className="p-4 rounded-2xl border border-indigo-100 bg-indigo-50/30 shadow-xs">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <Landmark className="w-4 h-4 text-indigo-600" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-slate-700">Imputación de Ingresos</span>
+              <span className="text-[10px] text-slate-500">Cuenta contable para registrar las ventas de este servicio.</span>
+            </div>
+          </div>
+          
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={() => openAccountSelector('cuentaIngresosId')}
+              className="w-full flex items-center justify-between px-4 py-3 bg-white border border-indigo-100 rounded-xl text-sm text-slate-600 hover:bg-indigo-50 transition-colors shadow-xs"
+            >
+              <span className="truncate font-medium">{getAccountName(watchIngresos)}</span>
+              <Search className="size-4 text-slate-400 shrink-0" />
+            </button>
           </div>
         </div>
 
