@@ -136,11 +136,31 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
   }
   data.cuitEmisor = foundCuit;
 
-  // 3.1. CUIT Receptor
+  // 3.1. CUITs (Emisor y Receptor)
   const allCuits = [...text.matchAll(/\b(\d{2}-?\d{8}-?\d{1})\b/g)];
   if (allCuits.length >= 2) {
-    // En AFIP, emisor es el primero, receptor el segundo
-    data.cuitReceptor = allCuits[1][1].replace(/-/g, '');
+    const idxLabelReceptor = lines.findIndex(l => l.includes("Apellido y Nombre / Razón") || l.includes("ñor(es):"));
+    if (idxLabelReceptor !== -1) {
+      let closestIdx = 1;
+      let minDistance = 999;
+      allCuits.forEach((match, i) => {
+        const lineIdx = lines.findIndex(l => l.includes(match[1]));
+        if (lineIdx !== -1) {
+          const dist = Math.abs(lineIdx - idxLabelReceptor);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestIdx = i;
+          }
+        }
+      });
+      data.cuitReceptor = allCuits[closestIdx][1].replace(/-/g, '');
+      data.cuitEmisor = allCuits[closestIdx === 0 ? 1 : 0][1].replace(/-/g, '');
+    } else {
+      data.cuitEmisor = allCuits[0][1].replace(/-/g, '');
+      data.cuitReceptor = allCuits[1][1].replace(/-/g, '');
+    }
+  } else if (allCuits.length === 1) {
+    data.cuitEmisor = allCuits[0][1].replace(/-/g, '');
   }
 
   // 3.1.5. Nombre Emisor (para evitar confundirlo con el receptor)
@@ -150,7 +170,7 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
       const idx = emisorCuitLineIdx + offset;
       if (idx >= 0 && idx < lines.length) {
         const l = lines[idx].trim();
-        if (l.length > 5 && !/CUIT|Ingresos|Inicio|Fecha|Domicilio|Punto|Comercial|Comp\.|Nro/i.test(l)) {
+        if (l.length > 5 && !/CUIT|Ingresos|Inicio|Fecha|Domicilio|Punto|Comercial|Comp\.|Nro|Código|Producto|Servicio|Cantidad|Medida|Unit|Bonif|Subtotal/i.test(l)) {
           data.nombreEmisor = l;
           break;
         }

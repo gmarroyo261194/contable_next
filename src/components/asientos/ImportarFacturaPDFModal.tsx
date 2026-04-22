@@ -269,7 +269,7 @@ export default function ImportarFacturaPDFModal({
                 {/* Cliente / Receptor */}
                 <div className="p-5 border border-slate-100 rounded-3xl bg-white shadow-sm space-y-4">
                   <div className="flex items-center gap-2 text-indigo-500 font-black text-[10px] uppercase tracking-widest">
-                    <Building2 className="w-3.5 h-3.5" /> Receptor / Cliente
+                    <Building2 className="w-3.5 h-3.5" /> Cliente
                   </div>
                   <div className="space-y-1">
                     <div className="text-slate-900 font-black text-lg leading-tight uppercase">{extractedData.nombreReceptor || "No detectado"}</div>
