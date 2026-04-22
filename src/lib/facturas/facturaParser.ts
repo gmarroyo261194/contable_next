@@ -143,25 +143,77 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
     data.cuitReceptor = allCuits[1][1].replace(/-/g, '');
   }
 
+  // 3.1.5. Nombre Emisor (para evitar confundirlo con el receptor)
+  const emisorCuitLineIdx = lines.findIndex(l => l.replace(/-/g, '').includes(data.cuitEmisor));
+  if (emisorCuitLineIdx !== -1) {
+    for (let offset of [1, -1, 2, -2, 3, -3]) {
+      const idx = emisorCuitLineIdx + offset;
+      if (idx >= 0 && idx < lines.length) {
+        const l = lines[idx].trim();
+        if (l.length > 5 && !/CUIT|Ingresos|Inicio|Fecha|Domicilio|Punto|Comercial|Comp\.|Nro/i.test(l)) {
+          data.nombreEmisor = l;
+          break;
+        }
+      }
+    }
+  }
+
   // 3.2. Nombre Receptor
   const idxLabel = lines.findIndex(l => l.includes("Apellido y Nombre / Razón") || l.includes("ñor(es):"));
   if (idxLabel !== -1) {
-    for (let i = idxLabel; i < Math.min(lines.length, idxLabel + 15); i++) {
+    for (let i = idxLabel; i < Math.min(lines.length, idxLabel + 20); i++) {
         let l = lines[i].trim();
         if (!l) continue;
         if (l.includes("Apellido y Nombre") || l.includes("ñor(es):")) continue;
-        if (l.includes("Domicilio:") || l.includes("Condición frente al IVA:")) continue;
-        if (/^\d{2}\/\d{2}\/\d{4}$/.test(l)) continue; // date
-        if (/^\d{2}-?\d{8}-?\d{1}$/.test(l) || /^\d{11}$/.test(l)) continue; // cuit
-        if (l.includes("CUIT:") || l.includes("Ingresos Brutos")) continue;
+        if (l.includes("Domicilio:") || l.includes("Condición frente al IVA:") || l.includes("Condición de venta:")) continue;
         
+        // Filtro de fechas más robusto (si contiene una fecha o formato de periodo)
+        if (l.includes("/") && /\d{2}\/\d{2}\/\d{4}/.test(l)) continue; 
+        
+        // Filtro de CUITs y números largos
+        if (l.replace(/-/g, '').match(/^\d{11}$/)) continue;
+        if (l.includes("CUIT:") || l.includes("Ingresos Brutos") || l.includes("Inicio de Actividades")) continue;
+        
+        // Filtro de palabras que indican que es parte del encabezado/periodo y no el nombre
+        if (l.toLowerCase().includes("período") || l.toLowerCase().includes("hasta:") || l.toLowerCase().includes("vto.")) continue;
+        
+        // Evitar capturar el nombre del emisor si aparece por error
+        if (data.nombreEmisor && l.toUpperCase().includes(data.nombreEmisor.toUpperCase().substring(0, 5))) continue;
+        
+        // Si el receptor CUIT está más adelante en el texto, y esta línea está muy arriba, 
+        // podría ser el emisor. En AFIP el receptor suele estar cerca de su CUIT.
+        const cuitReceptorIdx = lines.findIndex(line => line.includes(data.cuitReceptor));
+        if (cuitReceptorIdx !== -1 && i < cuitReceptorIdx - 5) {
+            // Si está muy lejos del CUIT del receptor, probablemente no sea el nombre del receptor
+            // a menos que no haya nada más.
+            continue; 
+        }
+
         // El primer string que pasa estos filtros suele ser el nombre
         data.nombreReceptor = l;
         break;
     }
   }
 
-  // Fallback si no lo encontró
+  // Fallback 1: Buscar cerca del CUIT del receptor (ESTA ES LA UBICACIÓN MÁS FIABLE)
+  const cuitLineIdx = lines.findIndex(l => l.replace(/-/g, '').includes(data.cuitReceptor));
+  if (cuitLineIdx !== -1) {
+    for (let offset of [1, 2, 3, 4, 5, -1, -2]) {
+      const idx = cuitLineIdx + offset;
+      if (idx >= 0 && idx < lines.length) {
+        let l = lines[idx].trim();
+        if (!l || l.length < 3 || l.includes(":") || l.includes("/") || l.includes("$")) continue;
+        if (l.toUpperCase().includes("CÓDIGO") || l.toUpperCase().includes("PRODUCTO") || l.toUpperCase().includes("CANTIDAD") || l.toUpperCase().includes("UNIDADES")) continue;
+        if (data.nombreEmisor && l.toUpperCase().includes(data.nombreEmisor.toUpperCase().substring(0, 5))) continue;
+        
+        // Si ya teníamos un nombre pero este está más cerca del CUIT, preferimos este
+        data.nombreReceptor = l;
+        break;
+      }
+    }
+  }
+
+  // Fallback 2: Expresión regular clásica
   if (!data.nombreReceptor) {
     const nombreMatches = [...text.matchAll(/(?:Apellido y Nombre \/ Raz[óo]n Social:|Se[ñn]or\(es\):)\s*(.+)/gi)];
     if (nombreMatches.length > 0) {
