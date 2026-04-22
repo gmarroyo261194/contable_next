@@ -101,25 +101,27 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
   }
 
   // DIAGNÓSTICO: Si aún no extrajo el punto de venta o número, volcar el texto para análisis
+  try {
+    require('fs').writeFileSync('d:/contable_next/debug_pdf_text.txt', text);
+  } catch (e) { }
+
   if (!data.puntoVenta || !data.numero) {
-    try {
-      require('fs').writeFileSync('d:/contable_next/debug_pdf_text.txt', text);
-      console.log("[FacturaParser] Nro no detectado. Texto volcado a debug_pdf_text.txt");
-    } catch(e) {}
+    console.log("[FacturaParser] Nro no detectado. Texto volcado a debug_pdf_text.txt");
   }
 
   // 3. CUIT Emisor - SE IGNORA SEGÚN INSTRUCCIÓN (solo se mantiene PV y Nro del encabezado)
   // No buscamos proactivamente el CUIT del emisor para evitar confusiones con el del receptor.
   const lines = text.split('\n').map(l => l.trim());
-  let foundCuitEmisor = ''; 
+  let foundCuitEmisor = '';
   // Solo buscamos CUITs generales para tener la lista completa, pero no asignamos emisor desde el encabezado.
 
   // 3.1. CUITs (Emisor y Receptor)
   const allCuits = [...text.matchAll(/\b(\d{2}-?\d{8}-?\d{1})\b/g)];
-  
+
   // Intentar encontrar el CUIT del receptor por cercanía extrema a su etiqueta (misma línea o adyacentes)
   const idxLabelReceptor = lines.findIndex(l => l.includes("Apellido y Nombre / Razón") || l.includes("ñor(es):"));
-  const CUITS_A_IGNORAR = ["30640431373", "30714047740"];
+  // El CUIT de la Fundación es 30714047740. 30640431373 es el CUIT de EMESA.
+  const CUITS_A_IGNORAR = ["30714047740"];
   const NOMBRE_A_IGNORAR = "FUNDACION UNIVERSIDAD TECNOLOGICA";
 
   if (idxLabelReceptor !== -1) {
@@ -141,14 +143,14 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
       // (Ignorando los que están arriba en el encabezado y el CUIT específico a ignorar)
       let bestMatch = null;
       let minDistance = 999;
-      
+
       allCuits.forEach((match) => {
         const potentialCuit = match[1].replace(/-/g, '');
         if (CUITS_A_IGNORAR.includes(potentialCuit)) return; // IGNORAR según instrucción
 
         const pos = match.index || 0;
         const lineIdx = text.substring(0, pos).split('\n').length - 1;
-        
+
         // Solo considerar CUITs que están en la misma línea o DESPUÉS del label del receptor
         if (lineIdx >= idxLabelReceptor - 1) {
           const dist = Math.abs(lineIdx - idxLabelReceptor);
@@ -160,7 +162,7 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
       });
       data.cuitReceptor = bestMatch || "";
     }
-    
+
     // Identificar el otro CUIT como emisor solo si es necesario, pero priorizando el receptor
     const otherCuit = allCuits.find(m => m[1].replace(/-/g, '') !== data.cuitReceptor);
     if (otherCuit) {
@@ -169,69 +171,78 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
   }
 
   // 3.1. Nombre Emisor - SE IGNORA SEGÚN INSTRUCCIÓN
-  data.nombreEmisor = ""; 
+  data.nombreEmisor = "";
   // 3.2. Nombre Receptor
   const idxLabel = lines.findIndex(l => l.includes("Apellido y Nombre / Razón") || l.includes("ñor(es):"));
   if (idxLabel !== -1) {
     for (let i = idxLabel; i < Math.min(lines.length, idxLabel + 20); i++) {
-        let l = lines[i].trim();
-        if (!l) continue;
-        if (l.includes("Apellido y Nombre") || l.includes("ñor(es):")) {
-            const matchName = l.match(/(?:Apellido y Nombre \/ Raz[óo]n Social:|Se[ñn]or\(es\):)\s*(.+)/i);
-            if (matchName && matchName[1].trim().length > 2) {
-                let candidate = matchName[1].trim();
-                if (candidate.toUpperCase().includes(NOMBRE_A_IGNORAR.toUpperCase())) {
-                    candidate = ""; // Ignorar si es la Fundación
-                }
-                
-                if (candidate) {
-                    candidate = candidate.split(/Domicilio:/i)[0].trim();
-                    candidate = candidate.split(/Condici[óo]n/i)[0].trim();
-                }
+      let l = lines[i].trim();
+      if (!l) continue;
+      if (l.includes("Apellido y Nombre") || l.includes("ñor(es):")) {
+        const matchName = l.match(/(?:Apellido y Nombre \/ Raz[óo]n Social:|Se[ñn]or\(es\):)\s*(.+)/i);
+        if (matchName && matchName[1].trim().length > 2) {
+          let candidate = matchName[1].trim();
+          if (candidate.toUpperCase().includes(NOMBRE_A_IGNORAR.toUpperCase())) {
+            candidate = ""; // Ignorar si es la Fundación
+          }
 
-                if (candidate && candidate.length > 2) {
-                    data.nombreReceptor = candidate;
-                    // Verificar si la siguiente línea es continuación del nombre
-                    if (i + 1 < lines.length) {
-                        const nextLine = lines[i+1].trim();
-                        // Si la siguiente línea es corta o tiene mayúsculas y no tiene etiquetas/números
-                        if (nextLine && nextLine.length > 3 && !nextLine.includes(":") && !nextLine.includes("/") && !/\b\d{4,}\b/.test(nextLine)) {
-                            data.nombreReceptor += " " + nextLine;
-                        }
-                    }
-                    break;
-                }
+          if (candidate) {
+            candidate = candidate.split(/Domicilio:/i)[0].trim();
+            candidate = candidate.split(/Condici[óo]n/i)[0].trim();
+          }
+
+          if (candidate && candidate.length > 2) {
+            data.nombreReceptor = candidate;
+            // Verificar si la siguiente línea es continuación del nombre
+            if (i + 1 < lines.length) {
+              const nextLine = lines[i + 1].trim();
+              // Si la siguiente línea es corta o tiene mayúsculas y no tiene etiquetas/números
+              if (nextLine && nextLine.length > 3 && !nextLine.includes(":") && !nextLine.includes("/") && !/\b\d{4,}\b/.test(nextLine)) {
+                data.nombreReceptor += " " + nextLine;
+              }
             }
-            continue;
+            break;
+          }
         }
-        if (l.includes("Domicilio:") || l.includes("Condición frente al IVA:") || l.includes("Condición de venta:")) continue;
-        
-        // Filtro de fechas más robusto (si contiene una fecha o formato de periodo)
-        if (l.includes("/") && /\d{2}\/\d{2}\/\d{4}/.test(l)) continue; 
-        
-        // Filtro de CUITs y números largos
-        if (l.replace(/-/g, '').match(/^\d{11}$/)) continue;
-        if (l.includes("CUIT:") || l.includes("Ingresos Brutos") || l.includes("Inicio de Actividades")) continue;
-        
-        // Filtro de palabras que indican que es parte del encabezado/periodo y no el nombre
-        if (l.toLowerCase().includes("período") || l.toLowerCase().includes("hasta:") || l.toLowerCase().includes("vto.")) continue;
-        
-        // Evitar capturar el nombre del emisor si aparece por error
-        if (data.nombreEmisor && l.toUpperCase().includes(data.nombreEmisor.toUpperCase().substring(0, 5))) continue;
-        
-        // REFUERZO: Evitar absolutamente capturar a la Fundación
-        if (l.toUpperCase().includes(NOMBRE_A_IGNORAR.toUpperCase())) continue;
+        continue;
+      }
+      if (l.includes("Domicilio:") || l.includes("Condición frente al IVA:") || l.includes("Condición de venta:")) continue;
 
-        // Si el receptor CUIT está más adelante en el texto, y esta línea está muy arriba, 
-        // podría ser el emisor. En AFIP el receptor suele estar cerca de su CUIT.
-        const cuitReceptorIdx = lines.findIndex(line => line.includes(data.cuitReceptor));
-        if (cuitReceptorIdx !== -1 && i < cuitReceptorIdx - 5) {
-            continue; 
+      // Filtro de fechas más robusto (si contiene una fecha o formato de periodo)
+      if (l.includes("/") && /\d{2}\/\d{2}\/\d{4}/.test(l)) continue;
+
+      // Filtro de CUITs y números largos
+      if (l.replace(/-/g, '').match(/^\d{11}$/)) continue;
+      if (l.includes("CUIT:") || l.includes("Ingresos Brutos") || l.includes("Inicio de Actividades")) continue;
+
+      // Filtro de palabras que indican que es parte del encabezado/periodo y no el nombre
+      if (l.toLowerCase().includes("período") || l.toLowerCase().includes("hasta:") || l.toLowerCase().includes("vto.")) continue;
+
+      // Evitar capturar el nombre del emisor si aparece por error
+      if (data.nombreEmisor && l.toUpperCase().includes(data.nombreEmisor.toUpperCase().substring(0, 5))) continue;
+
+      // REFUERZO: Evitar absolutamente capturar a la Fundación
+      if (l.toUpperCase().includes(NOMBRE_A_IGNORAR.toUpperCase())) continue;
+
+      // Si el receptor CUIT está más adelante en el texto, y esta línea está muy arriba, 
+      // podría ser el emisor. En AFIP el receptor suele estar cerca de su CUIT.
+      const cuitReceptorIdx = lines.findIndex(line => line.includes(data.cuitReceptor));
+      if (cuitReceptorIdx !== -1 && i < cuitReceptorIdx - 5) {
+        continue;
+      }
+
+      // El primer string que pasa estos filtros suele ser el nombre
+      data.nombreReceptor = l;
+      
+      // Soporte para nombres que ocupan 2 líneas (ej: EMPRESA MENDOCINA DE ENERGIA... en la línea 1 y CON PARTICIPAC en la línea 2)
+      if (i + 1 < lines.length) {
+        const nextLine = lines[i + 1].trim();
+        // Si la siguiente línea es corta, no contiene números (como una dirección postal) ni símbolos extraños
+        if (nextLine && nextLine.length > 2 && nextLine.length < 50 && !/\d/.test(nextLine) && !nextLine.includes(":") && !nextLine.includes("/")) {
+          data.nombreReceptor += " " + nextLine;
         }
-
-        // El primer string que pasa estos filtros suele ser el nombre
-        data.nombreReceptor = l;
-        break;
+      }
+      break;
     }
   }
 
@@ -247,7 +258,7 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
           if (!l || l.length < 3 || l.includes(":") || l.includes("/") || l.includes("$")) continue;
           if (l.toUpperCase().includes("CÓDIGO") || l.toUpperCase().includes("PRODUCTO") || l.toUpperCase().includes("CANTIDAD") || l.toUpperCase().includes("UNIDADES")) continue;
           if (data.nombreEmisor && l.toUpperCase().includes(data.nombreEmisor.toUpperCase().substring(0, 5))) continue;
-          
+
           // REFUERZO: Evitar absolutamente capturar a la Fundación
           if (l.toUpperCase().includes(NOMBRE_A_IGNORAR.toUpperCase())) continue;
 
@@ -291,7 +302,7 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
     if (sameLineMatch && sameLineMatch[1].includes(',')) {
       const rawValue = sameLineMatch[1].replace(/\./g, '').replace(',', '.');
       foundTotal = parseFloat(rawValue);
-    } 
+    }
     if (!foundTotal) {
       for (let i = totalIndex - 1; i >= Math.max(0, totalIndex - 5); i--) {
         const match = lines[i].match(/^([\d\.]*,\d{2})$/);
@@ -332,15 +343,15 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
     const endIndex = lines.findIndex(l => l.toLowerCase().includes("importe total") || l.toLowerCase().includes("otros tributos") || l.toLowerCase().includes("subtotal: $"));
     if (startIndex !== -1) {
       let currentDesc = "";
-      
+
       for (let i = startIndex + 1; i < (endIndex !== -1 ? endIndex : lines.length); i++) {
         const line = lines[i].trim();
         if (!line) continue;
-        
+
         // Ignorar basura del encabezado de la tabla AFIP
         if (line.includes("Opción de Transferencia") || line.includes("CBU del Emisor") || line.includes("Fecha de Vto. para el pago")) continue;
         if (/Subtotal/i.test(line) || /^[\d\.,]+$/.test(line)) continue; // ignore stray numbers
-        
+
         const textUpper = line.toUpperCase().trim();
         if (textUpper.includes("FUNDACION UNIVERSIDAD") || textUpper.includes("REGIONAL MENDOZA") || textUpper === "MENDOZA" || textUpper === "FUNDACION" || textUpper === "UNIVERSIDAD") continue;
 
@@ -349,43 +360,43 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
         // El regex para AFIP debe ser estricto: Descripción + Cantidad + Unidad + P.Unit + %Bonif + I.Bonif + Subtotal
         // Buscamos que termine con al menos 4-5 bloques numéricos con formato de moneda (X.XXX,XX)
         const matchEndsNums = line.match(/(.*?)\s+([\d\.,]+)\s+([A-Za-z]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)$/);
-        
-        if (matchEndsNums) {
-            const rawCant = matchEndsNums[2].replace(/\./g, "").replace(",", ".");
-            const cant = parseFloat(rawCant);
-            const um = matchEndsNums[3];
-            const precioUnit = parseFloat(matchEndsNums[4].replace(/\./g, "").replace(",", "."));
-            
-            // Validación: la cantidad en facturas de servicios suele ser pequeña o tener coma. 
-            // Si es un número gigante (pedido) sin coma decimal original, es probable que sea descripción.
-            const looksLikeId = !matchEndsNums[2].includes(",") && cant > 1000000;
 
-            if (!looksLikeId) {
-              const descPart = (currentDesc + " " + matchEndsNums[1]).trim();
-              data.items.push({
-                  descripcion: descPart,
-                  cantidad: cant,
-                  unidades: um,
-                  precioUnitario: precioUnit,
-                  importeTotal: cant * precioUnit
-              });
-              currentDesc = ""; // Reset
-              continue;
-            }
+        if (matchEndsNums) {
+          const rawCant = matchEndsNums[2].replace(/\./g, "").replace(",", ".");
+          const cant = parseFloat(rawCant);
+          const um = matchEndsNums[3];
+          const precioUnit = parseFloat(matchEndsNums[4].replace(/\./g, "").replace(",", "."));
+
+          // Validación: la cantidad en facturas de servicios suele ser pequeña o tener coma. 
+          // Si es un número gigante (pedido) sin coma decimal original, es probable que sea descripción.
+          const looksLikeId = !matchEndsNums[2].includes(",") && cant > 1000000;
+
+          if (!looksLikeId) {
+            const descPart = (currentDesc + " " + matchEndsNums[1]).trim();
+            data.items.push({
+              descripcion: descPart,
+              cantidad: cant,
+              unidades: um,
+              precioUnitario: precioUnit,
+              importeTotal: cant * precioUnit
+            });
+            currentDesc = ""; // Reset
+            continue;
+          }
         }
-        
+
         // Si no es una línea de valores, es parte de la descripción (o basura que limpiaremos después)
         currentDesc += (currentDesc ? " " : "") + line;
       }
-      
+
       // Si quedó una descripción sin procesar, la guardamos
       if (currentDesc.trim() && data.items.length === 0) {
         data.items.push({
-            descripcion: currentDesc.trim(),
-            cantidad: 1,
-            unidades: 'unidades',
-            precioUnitario: data.importeTotal,
-            importeTotal: data.importeTotal
+          descripcion: currentDesc.trim(),
+          cantidad: 1,
+          unidades: 'unidades',
+          precioUnitario: data.importeTotal,
+          importeTotal: data.importeTotal
         });
       }
     }
