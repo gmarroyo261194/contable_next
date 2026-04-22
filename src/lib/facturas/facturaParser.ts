@@ -138,16 +138,27 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
 
   // 3.1. CUITs (Emisor y Receptor)
   const allCuits = [...text.matchAll(/\b(\d{2}-?\d{8}-?\d{1})\b/g)];
+  
+  // Intentar encontrar el CUIT del receptor por cercanía extrema a su etiqueta (misma línea o adyacentes)
+  const idxLabelReceptor = lines.findIndex(l => l.includes("Apellido y Nombre / Razón") || l.includes("ñor(es):"));
+  if (idxLabelReceptor !== -1) {
+    for (let i = Math.max(0, idxLabelReceptor - 1); i <= Math.min(lines.length - 1, idxLabelReceptor + 2); i++) {
+      const m = lines[i].match(/\b(\d{2}-?\d{8}-?\d{1})\b/);
+      if (m) {
+        data.cuitReceptor = m[1].replace(/-/g, '');
+        break;
+      }
+    }
+  }
+
   if (allCuits.length >= 2) {
-    const idxLabelReceptor = lines.findIndex(l => l.includes("Apellido y Nombre / Razón") || l.includes("ñor(es):"));
-    if (idxLabelReceptor !== -1) {
+    if (!data.cuitReceptor) {
+      // Fallback a proximidad si no se encontró por etiqueta directa
       let closestIdx = 1;
       let minDistance = 999;
       allCuits.forEach((match, i) => {
-        // Encontrar en qué línea está ESTE match específico usando su posición en el texto
         const pos = match.index || 0;
         const lineIdx = text.substring(0, pos).split('\n').length - 1;
-        
         const dist = Math.abs(lineIdx - idxLabelReceptor);
         if (dist < minDistance) {
           minDistance = dist;
@@ -155,19 +166,18 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
         }
       });
       data.cuitReceptor = allCuits[closestIdx][1].replace(/-/g, '');
-      data.cuitEmisor = allCuits[closestIdx === 0 ? 1 : 0][1].replace(/-/g, '');
-    } else {
-      data.cuitEmisor = allCuits[0][1].replace(/-/g, '');
-      data.cuitReceptor = allCuits[1][1].replace(/-/g, '');
     }
+    
+    // El emisor es el que NO es el receptor (preferiblemente el que aparece primero o cerca de IIBB)
+    const otherCuit = allCuits.find(m => m[1].replace(/-/g, '') !== data.cuitReceptor);
+    data.cuitEmisor = otherCuit ? otherCuit[1].replace(/-/g, '') : (foundCuit || allCuits[0][1].replace(/-/g, ''));
   } else if (allCuits.length === 1) {
-    // Si solo hay uno, probablemente sea el emisor
     const onlyCuit = allCuits[0][1].replace(/-/g, '');
     if (foundCuit && foundCuit !== onlyCuit) {
-        data.cuitEmisor = foundCuit;
-        data.cuitReceptor = onlyCuit;
+      data.cuitEmisor = foundCuit;
+      data.cuitReceptor = onlyCuit;
     } else {
-        data.cuitEmisor = onlyCuit;
+      data.cuitEmisor = onlyCuit;
     }
   } else if (foundCuit) {
     data.cuitEmisor = foundCuit;

@@ -355,7 +355,7 @@ export async function parseFacturaPdfAction(formData: FormData) {
 
     // Ignorar el CUIT de la fundación (emisor) si fuera extraído como receptor por error
     const RECEPTOR_CUIT_CLEAN = extractedData.cuitReceptor?.replace(/\D/g, "");
-    const CUIT_FUNDACION = "30640431373";
+    const CUIT_FUNDACION = "30714047740";
 
     let entidad = null;
 
