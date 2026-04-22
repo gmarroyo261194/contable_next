@@ -354,15 +354,21 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
 
         // Matches line starting with amounts or ending with amounts
         const matchStartsNums = line.match(/^([\d\.,]+)\s+([A-Za-z]+)\s+([\d\.,]+)/);
-        // El regex para AFIP debe ser estricto: Descripción + Cantidad + Unidad + P.Unit + %Bonif + I.Bonif + Subtotal
-        // Buscamos que termine con al menos 4-5 bloques numéricos con formato de moneda (X.XXX,XX)
-        const matchEndsNums = line.match(/(.*?)\s+([\d\.,]+)\s+([A-Za-z]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)\s+([\d\.,]+)$/);
+        // El regex para AFIP debe aislar la descripción de la Cantidad + Unidad.
+        // Toleramos cualquier cantidad de números al final porque pdf-parse puede desordenar las columnas.
+        const matchEndsNums = line.match(/(.*?)\s+([\d\.,]+)\s+(unidades|u\.|kg|lts|litros|mts|km|hs|horas|dias|días|meses|gramos|gr|cm)\b\s*([\d\.,\s]*)$/i);
 
         if (matchEndsNums) {
           const rawCant = matchEndsNums[2].replace(/\./g, "").replace(",", ".");
           const cant = parseFloat(rawCant);
           const um = matchEndsNums[3];
-          const precioUnit = parseFloat(matchEndsNums[4].replace(/\./g, "").replace(",", "."));
+          
+          let precioUnit = cant > 0 && data.importeTotal ? data.importeTotal / cant : 0;
+          const tailNums = matchEndsNums[4].trim().split(/\s+/).filter(n => /^[\d\.,]+$/.test(n));
+          
+          if (tailNums.length > 0) {
+            precioUnit = parseFloat(tailNums[0].replace(/\./g, "").replace(",", "."));
+          }
 
           // Validación: la cantidad en facturas de servicios suele ser pequeña o tener coma. 
           // Si es un número gigante (pedido) sin coma decimal original, es probable que sea descripción.
@@ -388,8 +394,13 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
 
       // Si quedó una descripción sin procesar, la guardamos
       if (currentDesc.trim() && data.items.length === 0) {
+        // Limpiar por si acado quedaron números y "unidades" atorados al final
+        let finalDesc = currentDesc.trim();
+        const cleanup = finalDesc.match(/(.*?)\s+[\d\.,]+\s+(?:unidades|u\.|kg|lts|litros|mts|km|hs|horas|dias|días|meses|gramos|gr|cm)\b/i);
+        if (cleanup) finalDesc = cleanup[1].trim();
+
         data.items.push({
-          descripcion: currentDesc.trim(),
+          descripcion: finalDesc,
           cantidad: 1,
           unidades: 'unidades',
           precioUnitario: data.importeTotal,
