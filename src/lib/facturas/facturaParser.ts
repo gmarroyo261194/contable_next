@@ -44,7 +44,7 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
     letra: 'C', // Default
     puntoVenta: '',
     numero: '',
-    fechaEmision: new Date().toISOString().split('T')[0],
+    fechaEmision: new Date().toISOString().split('T')[0] + "T12:00:00",
     cuitEmisor: '',
     nombreEmisor: '',
     cuitReceptor: '',
@@ -278,15 +278,16 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
   }
 
   // 4. Fecha de Emisión
+  // Se agrega T12:00:00 para evitar desfasajes de huso horario (ej. -3 horas en Argentina resta un día si son las 00:00)
   const fechaEmisionMatch = text.match(/Fecha de Emisi[óo]n:\s*(\d{2}\/\d{2}\/\d{4})/i);
   if (fechaEmisionMatch) {
     const [d, m, y] = fechaEmisionMatch[1].split('/');
-    data.fechaEmision = `${y}-${m}-${d}`;
+    data.fechaEmision = `${y}-${m}-${d}T12:00:00`;
   } else {
     const genericDateMatch = text.match(/\d{2}\/\d{2}\/\d{4}/);
     if (genericDateMatch) {
       const [d, m, y] = genericDateMatch[0].split('/');
-      data.fechaEmision = `${y}-${m}-${d}`;
+      data.fechaEmision = `${y}-${m}-${d}T12:00:00`;
     }
   }
 
