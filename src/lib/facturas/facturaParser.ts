@@ -144,13 +144,14 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
       let closestIdx = 1;
       let minDistance = 999;
       allCuits.forEach((match, i) => {
-        const lineIdx = lines.findIndex(l => l.includes(match[1]));
-        if (lineIdx !== -1) {
-          const dist = Math.abs(lineIdx - idxLabelReceptor);
-          if (dist < minDistance) {
-            minDistance = dist;
-            closestIdx = i;
-          }
+        // Encontrar en qué línea está ESTE match específico usando su posición en el texto
+        const pos = match.index || 0;
+        const lineIdx = text.substring(0, pos).split('\n').length - 1;
+        
+        const dist = Math.abs(lineIdx - idxLabelReceptor);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestIdx = i;
         }
       });
       data.cuitReceptor = allCuits[closestIdx][1].replace(/-/g, '');
@@ -160,7 +161,16 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
       data.cuitReceptor = allCuits[1][1].replace(/-/g, '');
     }
   } else if (allCuits.length === 1) {
-    data.cuitEmisor = allCuits[0][1].replace(/-/g, '');
+    // Si solo hay uno, probablemente sea el emisor
+    const onlyCuit = allCuits[0][1].replace(/-/g, '');
+    if (foundCuit && foundCuit !== onlyCuit) {
+        data.cuitEmisor = foundCuit;
+        data.cuitReceptor = onlyCuit;
+    } else {
+        data.cuitEmisor = onlyCuit;
+    }
+  } else if (foundCuit) {
+    data.cuitEmisor = foundCuit;
   }
 
   // 3.1.5. Nombre Emisor (para evitar confundirlo con el receptor)
@@ -184,7 +194,27 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
     for (let i = idxLabel; i < Math.min(lines.length, idxLabel + 20); i++) {
         let l = lines[i].trim();
         if (!l) continue;
-        if (l.includes("Apellido y Nombre") || l.includes("ñor(es):")) continue;
+        if (l.includes("Apellido y Nombre") || l.includes("ñor(es):")) {
+            const matchName = l.match(/(?:Apellido y Nombre \/ Raz[óo]n Social:|Se[ñn]or\(es\):)\s*(.+)/i);
+            if (matchName && matchName[1].trim().length > 2) {
+                let candidate = matchName[1].trim();
+                candidate = candidate.split(/Domicilio:/i)[0].trim();
+                candidate = candidate.split(/Condici[óo]n/i)[0].trim();
+                if (candidate.length > 2) {
+                    data.nombreReceptor = candidate;
+                    // Verificar si la siguiente línea es continuación del nombre
+                    if (i + 1 < lines.length) {
+                        const nextLine = lines[i+1].trim();
+                        // Si la siguiente línea es corta o tiene mayúsculas y no tiene etiquetas/números
+                        if (nextLine && nextLine.length > 3 && !nextLine.includes(":") && !nextLine.includes("/") && !/\b\d{4,}\b/.test(nextLine)) {
+                            data.nombreReceptor += " " + nextLine;
+                        }
+                    }
+                    break;
+                }
+            }
+            continue;
+        }
         if (l.includes("Domicilio:") || l.includes("Condición frente al IVA:") || l.includes("Condición de venta:")) continue;
         
         // Filtro de fechas más robusto (si contiene una fecha o formato de periodo)
