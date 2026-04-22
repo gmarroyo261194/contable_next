@@ -108,96 +108,68 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
     } catch(e) {}
   }
 
-  // 3. CUIT Emisor
+  // 3. CUIT Emisor - SE IGNORA SEGÚN INSTRUCCIÓN (solo se mantiene PV y Nro del encabezado)
+  // No buscamos proactivamente el CUIT del emisor para evitar confusiones con el del receptor.
   const lines = text.split('\n').map(l => l.trim());
-  const iibvIndex = lines.findIndex(l => l.includes("Ingresos Brutos:"));
-  let foundCuit = '';
-
-  if (iibvIndex > 0) {
-    for (let i = iibvIndex - 1; i >= Math.max(0, iibvIndex - 5); i--) {
-      const match = lines[i].match(/\d{2}-?\d{8}-?\d{1}/);
-      if (match) {
-        foundCuit = match[0].replace(/-/g, '');
-        break;
-      }
-    }
-  }
-
-  if (!foundCuit) {
-    const cuitMatch = text.match(/(?:CUIT|CUIL)[:\s]*(\d{2}-?\d{8}-?\d{1})/i);
-    if (cuitMatch) {
-      foundCuit = cuitMatch[1].replace(/-/g, '');
-    } else {
-      const genericCuitMatch = text.match(/\b(\d{2}-?\d{8}-?\d{1})\b/);
-      if (genericCuitMatch) {
-        foundCuit = genericCuitMatch[1].replace(/-/g, '');
-      }
-    }
-  }
-  data.cuitEmisor = foundCuit;
+  let foundCuitEmisor = ''; 
+  // Solo buscamos CUITs generales para tener la lista completa, pero no asignamos emisor desde el encabezado.
 
   // 3.1. CUITs (Emisor y Receptor)
   const allCuits = [...text.matchAll(/\b(\d{2}-?\d{8}-?\d{1})\b/g)];
   
   // Intentar encontrar el CUIT del receptor por cercanía extrema a su etiqueta (misma línea o adyacentes)
   const idxLabelReceptor = lines.findIndex(l => l.includes("Apellido y Nombre / Razón") || l.includes("ñor(es):"));
+  const CUITS_A_IGNORAR = ["30640431373", "30714047740"];
+  const NOMBRE_A_IGNORAR = "FUNDACION UNIVERSIDAD TECNOLOGICA";
+
   if (idxLabelReceptor !== -1) {
     for (let i = Math.max(0, idxLabelReceptor - 1); i <= Math.min(lines.length - 1, idxLabelReceptor + 2); i++) {
       const m = lines[i].match(/\b(\d{2}-?\d{8}-?\d{1})\b/);
       if (m) {
-        data.cuitReceptor = m[1].replace(/-/g, '');
-        break;
-      }
-    }
-  }
-
-  if (allCuits.length >= 2) {
-    if (!data.cuitReceptor) {
-      // Fallback a proximidad si no se encontró por etiqueta directa
-      let closestIdx = 1;
-      let minDistance = 999;
-      allCuits.forEach((match, i) => {
-        const pos = match.index || 0;
-        const lineIdx = text.substring(0, pos).split('\n').length - 1;
-        const dist = Math.abs(lineIdx - idxLabelReceptor);
-        if (dist < minDistance) {
-          minDistance = dist;
-          closestIdx = i;
-        }
-      });
-      data.cuitReceptor = allCuits[closestIdx][1].replace(/-/g, '');
-    }
-    
-    // El emisor es el que NO es el receptor (preferiblemente el que aparece primero o cerca de IIBB)
-    const otherCuit = allCuits.find(m => m[1].replace(/-/g, '') !== data.cuitReceptor);
-    data.cuitEmisor = otherCuit ? otherCuit[1].replace(/-/g, '') : (foundCuit || allCuits[0][1].replace(/-/g, ''));
-  } else if (allCuits.length === 1) {
-    const onlyCuit = allCuits[0][1].replace(/-/g, '');
-    if (foundCuit && foundCuit !== onlyCuit) {
-      data.cuitEmisor = foundCuit;
-      data.cuitReceptor = onlyCuit;
-    } else {
-      data.cuitEmisor = onlyCuit;
-    }
-  } else if (foundCuit) {
-    data.cuitEmisor = foundCuit;
-  }
-
-  // 3.1.5. Nombre Emisor (para evitar confundirlo con el receptor)
-  const emisorCuitLineIdx = lines.findIndex(l => l.replace(/-/g, '').includes(data.cuitEmisor));
-  if (emisorCuitLineIdx !== -1) {
-    for (let offset of [1, -1, 2, -2, 3, -3]) {
-      const idx = emisorCuitLineIdx + offset;
-      if (idx >= 0 && idx < lines.length) {
-        const l = lines[idx].trim();
-        if (l.length > 5 && !/CUIT|Ingresos|Inicio|Fecha|Domicilio|Punto|Comercial|Comp\.|Nro|Código|Producto|Servicio|Cantidad|Medida|Unit|Bonif|Subtotal/i.test(l)) {
-          data.nombreEmisor = l;
+        const potentialCuit = m[1].replace(/-/g, '');
+        if (!CUITS_A_IGNORAR.includes(potentialCuit)) {
+          data.cuitReceptor = potentialCuit;
           break;
         }
       }
     }
   }
 
+  if (allCuits.length >= 1) {
+    if (!data.cuitReceptor) {
+      // Si no se encontró por etiqueta directa, buscar el que esté MÁS ABAJO del label del receptor
+      // (Ignorando los que están arriba en el encabezado y el CUIT específico a ignorar)
+      let bestMatch = null;
+      let minDistance = 999;
+      
+      allCuits.forEach((match) => {
+        const potentialCuit = match[1].replace(/-/g, '');
+        if (CUITS_A_IGNORAR.includes(potentialCuit)) return; // IGNORAR según instrucción
+
+        const pos = match.index || 0;
+        const lineIdx = text.substring(0, pos).split('\n').length - 1;
+        
+        // Solo considerar CUITs que están en la misma línea o DESPUÉS del label del receptor
+        if (lineIdx >= idxLabelReceptor - 1) {
+          const dist = Math.abs(lineIdx - idxLabelReceptor);
+          if (dist < minDistance) {
+            minDistance = dist;
+            bestMatch = potentialCuit;
+          }
+        }
+      });
+      data.cuitReceptor = bestMatch || "";
+    }
+    
+    // Identificar el otro CUIT como emisor solo si es necesario, pero priorizando el receptor
+    const otherCuit = allCuits.find(m => m[1].replace(/-/g, '') !== data.cuitReceptor);
+    if (otherCuit) {
+      data.cuitEmisor = otherCuit[1].replace(/-/g, '');
+    }
+  }
+
+  // 3.1. Nombre Emisor - SE IGNORA SEGÚN INSTRUCCIÓN
+  data.nombreEmisor = ""; 
   // 3.2. Nombre Receptor
   const idxLabel = lines.findIndex(l => l.includes("Apellido y Nombre / Razón") || l.includes("ñor(es):"));
   if (idxLabel !== -1) {
@@ -208,9 +180,16 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
             const matchName = l.match(/(?:Apellido y Nombre \/ Raz[óo]n Social:|Se[ñn]or\(es\):)\s*(.+)/i);
             if (matchName && matchName[1].trim().length > 2) {
                 let candidate = matchName[1].trim();
-                candidate = candidate.split(/Domicilio:/i)[0].trim();
-                candidate = candidate.split(/Condici[óo]n/i)[0].trim();
-                if (candidate.length > 2) {
+                if (candidate.toUpperCase().includes(NOMBRE_A_IGNORAR.toUpperCase())) {
+                    candidate = ""; // Ignorar si es la Fundación
+                }
+                
+                if (candidate) {
+                    candidate = candidate.split(/Domicilio:/i)[0].trim();
+                    candidate = candidate.split(/Condici[óo]n/i)[0].trim();
+                }
+
+                if (candidate && candidate.length > 2) {
                     data.nombreReceptor = candidate;
                     // Verificar si la siguiente línea es continuación del nombre
                     if (i + 1 < lines.length) {
@@ -240,12 +219,13 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
         // Evitar capturar el nombre del emisor si aparece por error
         if (data.nombreEmisor && l.toUpperCase().includes(data.nombreEmisor.toUpperCase().substring(0, 5))) continue;
         
+        // REFUERZO: Evitar absolutamente capturar a la Fundación
+        if (l.toUpperCase().includes(NOMBRE_A_IGNORAR.toUpperCase())) continue;
+
         // Si el receptor CUIT está más adelante en el texto, y esta línea está muy arriba, 
         // podría ser el emisor. En AFIP el receptor suele estar cerca de su CUIT.
         const cuitReceptorIdx = lines.findIndex(line => line.includes(data.cuitReceptor));
         if (cuitReceptorIdx !== -1 && i < cuitReceptorIdx - 5) {
-            // Si está muy lejos del CUIT del receptor, probablemente no sea el nombre del receptor
-            // a menos que no haya nada más.
             continue; 
         }
 
@@ -256,19 +236,24 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
   }
 
   // Fallback 1: Buscar cerca del CUIT del receptor (ESTA ES LA UBICACIÓN MÁS FIABLE)
-  const cuitLineIdx = lines.findIndex(l => l.replace(/-/g, '').includes(data.cuitReceptor));
-  if (cuitLineIdx !== -1) {
-    for (let offset of [1, 2, 3, 4, 5, -1, -2]) {
-      const idx = cuitLineIdx + offset;
-      if (idx >= 0 && idx < lines.length) {
-        let l = lines[idx].trim();
-        if (!l || l.length < 3 || l.includes(":") || l.includes("/") || l.includes("$")) continue;
-        if (l.toUpperCase().includes("CÓDIGO") || l.toUpperCase().includes("PRODUCTO") || l.toUpperCase().includes("CANTIDAD") || l.toUpperCase().includes("UNIDADES")) continue;
-        if (data.nombreEmisor && l.toUpperCase().includes(data.nombreEmisor.toUpperCase().substring(0, 5))) continue;
-        
-        // Si ya teníamos un nombre pero este está más cerca del CUIT, preferimos este
-        data.nombreReceptor = l;
-        break;
+  // SOLO usar fallback si no tenemos un nombre válido
+  if (!data.nombreReceptor || data.nombreReceptor.trim().length <= 2) {
+    const cuitLineIdx = lines.findIndex(l => l.replace(/-/g, '').includes(data.cuitReceptor));
+    if (cuitLineIdx !== -1) {
+      for (let offset of [1, 2, 3, 4, 5, -1, -2]) {
+        const idx = cuitLineIdx + offset;
+        if (idx >= 0 && idx < lines.length) {
+          let l = lines[idx].trim();
+          if (!l || l.length < 3 || l.includes(":") || l.includes("/") || l.includes("$")) continue;
+          if (l.toUpperCase().includes("CÓDIGO") || l.toUpperCase().includes("PRODUCTO") || l.toUpperCase().includes("CANTIDAD") || l.toUpperCase().includes("UNIDADES")) continue;
+          if (data.nombreEmisor && l.toUpperCase().includes(data.nombreEmisor.toUpperCase().substring(0, 5))) continue;
+          
+          // REFUERZO: Evitar absolutamente capturar a la Fundación
+          if (l.toUpperCase().includes(NOMBRE_A_IGNORAR.toUpperCase())) continue;
+
+          data.nombreReceptor = l;
+          break;
+        }
       }
     }
   }
