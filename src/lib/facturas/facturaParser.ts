@@ -120,8 +120,8 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
 
   // Intentar encontrar el CUIT del receptor por cercanía extrema a su etiqueta (misma línea o adyacentes)
   const idxLabelReceptor = lines.findIndex(l => l.includes("Apellido y Nombre / Razón") || l.includes("ñor(es):"));
-  // El CUIT de la Fundación es 30714047740. 30640431373 es el CUIT de EMESA.
-  const CUITS_A_IGNORAR = ["30714047740"];
+  // El usuario confirmó que 30640431373 es el CUIT que debe ignorarse
+  const CUITS_A_IGNORAR = ["30640431373"];
   const NOMBRE_A_IGNORAR = "FUNDACION UNIVERSIDAD TECNOLOGICA";
 
   if (idxLabelReceptor !== -1) {
@@ -224,16 +224,12 @@ export async function parseFacturaPDF(buffer: Buffer): Promise<ExtractedFacturaD
       // REFUERZO: Evitar absolutamente capturar a la Fundación
       if (l.toUpperCase().includes(NOMBRE_A_IGNORAR.toUpperCase())) continue;
 
-      // Si el receptor CUIT está más adelante en el texto, y esta línea está muy arriba, 
-      // podría ser el emisor. En AFIP el receptor suele estar cerca de su CUIT.
-      const cuitReceptorIdx = lines.findIndex(line => line.includes(data.cuitReceptor));
-      if (cuitReceptorIdx !== -1 && i < cuitReceptorIdx - 5) {
-        continue;
-      }
+      // Eliminado el chequeo de cuitReceptorIdx - 5 porque pdf-parse a veces coloca el CUIT del receptor 20 líneas por debajo de su nombre.
+      // Como ya estamos bloqueando "FUNDACION" con NOMBRE_A_IGNORAR, no hay riesgo de capturar al emisor.
 
       // El primer string que pasa estos filtros suele ser el nombre
       data.nombreReceptor = l;
-      
+
       // Soporte para nombres que ocupan 2 líneas (ej: EMPRESA MENDOCINA DE ENERGIA... en la línea 1 y CON PARTICIPAC en la línea 2)
       if (i + 1 < lines.length) {
         const nextLine = lines[i + 1].trim();
