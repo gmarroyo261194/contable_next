@@ -245,6 +245,7 @@ model Entidad {
   updatedBy          String?
   email              String?
   nroDoc             String?
+  condicionIva       Int?
   telefono           String?
   documentosClientes DocumentoClientes[]
   documentos         DocumentoProveedores[]
@@ -294,6 +295,9 @@ model DocumentoClientes {
   servicioId  Int?
   fechaPago   DateTime?
   montoPagado Decimal?                @db.Decimal(18, 2)
+  cae         String?                 @db.NVarChar(20)
+  caeVto      DateTime?
+  afipEstado  String?                 @db.NVarChar(20)
   items       DocumentoClientesItem[]
   asiento     Asiento?                @relation("AsientoADocumentoCli", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ejercicio   Ejercicio               @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)

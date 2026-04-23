@@ -16,11 +16,13 @@ import {
   User,
   FileUp,
   Trash2,
+  Send,
 } from "lucide-react";
 import RegistrarPagoModal from "@/components/asientos/RegistrarPagoModal";
 import { SyncFacturasModal } from "@/components/asientos/SyncFacturasModal";
 import ImportarFacturaPDFModal from "@/components/asientos/ImportarFacturaPDFModal";
 import EditarFacturaModal from "@/components/asientos/EditarFacturaModal";
+import EmitirFacturaAfipModal from "@/components/asientos/EmitirFacturaAfipModal";
 import { getDocumentosClientes, deleteDocumentoCliente } from "@/lib/actions/sync-facturas-actions";
 import { getCuentas } from "@/lib/actions/asiento-actions";
 import { format } from "date-fns";
@@ -37,6 +39,7 @@ export default function DocumentosClientesPage() {
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [isPagoModalOpen, setIsPagoModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAfipModalOpen, setIsAfipModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDocForItems, setSelectedDocForItems] = useState<any | null>(null);
   const [selectedDocForPago, setSelectedDocForPago] = useState<any | null>(null);
@@ -130,6 +133,15 @@ export default function DocumentosClientesPage() {
             >
               <FileUp className="w-5 h-5 text-indigo-500" />
               Importar PDF
+            </button>
+
+            <button
+              onClick={() => setIsAfipModalOpen(true)}
+              className="group flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-2xl
+                hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 active:scale-95 font-bold"
+            >
+              <Send className="w-5 h-5 text-white" />
+              Nueva Factura AFIP
             </button>
 
             <button
@@ -383,6 +395,12 @@ export default function DocumentosClientesPage() {
         documento={selectedDocForEdit}
         onSuccess={loadDocumentos}
         empresaId={Number(session?.user?.empresaId)}
+      />
+
+      <EmitirFacturaAfipModal
+        isOpen={isAfipModalOpen}
+        onClose={() => setIsAfipModalOpen(false)}
+        onSuccess={loadDocumentos}
       />
     </div>
     </>
