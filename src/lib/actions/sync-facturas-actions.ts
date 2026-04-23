@@ -703,3 +703,49 @@ export async function registrarPagoDocumento(id: number, fechaPago: Date, montoP
     return { error: error.message || "Error al registrar el pago." };
   }
 }
+
+export async function updateDocumentoCliente(
+  id: number,
+  data: {
+    fecha: string;
+    rubroId: number | null;
+    servicioId: number | null;
+    montoTotal: number;
+    items: { descripcion: string; cantidad: number; precioUnitario: number; importeTotal: number }[];
+  }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user) return { error: "No autorizado" };
+
+    const doc = await prisma.documentoClientes.findUnique({ where: { id } });
+    if (!doc) return { error: "Factura no encontrada" };
+    if (doc.asientoId) return { error: "No se puede editar una factura ya contabilizada" };
+    if (doc.montoPagado && doc.montoPagado.toNumber() > 0) return { error: "No se puede editar una factura con pagos registrados" };
+
+    const updated = await prisma.documentoClientes.update({
+      where: { id },
+      data: {
+        fecha: new Date(data.fecha),
+        rubroId: data.rubroId,
+        servicioId: data.servicioId,
+        montoTotal: data.montoTotal,
+        items: {
+          deleteMany: {},
+          create: data.items.map(i => ({
+            descripcion: i.descripcion,
+            cantidad: i.cantidad,
+            precioUnitario: i.precioUnitario,
+            importeTotal: i.importeTotal
+          }))
+        }
+      }
+    });
+    
+    revalidatePath("/doccli");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating documento:", error);
+    return { error: error.message };
+  }
+}

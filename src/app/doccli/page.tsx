@@ -20,12 +20,13 @@ import {
 import RegistrarPagoModal from "@/components/asientos/RegistrarPagoModal";
 import { SyncFacturasModal } from "@/components/asientos/SyncFacturasModal";
 import ImportarFacturaPDFModal from "@/components/asientos/ImportarFacturaPDFModal";
+import EditarFacturaModal from "@/components/asientos/EditarFacturaModal";
 import { getDocumentosClientes, deleteDocumentoCliente } from "@/lib/actions/sync-facturas-actions";
 import { getCuentas } from "@/lib/actions/asiento-actions";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
-import { X, DollarSign } from "lucide-react";
+import { X, DollarSign, Edit } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 
 export default function DocumentosClientesPage() {
@@ -35,9 +36,11 @@ export default function DocumentosClientesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [isPagoModalOpen, setIsPagoModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDocForItems, setSelectedDocForItems] = useState<any | null>(null);
   const [selectedDocForPago, setSelectedDocForPago] = useState<any | null>(null);
+  const [selectedDocForEdit, setSelectedDocForEdit] = useState<any | null>(null);
   const { data: session } = useSession();
   const { ejercicioId: storeEjercicioId } = useAppStore();
 
@@ -244,6 +247,16 @@ export default function DocumentosClientesPage() {
                           {!doc.asientoId && (
                             <>
                               <button
+                                className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all"
+                                title="Editar Factura"
+                                onClick={() => {
+                                  setSelectedDocForEdit(doc);
+                                  setIsEditModalOpen(true);
+                                }}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
                                 className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-all"
                                 title="Registrar Cobro"
                                 onClick={() => {
@@ -359,6 +372,17 @@ export default function DocumentosClientesPage() {
         documento={selectedDocForPago}
         onSuccess={loadDocumentos}
         cuentas={cuentas}
+      />
+
+      <EditarFacturaModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedDocForEdit(null);
+        }}
+        documento={selectedDocForEdit}
+        onSuccess={loadDocumentos}
+        empresaId={Number(session?.user?.empresaId)}
       />
     </div>
     </>
