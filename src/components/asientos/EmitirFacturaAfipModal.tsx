@@ -89,7 +89,7 @@ export default function EmitirFacturaAfipModal({ isOpen, onClose, onSuccess }: E
       setFetchingLast(true);
       getUltimoNroAFIP(ptoVenta, cbteTipo)
         .then(res => {
-          if (res.success) setUltimoNro(res.data);
+          if (res.success && res.data) setUltimoNro(res.data.numeroComprobante);
         })
         .finally(() => setFetchingLast(false));
     }
