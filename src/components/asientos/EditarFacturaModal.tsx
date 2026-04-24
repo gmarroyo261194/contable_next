@@ -167,9 +167,9 @@ export default function EditarFacturaModal({
           )}
 
           <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               {/* Fecha */}
-              <div className="space-y-2">
+              <div className="md:col-span-3 space-y-2">
                 <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2">
                   <Calendar className="w-3.5 h-3.5" /> Fecha de Emisión
                 </label>
@@ -181,41 +181,41 @@ export default function EditarFacturaModal({
                 />
               </div>
 
-              {/* Clasificación */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2">
-                    <Layers className="w-3.5 h-3.5" /> Rubro
-                  </label>
-                  <select
-                    value={selectedRubroId}
-                    onChange={(e) => setSelectedRubroId(e.target.value)}
-                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-slate-700 font-bold focus:ring-2 focus:ring-indigo-100 outline-none transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="">Seleccionar...</option>
-                    {rubros.map(r => (
-                      <option key={r.id} value={r.id}>{r.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2">
-                    <Briefcase className="w-3.5 h-3.5" /> Servicio
-                  </label>
-                  <select
-                    value={selectedServicioId}
-                    onChange={(e) => setSelectedServicioId(e.target.value)}
-                    className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-slate-700 font-bold focus:ring-2 focus:ring-indigo-100 outline-none transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="">Seleccionar...</option>
-                    {servicios
-                      .filter(s => !selectedRubroId || s.rubroId === parseInt(selectedRubroId))
-                      .map(s => (
-                        <option key={s.id} value={s.id}>{s.nombre}</option>
-                      ))
-                    }
-                  </select>
-                </div>
+              {/* Rubro */}
+              <div className="md:col-span-4 space-y-2">
+                <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2">
+                  <Layers className="w-3.5 h-3.5" /> Rubro
+                </label>
+                <select
+                  value={selectedRubroId}
+                  onChange={(e) => setSelectedRubroId(e.target.value)}
+                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-slate-700 font-bold focus:ring-2 focus:ring-indigo-100 outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Seleccionar...</option>
+                  {rubros.map(r => (
+                    <option key={r.id} value={r.id}>{r.nombre}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Servicio */}
+              <div className="md:col-span-5 space-y-2">
+                <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2">
+                  <Briefcase className="w-3.5 h-3.5" /> Servicio
+                </label>
+                <select
+                  value={selectedServicioId}
+                  onChange={(e) => setSelectedServicioId(e.target.value)}
+                  className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-slate-700 font-bold focus:ring-2 focus:ring-indigo-100 outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Seleccionar...</option>
+                  {servicios
+                    .filter(s => !selectedRubroId || s.rubroId === parseInt(selectedRubroId))
+                    .map(s => (
+                      <option key={s.id} value={s.id}>{s.nombre}</option>
+                    ))
+                  }
+                </select>
               </div>
             </div>
 
