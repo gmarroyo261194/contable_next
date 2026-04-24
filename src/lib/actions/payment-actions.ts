@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { generatePagos360Link } from "../pagos360";
 import { sendEmail } from "../mail";
 import { format } from "date-fns";
+import { generateInvoicePdf, PdfInvoiceData } from "../afip/generatePdf";
 
 export async function generatePaymentLinkAction(documentoId: number) {
   try {
@@ -63,7 +64,10 @@ export async function sendPaymentEmailAction(documentoId: number) {
   try {
     const documento = await prisma.documentoClientes.findUnique({
       where: { id: documentoId },
-      include: { entidad: true }
+      include: { 
+        entidad: true,
+        items: true
+      }
     });
 
     if (!documento) {
@@ -93,9 +97,52 @@ export async function sendPaymentEmailAction(documentoId: number) {
       </div>
     `;
 
-    // Si tuvieras una función para generar PDF on the fly o obtener el binario de AFIP, lo podrías adjuntar aquí
-    // const pdfBuffer = await generateInvoicePDF(documento.id);
     const attachments: any[] = [];
+    
+    try {
+      const ptoVentaStr = documento.numero.split("-")[0] || "1";
+      const nroComprobanteStr = documento.numero.split("-")[1] || "1";
+
+      const pdfData: PdfInvoiceData = {
+        Id: documento.id,
+        PtoVenta: Number(ptoVentaStr),
+        NroComprobante: Number(nroComprobanteStr),
+        Tipo: documento.tipo,
+        NroCae: documento.cae,
+        FechaVtoCae: documento.caeVto,
+        ServicioId: documento.servicioId || 0,
+        Clientes: {
+          Nombre: documento.entidad.nombre,
+          Identificacion: documento.entidad.cuit || documento.entidad.nroDoc || "0",
+          CondicionIva: documento.entidad.condicionIva || 5, // Default a CF
+          Direccion: null
+        },
+        FechasComprobantes: {
+          FechaDesde: documento.fecha,
+          FechaHasta: documento.fecha,
+          VtoPago: documento.fecha
+        },
+        ItemsComprobantes: documento.items.map(it => ({
+          Linea: it.descripcion,
+          Cantidad: Number(it.cantidad),
+          ImporteUnit: Number(it.precioUnitario),
+          ImporteTotal: Number(it.importeTotal)
+        }))
+      };
+
+      const pdfBuffer = await generateInvoicePdf(pdfData, 'arraybuffer');
+      if (pdfBuffer) {
+        attachments.push({
+          filename: `Factura_${documento.numero}.pdf`,
+          content: Buffer.from(pdfBuffer as ArrayBuffer),
+          contentType: 'application/pdf'
+        });
+      }
+    } catch (pdfError) {
+      console.error("Error al generar PDF adjunto:", pdfError);
+      // Opcional: Podrías decidir abortar el mail, pero generalmente es mejor enviarlo sin el PDF si falla,
+      // o avisarle al usuario. En este caso solo logueamos.
+    }
 
     const emailResult = await sendEmail({
       to: documento.entidad.email,
