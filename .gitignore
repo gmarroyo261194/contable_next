@@ -42,3 +42,6 @@ next-env.d.ts
 
 /src/generated/prisma
 20262367429_011_00002_00000119.pdf
+src/lib/afip/ta/TA-20262367429-wsfe.xml
+src/lib/afip/ta/TA-20262367429-wsfex.xml
+.gitignore
