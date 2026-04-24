@@ -28,8 +28,9 @@ import { getCuentas } from "@/lib/actions/asiento-actions";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
-import { X, DollarSign, Edit } from "lucide-react";
+import { X, DollarSign, Edit, Link as LinkIcon, Mail } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
+import { generatePaymentLinkAction, sendPaymentEmailAction } from "@/lib/actions/payment-actions";
 
 export default function DocumentosClientesPage() {
   const [documentos, setDocumentos] = useState<any[]>([]);
@@ -44,6 +45,8 @@ export default function DocumentosClientesPage() {
   const [selectedDocForItems, setSelectedDocForItems] = useState<any | null>(null);
   const [selectedDocForPago, setSelectedDocForPago] = useState<any | null>(null);
   const [selectedDocForEdit, setSelectedDocForEdit] = useState<any | null>(null);
+  const [isGeneratingLink, setIsGeneratingLink] = useState<number | null>(null);
+  const [isSendingEmail, setIsSendingEmail] = useState<number | null>(null);
   const { data: session } = useSession();
   const { ejercicioId: storeEjercicioId } = useAppStore();
 
@@ -101,6 +104,39 @@ export default function DocumentosClientesPage() {
       }
     } catch (error) {
       alert("Error al intentar eliminar la factura.");
+    }
+  };
+
+  const handleGenerateLink = async (id: number) => {
+    setIsGeneratingLink(id);
+    try {
+      const res = await generatePaymentLinkAction(id);
+      if (res.success) {
+        alert("Link de pago generado exitosamente.");
+        loadDocumentos();
+      } else {
+        alert("Error: " + res.error);
+      }
+    } catch (error) {
+      alert("Error al generar el link.");
+    } finally {
+      setIsGeneratingLink(null);
+    }
+  };
+
+  const handleSendEmail = async (id: number) => {
+    setIsSendingEmail(id);
+    try {
+      const res = await sendPaymentEmailAction(id);
+      if (res.success) {
+        alert("Email enviado exitosamente.");
+      } else {
+        alert("Error: " + res.error);
+      }
+    } catch (error) {
+      alert("Error al enviar el email.");
+    } finally {
+      setIsSendingEmail(null);
     }
   };
 
@@ -236,14 +272,24 @@ export default function DocumentosClientesPage() {
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap text-center">
                         {doc.asientoId ? (
-                          <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span className="text-[9px] font-black uppercase">Asiento {doc.asiento?.numero}</span>
+                          <div className="flex flex-col gap-1 items-center">
+                            <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span className="text-[9px] font-black uppercase">Asiento {doc.asiento?.numero}</span>
+                            </div>
+                            {doc.pagos360Url && (
+                              <a href={doc.pagos360Url} target="_blank" rel="noreferrer" className="text-[9px] text-indigo-600 font-bold hover:underline">Link Pago</a>
+                            )}
                           </div>
                         ) : (
-                          <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg border border-amber-100">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span className="text-[9px] font-black uppercase">Pendiente</span>
+                          <div className="flex flex-col gap-1 items-center">
+                            <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg border border-amber-100">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span className="text-[9px] font-black uppercase">Pendiente</span>
+                            </div>
+                            {doc.pagos360Url && (
+                              <a href={doc.pagos360Url} target="_blank" rel="noreferrer" className="text-[9px] text-indigo-600 font-bold hover:underline">Link Pago</a>
+                            )}
                           </div>
                         )}
                       </td>
@@ -278,6 +324,25 @@ export default function DocumentosClientesPage() {
                               >
                                 <DollarSign className="w-4 h-4" />
                               </button>
+                              {!doc.pagos360Url ? (
+                                <button
+                                  className="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-all"
+                                  title="Generar Link de Pago"
+                                  onClick={() => handleGenerateLink(doc.id)}
+                                  disabled={isGeneratingLink === doc.id}
+                                >
+                                  <LinkIcon className={`w-4 h-4 ${isGeneratingLink === doc.id ? 'animate-spin' : ''}`} />
+                                </button>
+                              ) : (
+                                <button
+                                  className="p-1.5 text-sky-600 bg-sky-50 hover:bg-sky-100 rounded-lg transition-all"
+                                  title="Enviar Link por Email"
+                                  onClick={() => handleSendEmail(doc.id)}
+                                  disabled={isSendingEmail === doc.id}
+                                >
+                                  <Mail className={`w-4 h-4 ${isSendingEmail === doc.id ? 'animate-pulse' : ''}`} />
+                                </button>
+                              )}
                               <button
                                 className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                                 title="Eliminar Factura"

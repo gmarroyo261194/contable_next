@@ -298,6 +298,9 @@ model DocumentoClientes {
   cae         String?                 @db.NVarChar(20)
   caeVto      DateTime?
   afipEstado  String?                 @db.NVarChar(20)
+  pagos360Id  BigInt?
+  pagos360Url String?                 @db.NVarChar(500)
+  pagos360Estado String?              @db.NVarChar(50)
   items       DocumentoClientesItem[]
   asiento     Asiento?                @relation("AsientoADocumentoCli", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ejercicio   Ejercicio               @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
