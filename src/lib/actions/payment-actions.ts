@@ -161,3 +161,61 @@ export async function sendPaymentEmailAction(documentoId: number) {
     return { success: false, error: error.message };
   }
 }
+
+export async function downloadInvoicePdfAction(documentoId: number) {
+  try {
+    const documento = await prisma.documentoClientes.findUnique({
+      where: { id: documentoId },
+      include: { 
+        entidad: true,
+        items: true
+      }
+    });
+
+    if (!documento) {
+      return { success: false, error: "Documento no encontrado." };
+    }
+
+    const ptoVentaStr = documento.numero.split("-")[0] || "1";
+    const nroComprobanteStr = documento.numero.split("-")[1] || "1";
+
+    const pdfData: PdfInvoiceData = {
+      Id: documento.id,
+      PtoVenta: Number(ptoVentaStr),
+      NroComprobante: Number(nroComprobanteStr),
+      Tipo: documento.tipo,
+      NroCae: documento.cae,
+      FechaVtoCae: documento.caeVto,
+      ServicioId: documento.servicioId || 0,
+      Clientes: {
+        Nombre: documento.entidad.nombre,
+        Identificacion: documento.entidad.cuit || documento.entidad.nroDoc || "0",
+        CondicionIva: documento.entidad.condicionIva || 5, // Default a CF
+        Direccion: null
+      },
+      FechasComprobantes: {
+        FechaDesde: documento.fecha,
+        FechaHasta: documento.fecha,
+        VtoPago: documento.fecha
+      },
+      ItemsComprobantes: documento.items.map(it => ({
+        Linea: it.descripcion,
+        Cantidad: Number(it.cantidad),
+        ImporteUnit: Number(it.precioUnitario),
+        ImporteTotal: Number(it.importeTotal)
+      }))
+    };
+
+    const pdfBuffer = await generateInvoicePdf(pdfData, 'arraybuffer');
+    
+    if (!pdfBuffer) {
+      return { success: false, error: "No se pudo generar el PDF" };
+    }
+
+    const base64Pdf = Buffer.from(pdfBuffer as ArrayBuffer).toString('base64');
+    return { success: true, base64: base64Pdf, filename: `Factura_${documento.numero}.pdf` };
+  } catch (error: any) {
+    console.error("Error en downloadInvoicePdfAction:", error);
+    return { success: false, error: error.message };
+  }
+}

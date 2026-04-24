@@ -28,9 +28,9 @@ import { getCuentas } from "@/lib/actions/asiento-actions";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
-import { X, DollarSign, Edit, Link as LinkIcon, Mail } from "lucide-react";
+import { X, DollarSign, Edit, Link as LinkIcon, Mail, Download } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
-import { generatePaymentLinkAction, sendPaymentEmailAction } from "@/lib/actions/payment-actions";
+import { generatePaymentLinkAction, sendPaymentEmailAction, downloadInvoicePdfAction } from "@/lib/actions/payment-actions";
 
 export default function DocumentosClientesPage() {
   const [documentos, setDocumentos] = useState<any[]>([]);
@@ -47,6 +47,7 @@ export default function DocumentosClientesPage() {
   const [selectedDocForEdit, setSelectedDocForEdit] = useState<any | null>(null);
   const [isGeneratingLink, setIsGeneratingLink] = useState<number | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState<number | null>(null);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState<number | null>(null);
   const { data: session } = useSession();
   const { ejercicioId: storeEjercicioId } = useAppStore();
 
@@ -137,6 +138,37 @@ export default function DocumentosClientesPage() {
       alert("Error al enviar el email.");
     } finally {
       setIsSendingEmail(null);
+    }
+  };
+
+  const handleDownloadPdf = async (id: number) => {
+    setIsDownloadingPdf(id);
+    try {
+      const result = await downloadInvoicePdfAction(id);
+      if (result.success && result.base64 && result.filename) {
+        const byteCharacters = atob(result.base64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = result.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert(result.error || "No se pudo generar el PDF");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error al descargar PDF");
+    } finally {
+      setIsDownloadingPdf(null);
     }
   };
 
@@ -343,6 +375,14 @@ export default function DocumentosClientesPage() {
                                   <Mail className={`w-4 h-4 ${isSendingEmail === doc.id ? 'animate-pulse' : ''}`} />
                                 </button>
                               )}
+                              <button
+                                className="p-1.5 text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-all"
+                                title="Descargar PDF"
+                                onClick={() => handleDownloadPdf(doc.id)}
+                                disabled={isDownloadingPdf === doc.id}
+                              >
+                                <Download className={`w-4 h-4 ${isDownloadingPdf === doc.id ? 'animate-bounce' : ''}`} />
+                              </button>
                               <button
                                 className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                                 title="Eliminar Factura"
