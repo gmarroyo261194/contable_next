@@ -12,18 +12,26 @@ export async function sendEmail({
   attachments?: any[];
 }) {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: Number(process.env.SMTP_PORT) || 587,
+    const transporterConfig: any = {
+      host: process.env.SMTP_HOST || "190.114.210.211",
+      port: Number(process.env.SMTP_PORT) || 25,
       secure: false, // true for 465, false for other ports
-      auth: {
+      tls: {
+        rejectUnauthorized: false // útil para relays internos
+      }
+    };
+
+    if (process.env.SMTP_USER) {
+      transporterConfig.auth = {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
-      },
-    });
+      };
+    }
+
+    const transporter = nodemailer.createTransport(transporterConfig);
 
     const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM_EMAIL || '"Pagos" <no-reply@pagos.com>',
+      from: process.env.SMTP_FROM_EMAIL || '"Pagos" <noreply@frm.utn.edu.ar>',
       to,
       subject,
       html,
