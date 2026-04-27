@@ -71,6 +71,20 @@ export async function updateEntidad(
     tipoId: number;
   }
 ) {
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+
+  if (!empresaId) throw new Error("No hay una empresa activa seleccionada.");
+
+  // Validar que la entidad pertenece a la empresa activa de la sesión
+  const entidadExistente = await prisma.entidad.findFirst({
+    where: { id, empresaId: parseInt(empresaId) },
+  });
+
+  if (!entidadExistente) {
+    throw new Error("No se puede modificar esta entidad. No pertenece a la empresa activa.");
+  }
+
   const entidad = await prisma.entidad.update({
     where: { id },
     data: {
@@ -132,6 +146,20 @@ export async function importEntidadesDocentes(rawRows: any[]) {
 }
 
 export async function deleteEntidad(id: number) {
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+
+  if (!empresaId) throw new Error("No hay una empresa activa seleccionada.");
+
+  // Validar que la entidad pertenece a la empresa activa de la sesión
+  const entidadExistente = await prisma.entidad.findFirst({
+    where: { id, empresaId: parseInt(empresaId) },
+  });
+
+  if (!entidadExistente) {
+    throw new Error("No se puede eliminar esta entidad. No pertenece a la empresa activa.");
+  }
+
   const docProvCount = await prisma.documentoProveedores.count({
     where: { entidadId: id },
   });

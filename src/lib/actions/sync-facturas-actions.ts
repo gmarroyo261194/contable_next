@@ -716,10 +716,14 @@ export async function updateDocumentoCliente(
 ) {
   try {
     const session = await auth();
-    if (!session?.user) return { error: "No autorizado" };
+    const empresaId = (session?.user as any)?.empresaId;
 
+    if (!session?.user || !empresaId) return { error: "No autorizado" };
+
+    // Validar que el documento pertenece a la empresa activa de la sesión
     const doc = await prisma.documentoClientes.findUnique({ where: { id } });
     if (!doc) return { error: "Factura no encontrada" };
+    if (doc.empresaId !== empresaId) return { error: "No tiene permisos para modificar este documento." };
     if (doc.asientoId) return { error: "No se puede editar una factura ya contabilizada" };
     if (doc.montoPagado && doc.montoPagado.toNumber() > 0) return { error: "No se puede editar una factura con pagos registrados" };
 

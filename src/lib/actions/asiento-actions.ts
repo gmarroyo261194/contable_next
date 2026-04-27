@@ -6,10 +6,12 @@ import { revalidatePath } from "next/cache";
 
 export async function getAsientoById(id: number) {
   const session = await auth();
-  if (!session) return null;
+  const ejercicioId = (session?.user as any)?.ejercicioId;
 
-  const asiento = await db.asiento.findUnique({
-    where: { id },
+  if (!ejercicioId) return null;
+
+  const asiento = await db.asiento.findFirst({
+    where: { id, ejercicioId },
     include: {
       renglones: {
         include: { cuenta: true }
@@ -249,13 +251,13 @@ export async function anularAsiento(asientoId: number) {
 
   try {
     return await db.$transaction(async (tx) => {
-      // 1. Buscar el asiento original
-      const original = await tx.asiento.findUnique({
-        where: { id: asientoId },
+      // 1. Buscar el asiento original validando que pertenezca al ejercicio activo
+      const original = await tx.asiento.findFirst({
+        where: { id: asientoId, ejercicioId },
         include: { renglones: true },
       });
 
-      if (!original) return { error: "Asiento no encontrado." };
+      if (!original) return { error: "Asiento no encontrado en el ejercicio activo." };
 
       // 2. Generar contra asiento
       const lastAsiento = await tx.asiento.findFirst({
@@ -325,13 +327,13 @@ export async function updateAsiento(id: number, data: {
 
   try {
     return await db.$transaction(async (tx) => {
-      // 1. Verificar existencia
-      const existing = await tx.asiento.findUnique({
-        where: { id },
+      // 1. Verificar existencia y pertenencia al ejercicio activo
+      const existing = await tx.asiento.findFirst({
+        where: { id, ejercicioId },
         include: { renglones: true }
       });
 
-      if (!existing) throw new Error("Asiento no encontrado.");
+      if (!existing) throw new Error("Asiento no encontrado en el ejercicio activo.");
 
       // Obtener la moneda base de la empresa
       const empresa = await tx.empresa.findUnique({

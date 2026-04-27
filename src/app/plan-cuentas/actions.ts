@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 
+/**
+ * Obtiene las cuentas del plan de cuentas para la empresa y ejercicio activo en la sesión.
+ * @returns Lista de cuentas del ejercicio activo, ordenadas por código.
+ */
 export async function getCuentas() {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
@@ -25,6 +29,11 @@ export async function getCuentas() {
   });
 }
 
+/**
+ * Crea una nueva cuenta contable en el ejercicio activo de la sesión.
+ * @param data - Datos de la cuenta a crear.
+ * @returns La cuenta creada.
+ */
 export async function createCuenta(data: {
   codigo: string;
   codigoCorto?: number;
@@ -51,17 +60,103 @@ export async function createCuenta(data: {
   return cuenta;
 }
 
-export async function updateCuenta(id: number, data: any) {
+/**
+ * Actualiza una cuenta contable, validando que pertenezca al ejercicio activo.
+ * Esto garantiza que no se puedan modificar cuentas de ejercicios pasados (cerrados).
+ * @param id - ID de la cuenta a actualizar.
+ * @param data - Campos a actualizar (nombre, tipo, imputable, etc.).
+ * @returns La cuenta actualizada.
+ */
+export async function updateCuenta(id: number, data: {
+  codigo?: string;
+  codigoCorto?: number | null;
+  nombre?: string;
+  tipo?: string;
+  imputable?: boolean;
+  padreId?: number | null;
+}) {
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+  const ejercicioId = (session?.user as any)?.ejercicioId;
+
+  if (!empresaId || !ejercicioId) throw new Error("No hay contexto de empresa/ejercicio.");
+
+  // Validar que la cuenta pertenece al ejercicio y empresa activos en sesión
+  const cuentaExistente = await prisma.cuenta.findFirst({
+    where: {
+      id,
+      empresaId: parseInt(empresaId),
+      ejercicioId: parseInt(ejercicioId),
+    },
+  });
+
+  if (!cuentaExistente) {
+    throw new Error(
+      "No se puede modificar esta cuenta. No pertenece al ejercicio activo o no tiene permisos."
+    );
+  }
+
+  // Verificar que el ejercicio no esté cerrado
+  const ejercicio = await prisma.ejercicio.findUnique({
+    where: { id: parseInt(ejercicioId) },
+    select: { cerrado: true, numero: true },
+  });
+
+  if (ejercicio?.cerrado) {
+    throw new Error(
+      `El ejercicio ${ejercicio.numero} está cerrado. No se puede modificar su plan de cuentas.`
+    );
+  }
+
   const cuenta = await prisma.cuenta.update({
     where: { id },
     data,
   });
+
   revalidatePath("/plan-cuentas");
   return cuenta;
 }
 
+/**
+ * Elimina una cuenta contable, validando que pertenezca al ejercicio activo y no tenga movimientos.
+ * Garantiza que cuentas de ejercicios pasados no puedan eliminarse.
+ * @param id - ID de la cuenta a eliminar.
+ */
 export async function deleteCuenta(id: number) {
-  // Check if it has children
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+  const ejercicioId = (session?.user as any)?.ejercicioId;
+
+  if (!empresaId || !ejercicioId) throw new Error("No hay contexto de empresa/ejercicio.");
+
+  // Validar que la cuenta pertenece al ejercicio y empresa activos en sesión
+  const cuentaExistente = await prisma.cuenta.findFirst({
+    where: {
+      id,
+      empresaId: parseInt(empresaId),
+      ejercicioId: parseInt(ejercicioId),
+    },
+  });
+
+  if (!cuentaExistente) {
+    throw new Error(
+      "No se puede eliminar esta cuenta. No pertenece al ejercicio activo o no tiene permisos."
+    );
+  }
+
+  // Verificar que el ejercicio no esté cerrado
+  const ejercicio = await prisma.ejercicio.findUnique({
+    where: { id: parseInt(ejercicioId) },
+    select: { cerrado: true, numero: true },
+  });
+
+  if (ejercicio?.cerrado) {
+    throw new Error(
+      `El ejercicio ${ejercicio.numero} está cerrado. No se puede modificar su plan de cuentas.`
+    );
+  }
+
+  // Verificar que no tenga subcuentas hijas
   const hijosCount = await prisma.cuenta.count({
     where: { padreId: id },
   });
@@ -70,21 +165,28 @@ export async function deleteCuenta(id: number) {
     throw new Error("No se puede eliminar una cuenta que tiene subcuentas.");
   }
 
-  // Check if used in journal entries
+  // Verificar que no tenga movimientos contables en el ejercicio activo
   const renglonesCount = await prisma.renglonAsiento.count({
     where: { cuentaId: id },
   });
 
   if (renglonesCount > 0) {
-    throw new Error("No se puede eliminar una cuenta con movimientos contables.");
+    throw new Error("No se puede eliminar una cuenta con movimientos contables registrados.");
   }
 
   await prisma.cuenta.delete({
     where: { id },
   });
+
   revalidatePath("/plan-cuentas");
 }
 
+/**
+ * Importa un conjunto de cuentas desde filas crudas (típicamente de un Excel).
+ * Las cuentas se crean o actualizan en el ejercicio activo de la sesión.
+ * @param rawRows - Filas con los datos de las cuentas a importar.
+ * @returns Resultado de la importación con el conteo de cuentas procesadas.
+ */
 export async function importCuentas(rawRows: any[]) {
   const session = await auth();
   const empresaId = parseInt((session?.user as any)?.empresaId);
@@ -104,8 +206,8 @@ export async function importCuentas(rawRows: any[]) {
   const mapCapitulo: { [key: string]: string } = {
     "0": "ACTIVO",
     "1": "PASIVO",
-    "2": "RESULTADO", // User said "2 = RESULTADO"
-    "3": "PATRIMONIO_NETO", // Missing in prompt but standard
+    "2": "RESULTADO",
+    "3": "PATRIMONIO_NETO",
     "4": "CUENTAS TRANSITORIAS"
   };
 
@@ -113,87 +215,92 @@ export async function importCuentas(rawRows: any[]) {
   let count = 0;
 
   // Validate IDs
-    if (isNaN(empresaId) || isNaN(ejercicioId)) {
-      console.error("Invalid context IDs:", { empresaId, ejercicioId });
-      throw new Error("ID de empresa o ejercicio inválido.");
+  if (isNaN(empresaId) || isNaN(ejercicioId)) {
+    console.error("Invalid context IDs:", { empresaId, ejercicioId });
+    throw new Error("ID de empresa o ejercicio inválido.");
+  }
+
+  // Process rows
+  for (const row of sortedRows) {
+    const codigo = String(row.codigoCta || "").trim();
+    if (!codigo) continue; // Skip empty rows
+
+    const nombre = String(row.nombreCta || "").trim();
+
+    let codigoCorto: number | null = null;
+    if (row.codigoAlt && row.codigoAlt !== "NULL") {
+      const parsedAlt = parseInt(row.codigoAlt);
+      if (!isNaN(parsedAlt)) codigoCorto = parsedAlt;
     }
 
-    // Process rows
-    for (const row of sortedRows) {
-      const codigo = String(row.codigoCta || "").trim();
-      if (!codigo) continue; // Skip empty rows
+    const tipo = mapCapitulo[String(row.capitulo)] || "ACTIVO";
+    const imputable = String(row.imputable) === "-1" || String(row.imputable).toUpperCase() === "S";
 
-      const nombre = String(row.nombreCta || "").trim();
-      
-      let codigoCorto: number | null = null;
-      if (row.codigoAlt && row.codigoAlt !== "NULL") {
-        const parsedAlt = parseInt(row.codigoAlt);
-        if (!isNaN(parsedAlt)) codigoCorto = parsedAlt;
-      }
+    // Find parentId logic
+    let padreId: number | null = null;
+    let longestPrefix = "";
 
-      const tipo = mapCapitulo[String(row.capitulo)] || "ACTIVO";
-      const imputable = String(row.imputable) === "-1" || String(row.imputable).toUpperCase() === "S";
-
-      // Find parentId logic
-      let padreId: number | null = null;
-      let longestPrefix = "";
-
-      for (const existingCode of Object.keys(codeToId)) {
-        if (codigo.startsWith(existingCode) && existingCode !== codigo) {
-          if (existingCode.length > longestPrefix.length) {
-            longestPrefix = existingCode;
-            padreId = codeToId[existingCode];
-          }
+    for (const existingCode of Object.keys(codeToId)) {
+      if (codigo.startsWith(existingCode) && existingCode !== codigo) {
+        if (existingCode.length > longestPrefix.length) {
+          longestPrefix = existingCode;
+          padreId = codeToId[existingCode];
         }
       }
+    }
 
-      // Upsert to handle existing
-      try {
-        const account = await prisma.cuenta.upsert({
-          where: {
-            codigo_ejercicioId: {
-              codigo,
-              ejercicioId
-            }
-          },
-          update: {
-            nombre,
-            tipo,
-            imputable,
-            codigoCorto,
-            padreId: padreId
-          },
-          create: {
+    // Upsert to handle existing
+    try {
+      const account = await prisma.cuenta.upsert({
+        where: {
+          codigo_ejercicioId: {
             codigo,
-            nombre,
-            tipo,
-            imputable,
-            codigoCorto,
-            padreId,
-            empresaId,
             ejercicioId
           }
-        });
-        codeToId[codigo] = account.id;
-        count++;
-      } catch (err: any) {
-        console.error(`Error upserting account ${codigo}:`, {
+        },
+        update: {
           nombre,
+          tipo,
+          imputable,
+          codigoCorto,
+          padreId: padreId
+        },
+        create: {
+          codigo,
+          nombre,
+          tipo,
+          imputable,
+          codigoCorto,
           padreId,
           empresaId,
-          ejercicioId,
-          errorMessage: err.message,
-          errorCode: err.code,
-          meta: err.meta
-        });
-        throw new Error(`Error en cuenta ${codigo}: ${err.message}`);
-      }
+          ejercicioId
+        }
+      });
+      codeToId[codigo] = account.id;
+      count++;
+    } catch (err: any) {
+      console.error(`Error upserting account ${codigo}:`, {
+        nombre,
+        padreId,
+        empresaId,
+        ejercicioId,
+        errorMessage: err.message,
+        errorCode: err.code,
+        meta: err.meta
+      });
+      throw new Error(`Error en cuenta ${codigo}: ${err.message}`);
     }
+  }
 
   revalidatePath("/plan-cuentas");
   return { success: true, count, message: `Se importaron ${count} cuentas correctamente.` };
 }
 
+/**
+ * Importa el plan de cuentas desde la base de datos legacy (ContableFundacion)
+ * para el ejercicio activo en la sesión.
+ * @returns Resultado de la importación.
+ */
 export async function importCuentasLegacy() {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
@@ -223,7 +330,6 @@ export async function importCuentasLegacy() {
     }
 
     // 2. Usar la lógica de importación existente
-    // Adaptamos imputable: -1 es imputable en legacy
     const processedRows = rawRows.map(row => ({
       ...row,
       imputable: String(row.imputable) === "-1" ? "-1" : "0"

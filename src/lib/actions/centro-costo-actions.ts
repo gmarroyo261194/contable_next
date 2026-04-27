@@ -1,16 +1,25 @@
 "use server";
 
+import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { MayorRenglon, MayorResult, getLibroMayor } from "./reportes-actions";
 
 /**
- * Obtiene todos los centros de costo de una empresa.
- * @param {number} empresaId - ID de la empresa.
+ * Obtiene todos los centros de costo de la empresa activa en la sesión.
  * @returns {Promise<any[]>} Listado de centros de costo con sus IDs de cuenta.
  */
-export async function getCentrosCosto(empresaId: number) {
+export async function getCentrosCosto(empresaId?: number) {
+  // Si no se pasa empresaId, lo obtenemos de la sesión
+  let resolvedEmpresaId = empresaId;
+  if (!resolvedEmpresaId) {
+    const session = await auth();
+    resolvedEmpresaId = (session?.user as any)?.empresaId;
+  }
+
+  if (!resolvedEmpresaId) return [];
+
   return await prisma.centroCosto.findMany({
-    where: { empresaId },
+    where: { empresaId: resolvedEmpresaId },
     include: {
       cuentas: {
         select: {
@@ -24,17 +33,31 @@ export async function getCentrosCosto(empresaId: number) {
 
 /**
  * Crea o actualiza un centro de costo.
- * @param {any} data - Datos del centro de costo (id, nombre, empresaId, cuentaIds).
+ * Valida que el empresaId corresponda a la empresa activa de la sesión.
+ * @param {any} data - Datos del centro de costo (id, nombre, cuentaIds).
  */
 export async function upsertCentroCosto(data: {
   id?: number;
   nombre: string;
-  empresaId: number;
   cuentaIds: number[];
 }) {
-  const { id, nombre, empresaId, cuentaIds } = data;
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+
+  if (!empresaId) throw new Error("No hay una empresa activa seleccionada.");
+
+  const { id, nombre, cuentaIds } = data;
 
   if (id) {
+    // Validar que el centro pertenece a la empresa activa
+    const centroExistente = await prisma.centroCosto.findFirst({
+      where: { id, empresaId },
+    });
+
+    if (!centroExistente) {
+      throw new Error("No se puede modificar este centro de costo. No pertenece a la empresa activa.");
+    }
+
     // Actualizar
     return await prisma.$transaction(async (tx) => {
       const centro = await tx.centroCosto.update({
@@ -60,7 +83,7 @@ export async function upsertCentroCosto(data: {
       return centro;
     });
   } else {
-    // Crear
+    // Crear — usar empresaId de la sesión
     return await prisma.centroCosto.create({
       data: {
         nombre,
@@ -76,10 +99,24 @@ export async function upsertCentroCosto(data: {
 }
 
 /**
- * Elimina un centro de costo.
+ * Elimina un centro de costo, validando que pertenezca a la empresa activa.
  * @param {number} id - ID del centro de costo.
  */
 export async function deleteCentroCosto(id: number) {
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+
+  if (!empresaId) throw new Error("No hay una empresa activa seleccionada.");
+
+  // Validar que el centro pertenece a la empresa activa de la sesión
+  const centroExistente = await prisma.centroCosto.findFirst({
+    where: { id, empresaId },
+  });
+
+  if (!centroExistente) {
+    throw new Error("No se puede eliminar este centro de costo. No pertenece a la empresa activa.");
+  }
+
   return await prisma.centroCosto.delete({
     where: { id }
   });
@@ -121,10 +158,8 @@ export async function getReporteMayorCentroCosto(
   const desglose = await getLibroMayor(ejercicioId, cuentaIds, fechaDesde, fechaHasta);
 
   // 2. Generar el consolidado
-  // Combinamos todos los renglones y recalculamos el saldo
   const todosLosRenglones: MayorRenglon[] = [];
   
-  // Para el saldo inicial consolidado, sumamos los transportes de cada cuenta
   let sumDebeInicial = 0;
   let sumHaberInicial = 0;
 
@@ -138,11 +173,9 @@ export async function getReporteMayorCentroCosto(
       }
     }
 
-    // Agregar movimientos (no transportes)
     todosLosRenglones.push(...mayor.renglones.filter(r => !r.esTransporte));
   });
 
-  // Ordenar movimientos consolidados por fecha y número de asiento
   todosLosRenglones.sort((a, b) => {
     const fA = new Date(a.fecha).getTime();
     const fB = new Date(b.fecha).getTime();

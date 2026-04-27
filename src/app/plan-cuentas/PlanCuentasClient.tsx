@@ -352,15 +352,15 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
             <>
               <button
                 onClick={() => handleEdit(item)}
-                className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
-                title="Editar"
+                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                title="Editar cuenta"
               >
                 <Pencil className="size-4" />
               </button>
               <button
                 onClick={() => handleDelete(item.id)}
-                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                title="Eliminar"
+                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                title="Eliminar cuenta"
               >
                 <Trash2 className="size-4" />
               </button>

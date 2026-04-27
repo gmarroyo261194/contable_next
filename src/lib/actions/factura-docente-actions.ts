@@ -141,6 +141,13 @@ export async function updateFacturaDocente(id: number, data: {
 
   if (!empresaId) return { error: "No hay una empresa activa seleccionada." };
 
+  // Validar que la factura pertenece a la empresa activa de la sesión
+  const facturaExistente = await db.facturaDocente.findFirst({
+    where: { id, empresaId },
+  });
+
+  if (!facturaExistente) return { error: "No se puede modificar esta factura. No pertenece a la empresa activa." };
+
   try {
     const original = await db.facturaDocente.findUnique({
       where: { id },
@@ -194,7 +201,17 @@ export async function updateFacturaDocente(id: number, data: {
 
 export async function authorizeFacturaDocente(id: number, fechaHabilitacionPago: string) {
   const session = await auth();
+  const empresaId = parseInt((session?.user as any)?.empresaId);
   const userIdentity = session?.user?.email || session?.user?.name || "Usuario Desconocido";
+
+  if (!empresaId) return { error: "No hay una empresa activa seleccionada." };
+
+  // Validar que la factura pertenece a la empresa activa de la sesión
+  const facturaExistente = await db.facturaDocente.findFirst({
+    where: { id, empresaId },
+  });
+
+  if (!facturaExistente) return { error: "No se puede autorizar esta factura. No pertenece a la empresa activa." };
 
   try {
     const factura = await db.facturaDocente.update({
@@ -216,6 +233,18 @@ export async function authorizeFacturaDocente(id: number, fechaHabilitacionPago:
 }
 
 export async function unauthorizeFacturaDocente(id: number) {
+  const session = await auth();
+  const empresaId = parseInt((session?.user as any)?.empresaId);
+
+  if (!empresaId) return { error: "No hay una empresa activa seleccionada." };
+
+  // Validar que la factura pertenece a la empresa activa de la sesión
+  const facturaExistente = await db.facturaDocente.findFirst({
+    where: { id, empresaId },
+  });
+
+  if (!facturaExistente) return { error: "No se puede modificar esta factura. No pertenece a la empresa activa." };
+
   try {
     await db.facturaDocente.update({
       where: { id },
@@ -236,6 +265,18 @@ export async function unauthorizeFacturaDocente(id: number) {
 }
 
 export async function deleteFacturaDocente(id: number) {
+  const session = await auth();
+  const empresaId = parseInt((session?.user as any)?.empresaId);
+
+  if (!empresaId) return { error: "No hay una empresa activa seleccionada." };
+
+  // Validar que la factura pertenece a la empresa activa de la sesión
+  const facturaExistente = await db.facturaDocente.findFirst({
+    where: { id, empresaId },
+  });
+
+  if (!facturaExistente) return { error: "No se puede eliminar esta factura. No pertenece a la empresa activa." };
+
   try {
     const factura = await db.facturaDocente.findUnique({
       where: { id },

@@ -53,6 +53,20 @@ export async function updateEjercicio(
     cerrado: boolean;
   }
 ) {
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+
+  if (!empresaId) throw new Error("No hay una empresa activa seleccionada.");
+
+  // Validar que el ejercicio pertenece a la empresa activa de la sesión
+  const ejercicioExistente = await prisma.ejercicio.findFirst({
+    where: { id, empresaId: parseInt(empresaId) },
+  });
+
+  if (!ejercicioExistente) {
+    throw new Error("No se puede modificar este ejercicio. No pertenece a la empresa activa.");
+  }
+
   const ejercicio = await prisma.ejercicio.update({
     where: { id },
     data,
@@ -63,6 +77,20 @@ export async function updateEjercicio(
 }
 
 export async function deleteEjercicio(id: number) {
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+
+  if (!empresaId) throw new Error("No hay una empresa activa seleccionada.");
+
+  // Validar que el ejercicio pertenece a la empresa activa de la sesión
+  const ejercicioExistente = await prisma.ejercicio.findFirst({
+    where: { id, empresaId: parseInt(empresaId) },
+  });
+
+  if (!ejercicioExistente) {
+    throw new Error("No se puede eliminar este ejercicio. No pertenece a la empresa activa.");
+  }
+
   const asientoCount = await prisma.asiento.count({
     where: { ejercicioId: id },
   });
@@ -78,6 +106,20 @@ export async function deleteEjercicio(id: number) {
 }
 
 export async function toggleCerrarEjercicio(id: number, cerrado: boolean) {
+  const session = await auth();
+  const empresaId = (session?.user as any)?.empresaId;
+
+  if (!empresaId) throw new Error("No hay una empresa activa seleccionada.");
+
+  // Validar que el ejercicio pertenece a la empresa activa de la sesión
+  const ejercicioExistente = await prisma.ejercicio.findFirst({
+    where: { id, empresaId: parseInt(empresaId) },
+  });
+
+  if (!ejercicioExistente) {
+    throw new Error("No se puede modificar este ejercicio. No pertenece a la empresa activa.");
+  }
+
   await prisma.ejercicio.update({
     where: { id },
     data: { cerrado },
