@@ -168,6 +168,9 @@ export async function processPaymentDocente(ids: number[], data: {
         }
       });
 
+      // Auditoría del asiento autogenerado
+      await auditCreate("Asiento", asiento.id, asiento, userEmail, empresaId);
+
       // 4. Crear GestionPago
       const gestionPago = await tx.gestionPago.create({
         data: {

@@ -5,7 +5,7 @@ import dbFacturacion from "@/lib/dbFacturacion";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { auditUpdate } from "@/lib/audit/auditLogger";
+import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 import { parseFacturaPDF } from "@/lib/facturas/facturaParser";
 
 export interface FacturaExterna {
@@ -247,7 +247,7 @@ export async function syncFacturasSeleccionadas(facturas: FacturaExterna[], ejer
           // Obtener ítems de la base externa
           const itemsExt = await dbFacturacion.$queryRaw<any[]>`SELECT Linea, Cantidad, ImporteUnit, ImporteTotal FROM ItemsComprobantes WHERE ComprobanteId = ${fact.id}`;
 
-          await tx.documentoClientes.create({
+          const docCreated = await tx.documentoClientes.create({
             data: {
               tipo: fact.tipo,
               numero: numeroFormateado,
@@ -272,6 +272,9 @@ export async function syncFacturasSeleccionadas(facturas: FacturaExterna[], ejer
               }
             }
           });
+
+          // Auditoría de sincronización
+          await auditCreate("DocumentoClientes", docCreated.id, docCreated, userEmail, empresaId);
           syncedCount++;
         }
       }
@@ -494,7 +497,12 @@ export async function saveFacturaImportada(data: {
       });
 
       revalidatePath("/doccli");
-      return { success: true, data: JSON.parse(JSON.stringify(factura)) };
+      const result = JSON.parse(JSON.stringify(factura));
+      
+      // Auditoría de creación manual
+      await auditCreate("DocumentoClientes", factura.id, result, userEmail, empresaId);
+
+      return { success: true, data: result };
     });
   } catch (error: any) {
     console.error("Error al guardar factura importada:", error);
@@ -528,6 +536,9 @@ export async function deleteDocumentoCliente(id: number) {
     await prisma.documentoClientes.delete({
       where: { id }
     });
+
+    // Auditoría de eliminación
+    await auditDelete("DocumentoClientes", id, doc, session.user.email, empresaId);
 
     revalidatePath("/doccli");
     return { success: true };
@@ -636,6 +647,9 @@ export async function registrarPagoDocumento(id: number, fechaPago: Date, montoP
         }
       });
 
+      // Auditoría del asiento de cobro
+      await auditCreate("Asiento", asientoCobro.id, asientoCobro, userEmail, empresaId);
+
       // 3. Asiento Fundación (si aplica)
       if (doc.servicio.participacionFundacion && doc.servicio.porcentajeFundacion) {
         if (!config.cuentaFundacionImputarId || !config.cuentaFundacionRetenerId) {
@@ -644,7 +658,7 @@ export async function registrarPagoDocumento(id: number, fechaPago: Date, montoP
 
         const importeFundacion = Number(montoPagado) * (Number(doc.servicio.porcentajeFundacion) / 100);
 
-        await tx.asiento.create({
+        const asientoFundacion = await tx.asiento.create({
           data: {
             numero: nextNumero++,
             fecha: fechaPago,
@@ -675,6 +689,8 @@ export async function registrarPagoDocumento(id: number, fechaPago: Date, montoP
             }
           }
         });
+        // Auditoría del asiento de fundación
+        await auditCreate("Asiento", asientoFundacion.id, asientoFundacion, userEmail, empresaId);
       }
 
       // 4. Asiento Departamento (si aplica)
@@ -685,7 +701,7 @@ export async function registrarPagoDocumento(id: number, fechaPago: Date, montoP
 
         const importeDepto = Number(montoPagado) * (Number(doc.servicio.porcentajeDepto) / 100);
 
-        await tx.asiento.create({
+        const asientoDepto = await tx.asiento.create({
           data: {
             numero: nextNumero++,
             fecha: fechaPago,
@@ -716,6 +732,8 @@ export async function registrarPagoDocumento(id: number, fechaPago: Date, montoP
             }
           }
         });
+        // Auditoría del asiento de departamento
+        await auditCreate("Asiento", asientoDepto.id, asientoDepto, userEmail, empresaId);
       }
 
       // 5. Actualizar Documento
@@ -728,6 +746,10 @@ export async function registrarPagoDocumento(id: number, fechaPago: Date, montoP
           updatedBy: userEmail
         }
       });
+
+      revalidatePath("/doccli");
+      // Auditoría de cobro (Se audita el cambio en el documento)
+      await auditUpdate("DocumentoClientes", id, doc, { ...doc, montoPagado, asientoId: asientoCobro.id }, userEmail, empresaId);
 
       return { success: true };
     });

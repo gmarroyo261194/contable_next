@@ -2,6 +2,8 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 
 /**
  * Obtiene todos los servicios con su configuración para la empresa actual.
@@ -77,7 +79,13 @@ export async function upsertServicio(data: {
     config 
   } = data;
 
+  const session = await auth();
+  const userEmail = session?.user?.email;
+
   const result = await prisma.$transaction(async (tx) => {
+    // 0. Obtener estado anterior si es una edición para auditoría
+    const existing = id ? await tx.servicio.findUnique({ where: { id }, include: { configs: { where: { empresaId } } } }) : null;
+
     // 1. Upsert Servicio (Global)
     const servicio = id 
       ? await tx.servicio.update({
@@ -133,6 +141,12 @@ export async function upsertServicio(data: {
         }
       });
     }
+    if (id && existing) {
+      await auditUpdate("Servicio", id, existing, servicio, userEmail, empresaId);
+    } else {
+      await auditCreate("Servicio", servicio.id, servicio, userEmail, empresaId);
+    }
+
     return servicio;
   });
 
@@ -140,14 +154,22 @@ export async function upsertServicio(data: {
   return JSON.parse(JSON.stringify(result));
 }
 
-/**
- * Cambia el estado de un servicio.
- */
 export async function toggleServicio(id: number, activo: boolean) {
+  const session = await auth();
+  const userEmail = session?.user?.email;
+  const empresaId = (session?.user as any)?.empresaId;
+
+  const existing = await prisma.servicio.findUnique({ where: { id } });
+  
   const result = await prisma.servicio.update({
     where: { id },
     data: { activo }
   });
+
+  if (empresaId) {
+    await auditUpdate("Servicio", id, existing, result, userEmail, empresaId);
+  }
+
   revalidatePath("/settings/rubros-servicios");
   return JSON.parse(JSON.stringify(result));
 }
@@ -159,16 +181,29 @@ export async function toggleServicio(id: number, activo: boolean) {
  */
 export async function deleteServicio(id: number) {
   try {
+    const session = await auth();
+    const userEmail = session?.user?.email;
+    const empresaId = (session?.user as any)?.empresaId;
+
     const result = await prisma.$transaction(async (tx) => {
+      // 0. Obtener para auditoría
+      const existing = await tx.servicio.findUnique({ where: { id } });
+
       // 1. Borramos las configuraciones de empresa asociadas al servicio
       await tx.servicioConfig.deleteMany({
         where: { servicioId: id }
       });
 
       // 2. Borramos el servicio
-      return await tx.servicio.delete({
+      const deleted = await tx.servicio.delete({
         where: { id }
       });
+
+      if (empresaId && existing) {
+        await auditDelete("Servicio", id, existing, userEmail, empresaId);
+      }
+
+      return deleted;
     });
 
     revalidatePath("/settings/rubros-servicios");

@@ -2,6 +2,8 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 
 /**
  * Obtiene todos los rubros.
@@ -24,6 +26,12 @@ export async function upsertRubro(data: {
   activo: boolean;
 }) {
   const { id, nombre, activo } = data;
+  const session = await auth();
+  const userEmail = session?.user?.email;
+  const empresaId = (session?.user as any)?.empresaId;
+
+  // 0. Obtener para auditoría si es edición
+  const existing = id ? await prisma.rubro.findUnique({ where: { id } }) : null;
 
   const result = id
     ? await prisma.rubro.update({
@@ -34,20 +42,34 @@ export async function upsertRubro(data: {
         data: { nombre, activo }
       });
 
+  if (empresaId) {
+    if (id && existing) {
+      await auditUpdate("Rubro", id, existing, result, userEmail, empresaId);
+    } else {
+      await auditCreate("Rubro", result.id, result, userEmail, empresaId);
+    }
+  }
+
   revalidatePath("/settings/rubros-servicios");
   return JSON.parse(JSON.stringify(result));
 }
 
-/**
- * Cambia el estado de un rubro.
- * @param {number} id - ID del rubro.
- * @param {boolean} activo - Nuevo estado.
- */
 export async function toggleRubro(id: number, activo: boolean) {
+  const session = await auth();
+  const userEmail = session?.user?.email;
+  const empresaId = (session?.user as any)?.empresaId;
+
+  const existing = await prisma.rubro.findUnique({ where: { id } });
+
   const result = await prisma.rubro.update({
     where: { id },
     data: { activo }
   });
+
+  if (empresaId) {
+    await auditUpdate("Rubro", id, existing, result, userEmail, empresaId);
+  }
+
   revalidatePath("/settings/rubros-servicios");
   return JSON.parse(JSON.stringify(result));
 }
@@ -59,7 +81,14 @@ export async function toggleRubro(id: number, activo: boolean) {
  */
 export async function deleteRubro(id: number) {
   try {
+    const session = await auth();
+    const userEmail = session?.user?.email;
+    const empresaId = (session?.user as any)?.empresaId;
+
     const result = await prisma.$transaction(async (tx) => {
+      // 0. Obtener para auditoría
+      const existing = await tx.rubro.findUnique({ where: { id } });
+
       // 1. Buscamos los servicios asociados para borrar sus configs
       const servicios = await tx.servicio.findMany({
         where: { rubroId: id },
@@ -81,9 +110,15 @@ export async function deleteRubro(id: number) {
       }
 
       // 4. Borramos el rubro
-      return await tx.rubro.delete({
+      const deleted = await tx.rubro.delete({
         where: { id }
       });
+
+      if (empresaId && existing) {
+        await auditDelete("Rubro", id, existing, userEmail, empresaId);
+      }
+
+      return deleted;
     });
 
     revalidatePath("/settings/rubros-servicios");
