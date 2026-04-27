@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Coins, Shield, User, Bell, Globe, Database, Tag, ArrowDownCircleIcon, ArrowRightLeft } from "lucide-react";
+import { Coins, Shield, User, Bell, Globe, Database, Tag, ArrowDownCircleIcon, ArrowRightLeft, History } from "lucide-react";
 
 const categories = [
   {
@@ -57,6 +57,14 @@ const categories = [
     icon: ArrowRightLeft,
     href: "/settings/integracion-afip",
     color: "bg-blue-50 text-blue-600",
+    disabled: false
+  },
+  {
+    title: "Auditoría",
+    description: "Historial de cambios, quién hizo qué y cuándo",
+    icon: History,
+    href: "/settings/audit-logs",
+    color: "bg-amber-50 text-amber-600",
     disabled: false
   }
 ];
