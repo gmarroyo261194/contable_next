@@ -5,24 +5,39 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 
-export async function getEntidades() {
+export async function getEntidades(tipoNombre?: string | string[]) {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
 
   if (!empresaId) return [];
 
+  const where: any = {
+    empresaId: parseInt(empresaId),
+  };
+
+  if (tipoNombre) {
+    if (Array.isArray(tipoNombre)) {
+      where.tipo = { nombre: { in: tipoNombre } };
+    } else {
+      where.tipo = { nombre: tipoNombre };
+    }
+  }
+
   return await prisma.entidad.findMany({
-    where: {
-      empresaId: parseInt(empresaId),
-    },
+    where,
     include: {
       tipo: true,
       empresa: true,
+      cuentaContable: true,
     },
     orderBy: {
       nombre: "asc",
     },
   });
+}
+
+export async function getDocentes() {
+  return await getEntidades('DOCENTE');
 }
 
 export async function getTiposEntidad() {
@@ -40,6 +55,7 @@ export async function createEntidad(data: {
   email?: string;
   telefono?: string;
   tipoId: number;
+  cuentaContableId?: number;
 }) {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
@@ -54,6 +70,7 @@ export async function createEntidad(data: {
       email: data.email || null,
       telefono: data.telefono || null,
       tipoId: data.tipoId,
+      cuentaContableId: data.cuentaContableId || null,
       empresaId: parseInt(empresaId),
     } as any,
   });
@@ -61,6 +78,7 @@ export async function createEntidad(data: {
   await auditCreate("Entidad", entidad.id, entidad, session?.user?.email, parseInt(empresaId));
 
   revalidatePath("/entidades");
+  revalidatePath("/docentes");
   return entidad;
 }
 
@@ -73,6 +91,7 @@ export async function updateEntidad(
     email?: string;
     telefono?: string;
     tipoId: number;
+    cuentaContableId?: number;
   }
 ) {
   const session = await auth();
@@ -98,6 +117,7 @@ export async function updateEntidad(
       email: data.email || null,
       telefono: data.telefono || null,
       tipoId: data.tipoId,
+      cuentaContableId: data.cuentaContableId || null,
     } as any,
   });
 
@@ -105,6 +125,7 @@ export async function updateEntidad(
   await auditUpdate("Entidad", id, entidadExistente, entidad, session?.user?.email, parseInt(empresaId));
 
   revalidatePath("/entidades");
+  revalidatePath("/docentes");
   return entidad;
 }
 
@@ -149,6 +170,7 @@ export async function importEntidadesDocentes(rawRows: any[]) {
   }
 
   revalidatePath("/entidades");
+  revalidatePath("/docentes");
   return { success: true, count };
 }
 
@@ -185,4 +207,5 @@ export async function deleteEntidad(id: number) {
     where: { id },
   });
   revalidatePath("/entidades");
+  revalidatePath("/docentes");
 }

@@ -9,7 +9,21 @@ import { ImportDocentesModal } from "@/components/entidades/ImportDocentesModal"
 import { deleteEntidad } from "@/app/entidades/actions";
 import { useRouter } from "next/navigation";
 
-export function EntidadClient({ initialEntidades, tipos }: { initialEntidades: any[], tipos: any[] }) {
+export function EntidadClient({ 
+  initialEntidades, 
+  tipos, 
+  cuentas,
+  title = "Clientes y Proveedores",
+  description,
+  hideEmpresa = false
+}: { 
+  initialEntidades: any[], 
+  tipos: any[], 
+  cuentas: any[],
+  title?: string,
+  description?: string,
+  hideEmpresa?: boolean
+}) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = React.useState(false);
   const [editingEntidad, setEditingEntidad] = React.useState<any>(null);
@@ -52,20 +66,18 @@ export function EntidadClient({ initialEntidades, tipos }: { initialEntidades: a
         </div>
       )
     },
-    {
+    ...(!hideEmpresa ? [{
       header: "Empresa",
       cell: (e: any) => (
         <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
           {e.empresa?.nombreFantasia || e.empresa?.razonSocial}
         </span>
       )
-    },
+    }] : []),
     { header: "CUIT / CUIL", accessor: "cuit", className: "font-mono text-xs" },
     { header: "DNI", accessor: "nroDoc", className: "font-mono text-xs" },
     {
       header: "Tipo",
-      // accessor no funcionaría bien aquí para ordenar por nombre de tipo directamente sin más lógica, 
-      // pero al menos habilitamos la búsqueda básica si el objeto tiene la propiedad.
       cell: (e: any) => (
         <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${e.tipo?.nombre === 'CLIENTE' ? 'bg-blue-50 text-blue-600' :
           e.tipo?.nombre === 'PROVEEDOR' ? 'bg-orange-50 text-orange-600' :
@@ -76,14 +88,29 @@ export function EntidadClient({ initialEntidades, tipos }: { initialEntidades: a
         </span>
       )
     },
+    {
+      header: "Cuenta Contable",
+      cell: (e: any) => (
+        <span className="text-xs font-bold text-slate-500">
+          {e.cuentaContable ? (
+            <div className="flex flex-col">
+              <span className="text-slate-700">{e.cuentaContable.nombre}</span>
+              <span className="text-[10px] text-slate-400 font-mono">{e.cuentaContable.codigo}</span>
+            </div>
+          ) : (
+            <span className="italic text-slate-300">No asignada</span>
+          )}
+        </span>
+      )
+    },
   ];
 
   return (
     <div className="space-y-8">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 font-display">Clientes y Proveedores</h2>
-          {/* <p className="text-slate-500 text-sm">Gestiona tus clientes y proveedores</p> */}
+          <h2 className="text-2xl font-bold text-slate-800 font-display">{title}</h2>
+          {description && <p className="text-slate-500 text-sm">{description}</p>}
         </div>
         <div className="flex gap-3">
           <button
@@ -132,6 +159,7 @@ export function EntidadClient({ initialEntidades, tipos }: { initialEntidades: a
         <EntidadForm
           initialData={editingEntidad}
           tipos={tipos}
+          cuentas={cuentas}
           onClose={() => setIsDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />

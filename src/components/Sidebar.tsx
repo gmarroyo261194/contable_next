@@ -46,7 +46,8 @@ const navItems = [
     icon: GraduationCap,
     label: 'Honorarios Docentes',
     href: '/honorarios-docentes',
-    children: [
+     children: [
+      { icon: Users, label: 'Docentes', href: '/docentes' },
       { icon: ReceiptText, label: 'Facturas Docentes', href: '/facturas-docentes' },
     ]
   },

@@ -4,15 +4,18 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { User, Hash, Tag, Loader2, ChevronDown, Mail, Phone, CreditCard } from "lucide-react";
 import { createEntidad, updateEntidad } from "@/app/entidades/actions";
+import { AccountSearchDialog, Account } from "../AccountSearchDialog";
+import { Search, X } from "lucide-react";
 
 interface EntidadFormProps {
   initialData?: any;
   tipos: any[];
+  cuentas: any[];
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function EntidadForm({ initialData, tipos, onClose, onSuccess }: EntidadFormProps) {
+export function EntidadForm({ initialData, tipos, cuentas, onClose, onSuccess }: EntidadFormProps) {
   const [loading, setLoading] = React.useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: initialData ? {
@@ -31,6 +34,16 @@ export function EntidadForm({ initialData, tipos, onClose, onSuccess }: EntidadF
       tipoId: tipos.length > 0 ? tipos[0].id : "",
     },
   });
+  
+  const [isAccountDialogOpen, setIsAccountDialogOpen] = React.useState(false);
+  const [selectedAccount, setSelectedAccount] = React.useState<Account | null>(
+    initialData?.cuentaContable ? {
+      id: initialData.cuentaContable.id,
+      codigo: initialData.cuentaContable.codigo,
+      codigoCorto: initialData.cuentaContable.codigoCorto,
+      nombre: initialData.cuentaContable.nombre
+    } : null
+  );
 
   const onSubmit = async (data: any) => {
     setLoading(true);
@@ -42,6 +55,7 @@ export function EntidadForm({ initialData, tipos, onClose, onSuccess }: EntidadF
         nroDoc: data.nroDoc || null,
         email: data.email || null,
         telefono: data.telefono || null,
+        cuentaContableId: selectedAccount?.id || null,
       };
       if (initialData) {
         await updateEntidad(initialData.id, payload);
@@ -148,7 +162,64 @@ export function EntidadForm({ initialData, tipos, onClose, onSuccess }: EntidadF
           </div>
           {errors.tipoId && <span className="text-xs text-red-500 font-medium">Este campo es requerido</span>}
         </div>
+
+        {/* Cuenta Contable */}
+        <div className="space-y-2 md:col-span-2">
+          <label className="text-sm font-bold text-slate-700">Cuenta Contable Predeterminada</label>
+          <div className="flex flex-col gap-2">
+            {selectedAccount ? (
+              <div className="flex items-center justify-between p-3 bg-indigo-50 border border-indigo-100 rounded-xl group transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 rounded-lg bg-indigo-600/10 flex items-center justify-center text-indigo-600">
+                    <Hash className="size-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-800">{selectedAccount.nombre}</span>
+                    <span className="text-[10px] text-indigo-500 font-mono uppercase font-black">{selectedAccount.codigo}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsAccountDialogOpen(true)}
+                    className="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-100 rounded-lg transition-all"
+                    title="Cambiar cuenta"
+                  >
+                    <Search className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAccount(null)}
+                    className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-100 rounded-lg transition-all"
+                    title="Quitar cuenta"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsAccountDialogOpen(true)}
+                className="w-full flex items-center justify-center gap-2 p-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:text-indigo-500 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group"
+              >
+                <Search className="size-4 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-bold uppercase tracking-wider">Asociar Cuenta Contable</span>
+              </button>
+            )}
+            <p className="text-[10px] text-slate-400 font-medium italic px-1">
+              Esta cuenta se sugerirá automáticamente al registrar comprobantes para esta entidad.
+            </p>
+          </div>
+        </div>
       </div>
+
+      <AccountSearchDialog
+        isOpen={isAccountDialogOpen}
+        onClose={() => setIsAccountDialogOpen(false)}
+        onSelect={(acc) => setSelectedAccount(acc)}
+        cuentas={cuentas}
+      />
 
       <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
         <button

@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { getCuentas, getAsientoById } from "@/lib/actions/asiento-actions";
 import { AsientoForm } from "@/components/AsientoForm";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { MediosPagoManager } from "@/components/MediosPagoManager";
 
 export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
   const [mounted, setMounted] = useState(false);
@@ -174,17 +175,6 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
       }
     },
     {
-      header: "Empresa",
-      accessor: "empresa.razonSocial",
-      cell: (f: any) => (
-        <div className="flex flex-col">
-          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
-            {f.empresa?.nombreFantasia || f.empresa?.razonSocial}
-          </span>
-        </div>
-      )
-    },
-    {
       header: "Docente",
       accessor: "entidad.nombre",
       cell: (f: any) => (
@@ -251,7 +241,7 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
                 {isAsientoLoading ? <Loader2 className="size-3 animate-spin" /> : <CheckCircle className="size-3" />}
                 Pagado
               </button>
-              <span className="text-[9px] text-slate-400 mt-0.5">Asiento #{f.asientoPagoId}</span>
+              <span className="text-[9px] font-bold text-slate-400 mt-0.5">Asiento Pago {f.asientoPago?.numero}</span>
             </div>
           );
         }
@@ -369,8 +359,9 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
                 setEditingInvoice(item);
                 setIsDialogOpen(true);
               }}
-              className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all border border-blue-100 shadow-sm"
-              title="Editar"
+              disabled={!!item.asientoPagoId}
+              className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all border border-blue-100 shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              title={item.asientoPagoId ? "No se puede editar una factura pagada" : "Editar"}
             >
               <Pencil className="size-4" />
             </button>
@@ -506,44 +497,13 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
         title="Configuración de Medios de Pago"
         maxWidth="max-w-lg"
       >
-        <div className="space-y-6">
-          <p className="text-xs text-slate-500 font-medium">Asocie cada medio de pago con su cuenta contable correspondiente para la generación automática de asientos.</p>
-
-          <div className="space-y-4">
-            {medios.map(m => (
-              <div key={m.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800">{m.nombre}</span>
-                  <span className="text-[10px] font-black text-slate-400 uppercase">Cuenta Pagadora</span>
-                </div>
-                <select
-                  value={m.cuentaId || ""}
-                  onChange={async (e) => {
-                    const val = e.target.value ? parseInt(e.target.value) : null;
-                    const res = await updateMedioPagoAccount(m.id, val);
-                    if ("success" in res) {
-                      toast.success(`Cuenta de ${m.nombre} actualizada.`);
-                      loadSettingsData();
-                    } else {
-                      toast.error(res.error);
-                    }
-                  }}
-                  className="w-full bg-white border-2 border-slate-200 rounded-xl py-2 px-3 text-sm font-bold text-slate-700 outline-none focus:border-primary transition-all"
-                >
-                  <option value="">Sin asignar...</option>
-                  {cuentas.map(c => (
-                    <option key={c.id} value={c.id}>{c.codigo} - {c.nombre}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
-          </div>
-
+        <MediosPagoManager />
+        <div className="mt-6 pt-4 border-t border-slate-100">
           <button
             onClick={() => setIsSettingsOpen(false)}
-            className="w-full py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-all"
+            className="w-full py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-all shadow-lg shadow-slate-200"
           >
-            Listo
+            Cerrar
           </button>
         </div>
       </Dialog>

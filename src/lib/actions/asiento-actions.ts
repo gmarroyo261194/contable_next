@@ -155,17 +155,23 @@ export async function getAsientos(params: {
   };
 }
 
-export async function getCuentas() {
+export async function getCuentas(prefix?: string) {
   const session = await auth();
   const ejercicioId = (session?.user as any)?.ejercicioId;
 
   if (!ejercicioId) return [];
 
+  const where: any = { 
+    ejercicioId,
+    imputable: true 
+  };
+
+  if (prefix) {
+    where.codigo = { startsWith: prefix };
+  }
+
   return await db.cuenta.findMany({
-    where: { 
-      ejercicioId,
-      imputable: true 
-    },
+    where,
     orderBy: { codigo: "asc" },
   });
 }

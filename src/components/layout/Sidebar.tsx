@@ -8,11 +8,15 @@ import {
   Users, 
   Settings, 
   LayoutDashboard,
-  CreditCard
+  CreditCard,
+  FileText,
+  ShoppingCart
 } from 'lucide-react'
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Ventas', href: '/doccli', icon: FileText },
+  { name: 'Compras', href: '/docprov', icon: ShoppingCart },
   { name: 'Libro Diario', href: '/asientos', icon: BookOpen },
   { name: 'Cuentas Corrientes', href: '/cuentas-corrientes', icon: CreditCard },
   { name: 'Reportes', href: '/reportes', icon: BarChart3 },

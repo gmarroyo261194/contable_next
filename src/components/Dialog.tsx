@@ -13,6 +13,7 @@ interface DialogProps {
   maxWidth?: string;
   preventCloseOnOutsideClick?: boolean;
   preventCloseOnEscape?: boolean;
+  zIndex?: string;
 }
 
 export function Dialog({ 
@@ -24,7 +25,8 @@ export function Dialog({
   noPadding, 
   maxWidth = 'max-w-4xl',
   preventCloseOnOutsideClick = false,
-  preventCloseOnEscape = false
+  preventCloseOnEscape = false,
+  zIndex = 'z-[1000]'
 }: DialogProps) {
   
   React.useEffect(() => {
@@ -46,7 +48,7 @@ export function Dialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className={`fixed inset-0 ${zIndex} flex items-center justify-center p-4`}>
       <div 
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" 
         onClick={() => !preventCloseOnOutsideClick && onClose()}

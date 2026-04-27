@@ -24,7 +24,8 @@ export async function getEntidades() {
         nombre: true,
         cuit: true,
         nroDoc: true,
-        condicionIva: true
+        condicionIva: true,
+        cuentaContableId: true
       },
       orderBy: {
         nombre: 'asc'

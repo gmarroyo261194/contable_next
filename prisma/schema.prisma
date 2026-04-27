@@ -188,6 +188,7 @@ model Cuenta {
   serviciosFundImputar  ServicioConfig[]    @relation("CuentaFundacionImputar")
   serviciosFundRetener  ServicioConfig[]    @relation("CuentaFundacionRetener")
   serviciosIngresos     ServicioConfig[]    @relation("CuentaIngresos")
+  entidades             Entidad[]           @relation("EntidadACuenta")
 
   @@unique([codigo, ejercicioId])
 }
@@ -208,6 +209,7 @@ model Asiento {
   ejercicio          Ejercicio              @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
   docClientes        DocumentoClientes[]    @relation("AsientoADocumentoCli")
   documentos         DocumentoProveedores[] @relation("AsientoADocumentoProv")
+  documentosPagos    DocumentoProveedores[] @relation("AsientoPagoADocumentoProv")
   facturasDocentes   FacturaDocente[]
   anulacionesGestion GestionPago[]          @relation("AsientoDeAnulacion")
   pagosGestion       GestionPago[]          @relation("AsientoDePago")
@@ -247,6 +249,8 @@ model Entidad {
   nroDoc             String?
   condicionIva       Int?
   telefono           String?
+  cuentaContableId   Int?
+  cuentaContable     Cuenta?                @relation("EntidadACuenta", fields: [cuentaContableId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   documentosClientes DocumentoClientes[]
   documentos         DocumentoProveedores[]
   empresa            Empresa                @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
@@ -256,24 +260,43 @@ model Entidad {
 }
 
 model DocumentoProveedores {
-  id          Int       @id @default(autoincrement())
-  tipo        String
-  numero      String
-  fecha       DateTime
-  montoTotal  Decimal   @db.Decimal(18, 2)
-  iva         Decimal   @db.Decimal(18, 2)
-  entidadId   Int
-  empresaId   Int
-  ejercicioId Int
-  asientoId   Int?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  createdBy   String?
-  updatedBy   String?
-  asiento     Asiento?  @relation("AsientoADocumentoProv", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ejercicio   Ejercicio @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
-  empresa     Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
-  entidad     Entidad   @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
+  id             Int       @id @default(autoincrement())
+  tipo           String    // Factura, Nota de Crédito, etc.
+  letra          String    @default("C")
+  numero         String
+  fecha          DateTime
+  vencimiento    DateTime?
+  cai            String?   @db.NVarChar(20)
+  montoTotal     Decimal   @db.Decimal(18, 2)
+  iva            Decimal   @default(0) @db.Decimal(18, 2)
+  retencion      Decimal   @default(0) @db.Decimal(18, 2)
+  detalle        String?   @db.NVarChar(Max)
+  entidadId      Int
+  empresaId      Int
+  ejercicioId    Int
+  asientoId      Int?
+  anulado        Boolean   @default(false)
+  fechaAnulacion DateTime?
+  anuladoPor     String?
+  cuentaDebeId   Int?      // Cuenta de Gasto/Activo
+  cuentaHaberId  Int?      // Cuenta de Pasivo (Proveedores)
+  leyendaDebe    String?   @db.NVarChar(200)
+  leyendaHaber   String?   @db.NVarChar(200)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdBy      String?
+  updatedBy      String?
+  autorizado     Boolean   @default(false)
+  fechaAutorizacionPago DateTime?
+  pagado         Boolean   @default(false)
+  fechaPago      DateTime?
+  montoPagado    Decimal   @default(0) @db.Decimal(18, 2)
+  asientoPagoId  Int?
+  asiento        Asiento?  @relation("AsientoADocumentoProv", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  asientoPago    Asiento?  @relation("AsientoPagoADocumentoProv", fields: [asientoPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ejercicio      Ejercicio @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
+  empresa        Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  entidad        Entidad   @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
 }
 
 model DocumentoClientes {

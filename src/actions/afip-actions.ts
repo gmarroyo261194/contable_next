@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createNextVoucher, toAfipDate, getLastVoucher, getCotizacion, createNextFEXVoucher, getFEXLastVoucher } from '@/lib/afip/afipService';
 import { TIPO_DOC, CONCEPTO, TipoComprobante, TIPO_COMPROBANTE, Concepto, TipoDoc, CONDICION_IVA, CondicionIva } from '@/lib/afip/voucherTypes';
+import { auth } from '@/auth';
+import { auditCreate } from '@/lib/audit/auditLogger';
 
 export interface EmitirComprobanteInput {
   empresaId: number;
@@ -37,6 +39,9 @@ export interface EmitirComprobanteInput {
  */
 export async function emitirComprobanteAFIP(input: EmitirComprobanteInput) {
   try {
+    const session = await auth();
+    const userEmail = session?.user?.email;
+
     // 1. Obtener datos del cliente
     const cliente = await prisma.entidad.findUnique({ 
       where: { id: input.entidadId },
@@ -135,6 +140,9 @@ export async function emitirComprobanteAFIP(input: EmitirComprobanteInput) {
         }
       }
     });
+
+    // Auditoría de emisión AFIP
+    await auditCreate("DocumentoClientes", nuevoDocumento.id, nuevoDocumento, userEmail, input.empresaId);
 
     revalidatePath('/facturas');
     return { 

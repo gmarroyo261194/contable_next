@@ -43,10 +43,88 @@ export async function updateMedioPagoAccount(id: number, cuentaId: number | null
     });
 
     revalidatePath("/facturas-docentes");
+    revalidatePath("/settings/medios-pago");
     return { success: true };
   } catch (error) {
     console.error("Error al actualizar medio de pago:", error);
     return { error: "No se pudo actualizar la cuenta del medio de pago." };
+  }
+}
+
+export async function createMedioPago(nombre: string, cuentaId?: number | null) {
+  try {
+    const session = await auth();
+    const empresaId = parseInt((session?.user as any)?.empresaId);
+    const userEmail = session?.user?.email;
+
+    if (!empresaId) return { error: "No hay empresa activa." };
+
+    const medio = await db.medioPago.create({
+      data: {
+        nombre,
+        cuentaId: cuentaId || null,
+        empresaId,
+        createdBy: userEmail
+      }
+    });
+
+    revalidatePath("/facturas-docentes");
+    revalidatePath("/settings/medios-pago");
+    return { success: true, data: medio };
+  } catch (error) {
+    console.error("Error al crear medio de pago:", error);
+    return { error: "No se pudo crear el medio de pago." };
+  }
+}
+
+export async function deleteMedioPago(id: number) {
+  try {
+    const session = await auth();
+    const empresaId = parseInt((session?.user as any)?.empresaId);
+
+    if (!empresaId) return { error: "No hay empresa activa." };
+
+    // Validar si tiene pagos asociados
+    const count = await db.gestionPago.count({
+      where: { medioPagoId: id }
+    });
+
+    if (count > 0) {
+      return { error: "No se puede eliminar un medio de pago con registros asociados." };
+    }
+
+    await db.medioPago.delete({
+      where: { id }
+    });
+
+    revalidatePath("/facturas-docentes");
+    revalidatePath("/settings/medios-pago");
+    return { success: true };
+  } catch (error) {
+    console.error("Error al eliminar medio de pago:", error);
+    return { error: "No se pudo eliminar el medio de pago." };
+  }
+}
+
+export async function updateMedioPagoName(id: number, nombre: string) {
+  try {
+    const session = await auth();
+    const userEmail = session?.user?.email;
+
+    await db.medioPago.update({
+      where: { id },
+      data: {
+        nombre,
+        updatedBy: userEmail
+      }
+    });
+
+    revalidatePath("/facturas-docentes");
+    revalidatePath("/settings/medios-pago");
+    return { success: true };
+  } catch (error) {
+    console.error("Error al actualizar nombre del medio de pago:", error);
+    return { error: "No se pudo actualizar el nombre." };
   }
 }
 

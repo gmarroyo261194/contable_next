@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Coins, Shield, User, Bell, Globe, Database, Tag, ArrowDownCircleIcon, ArrowRightLeft, History } from "lucide-react";
+import { Coins, Shield, User, Bell, Globe, Database, Tag, ArrowDownCircleIcon, ArrowRightLeft, History, CreditCard } from "lucide-react";
 
 const categories = [
   {
@@ -65,6 +65,14 @@ const categories = [
     icon: History,
     href: "/settings/audit-logs",
     color: "bg-amber-50 text-amber-600",
+    disabled: false
+  },
+  {
+    title: "Medios de Pago",
+    description: "Configura tus cuentas pagadoras y métodos de cobro/pago",
+    icon: CreditCard,
+    href: "/settings/medios-pago",
+    color: "bg-emerald-50 text-emerald-600",
     disabled: false
   }
 ];
