@@ -69,7 +69,6 @@ export function CentrosCostoClient({
       await upsertCentroCosto({
         id: editingCentro?.id,
         nombre: formData.nombre,
-        empresaId,
         cuentaIds: formData.selectedAccountIds
       });
       toast.success(editingCentro ? "Centro actualizado." : "Centro creado.");

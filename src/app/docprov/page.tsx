@@ -38,7 +38,7 @@ export default function DocumentosProveedoresPage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [docToAuth, setDocToAuth] = useState<any | null>(null);
   const [fechaAuth, setFechaAuth] = useState(new Date().toISOString().split('T')[0]);
-  
+
   // Payment State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [docToPay, setDocToPay] = useState<any | null>(null);
@@ -46,7 +46,7 @@ export default function DocumentosProveedoresPage() {
   const [cuentas, setCuentas] = useState<any[]>([]);
   const [selectedPayingAccount, setSelectedPayingAccount] = useState<any | null>(null);
   const [fechaPago, setFechaPago] = useState(new Date().toISOString().split('T')[0]);
-  
+
   const { data: session } = useSession();
   const { ejercicioId: storeEjercicioId } = useAppStore();
   const ejercicioId = storeEjercicioId || (session?.user as any)?.ejercicioId;
@@ -110,10 +110,10 @@ export default function DocumentosProveedoresPage() {
       toast.error("Error al intentar eliminar el documento.");
     }
   };
-  
+
   const handleAutorizar = async () => {
     if (!docToAuth) return;
-    
+
     try {
       const res = await autorizarDocumentoProveedor(docToAuth.id, fechaAuth);
       if (res.error) {
@@ -134,7 +134,7 @@ export default function DocumentosProveedoresPage() {
       toast.error("Debe seleccionar una cuenta pagadora.");
       return;
     }
-    
+
     try {
       const res = await pagarDocumentoProveedor(docToPay.id, selectedPayingAccount.id, fechaPago);
       if (res.error) {
@@ -157,7 +157,7 @@ export default function DocumentosProveedoresPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-4 lg:p-8">
       <div className="w-full mx-auto space-y-6">
-        
+
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -461,14 +461,14 @@ export default function DocumentosProveedoresPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="p-8 space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                   <CalendarDays className="w-3.5 h-3.5 text-indigo-500" />
                   Fecha Permitida de Pago
                 </label>
-                <input 
+                <input
                   type="date"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 border-b-2 hover:border-slate-300 transition-all"
                   value={fechaAuth}
@@ -517,7 +517,7 @@ export default function DocumentosProveedoresPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="p-8 space-y-8">
               <div className="grid grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
                 <div className="flex flex-col">
@@ -536,9 +536,8 @@ export default function DocumentosProveedoresPage() {
                   <button
                     type="button"
                     onClick={() => setIsAccountSelectorOpen(true)}
-                    className={`w-full text-left bg-slate-50 border-2 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all flex items-center justify-between group ${
-                      selectedPayingAccount ? "text-slate-900 border-indigo-100 bg-white" : "text-slate-400 border-transparent hover:border-indigo-100"
-                    }`}
+                    className={`w-full text-left bg-slate-50 border-2 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all flex items-center justify-between group ${selectedPayingAccount ? "text-slate-900 border-indigo-100 bg-white" : "text-slate-400 border-transparent hover:border-indigo-100"
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <Search className={`w-4 h-4 ${selectedPayingAccount ? "text-indigo-500" : "text-slate-300"}`} />
@@ -552,7 +551,7 @@ export default function DocumentosProveedoresPage() {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha de Pago</label>
-                  <input 
+                  <input
                     type="date"
                     className="w-full bg-slate-50 border-2 border-transparent rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-0 focus:border-indigo-100 transition-all"
                     value={fechaPago}

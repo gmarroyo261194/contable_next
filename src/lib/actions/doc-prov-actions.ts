@@ -195,11 +195,11 @@ export async function upsertDocumentoProveedor(data: {
       }
 
       revalidatePath("/docprov");
-      return { success: true, data: finalResult };
+      return { success: true, data: finalResult, error: undefined };
     });
   } catch (error: any) {
     console.error("Error al procesar documento de proveedor:", error);
-    return { error: error.message || "Error al procesar el documento." };
+    return { success: false, error: error.message || "Error al procesar el documento." };
   }
 }
 
@@ -269,11 +269,11 @@ export async function anularDocumentoProveedor(id: number) {
       await auditUpdate("DocumentoProveedores", id, doc, { ...doc, anulado: true }, userEmail, empresaId);
       
       revalidatePath("/docprov");
-      return { success: true };
+      return { success: true, error: undefined };
     });
   } catch (error: any) {
     console.error("Error al anular documento:", error);
-    return { error: error.message || "Error al anular el documento." };
+    return { success: false, error: error.message || "Error al anular el documento." };
   }
 }
 
@@ -300,9 +300,9 @@ export async function autorizarDocumentoProveedor(id: number, fechaAutorizacionP
     await auditUpdate("DocumentoProveedores", id, { autorizado: false }, JSON.parse(JSON.stringify(doc)), userEmail, empresaId);
     
     revalidatePath("/docprov");
-    return { success: true };
+    return { success: true, error: undefined };
   } catch (error: any) {
-    return { error: error.message || "Error al autorizar el documento." };
+    return { success: false, error: error.message || "Error al autorizar el documento." };
   }
 }
 
@@ -324,9 +324,9 @@ export async function deleteDocumentoProveedor(id: number) {
     await auditDelete("DocumentoProveedores", id, doc, userEmail, empresaId);
 
     revalidatePath("/docprov");
-    return { success: true };
+    return { success: true, error: undefined };
   } catch (error: any) {
-    return { error: error.message || "Error al eliminar el documento." };
+    return { success: false, error: error.message || "Error al eliminar el documento." };
   }
 }
 
@@ -423,10 +423,10 @@ export async function pagarDocumentoProveedor(id: number, cuentaPagadoraId: numb
       await auditUpdate("DocumentoProveedores", id, doc, JSON.parse(JSON.stringify(updatedDoc)), userEmail, empresaId);
 
       revalidatePath("/docprov");
-      return { success: true };
+      return { success: true, error: undefined };
     });
   } catch (error: any) {
     console.error("Error al pagar documento:", error);
-    return { error: error.message || "Error al registrar el pago." };
+    return { success: false, error: error.message || "Error al registrar el pago." };
   }
 }

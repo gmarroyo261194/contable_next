@@ -33,8 +33,8 @@ export const authConfig = {
         console.log("[Auth] Autorizando usuario:", user.email);
         console.log("[Auth] Empresas vinculadas:", user.empresas.length);
 
-        const selectedEmpresaId = credentials.empresaId ? parseInt(credentials.empresaId as string) : null;
-        const selectedEjercicioId = credentials.ejercicioId ? parseInt(credentials.ejercicioId as string) : null;
+        const selectedEmpresaId = credentials.empresaId ? parseInt(credentials.empresaId as string) : undefined;
+        const selectedEjercicioId = credentials.ejercicioId ? parseInt(credentials.ejercicioId as string) : undefined;
 
         let activeEmpresa = user.empresas[0]?.empresa;
         if (selectedEmpresaId) {
@@ -71,10 +71,10 @@ export const authConfig = {
           email: user.email,
           roles: user.roles.map((ur: any) => ur.role.name),
           permissions: Array.from(new Set(permissions)),
-          empresaId: activeEmpresa?.id,
-          empresaNombre: activeEmpresa?.nombre,
-          ejercicioId: finalEjercicioId,
-          ejercicioNombre: activeEjercicioNombre,
+          empresaId: activeEmpresa?.id || undefined,
+          empresaNombre: activeEmpresa?.nombre || undefined,
+          ejercicioId: finalEjercicioId || undefined,
+          ejercicioNombre: activeEjercicioNombre || undefined,
         };
       },
     }),

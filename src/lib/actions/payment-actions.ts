@@ -1,10 +1,12 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
 import { generatePagos360Link } from "../pagos360";
 import { sendEmail } from "../mail";
 import { format } from "date-fns";
 import { generateInvoicePdf, PdfInvoiceData } from "../afip/generatePdf";
+import { auditUpdate } from "@/lib/audit/auditLogger";
 
 export async function generatePaymentLinkAction(documentoId: number) {
   try {

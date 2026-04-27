@@ -529,7 +529,7 @@ export async function deleteDocumentoCliente(id: number) {
 
     // Validar ejercicio cerrado
     const ej = await prisma.ejercicio.findFirst({
-      where: { documentosClientes: { some: { id } } }
+      where: { docClientes: { some: { id } } }
     });
     if (ej?.cerrado) return { error: "No se puede eliminar documentos de un ejercicio cerrado." };
 
