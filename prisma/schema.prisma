@@ -668,3 +668,30 @@ model ServicioConfig {
   @@unique([servicioId, empresaId])
   @@map("servicio_configs")
 }
+
+/// Registro de auditoría para rastrear creaciones, modificaciones y eliminaciones
+/// de entidades críticas del sistema contable.
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  /// Nombre del modelo Prisma auditado (ej: "Cuenta", "Asiento", "FacturaDocente")
+  entidad     String
+  /// ID del registro afectado como string para soportar IDs numéricos y CUID
+  entidadId   String
+  /// Tipo de operación: "CREATE" | "UPDATE" | "DELETE"
+  accion      String
+  /// Snapshot JSON del estado ANTERIOR al cambio (null en CREATE)
+  valoresAnt  String?  @db.NVarChar(Max)
+  /// Snapshot JSON del estado NUEVO tras el cambio (null en DELETE)
+  valoresNuev String?  @db.NVarChar(Max)
+  /// Email o identificador del usuario que realizó el cambio
+  cambiadoPor String?
+  /// Timestamp del cambio (UTC)
+  cambiadoEn  DateTime @default(now())
+  /// Empresa a la que pertenece el registro — permite filtrar el historial por empresa
+  empresaId   Int?
+
+  @@index([entidad, entidadId])
+  @@index([empresaId, cambiadoEn])
+  @@index([cambiadoPor])
+  @@map("audit_logs")
+}

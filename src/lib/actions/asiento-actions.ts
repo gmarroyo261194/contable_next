@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { auditCreate, auditUpdate } from "@/lib/audit/auditLogger";
 
 export async function getAsientoById(id: number) {
   const session = await auth();
@@ -234,7 +235,12 @@ export async function createAsiento(data: {
 
       revalidatePath("/asientos");
       // JSON.parse(JSON.stringify()) is a safe way to ensure it's a plain object
-      return { success: true, asiento: JSON.parse(JSON.stringify(asiento)) };
+      const result = JSON.parse(JSON.stringify(asiento));
+
+      // Registrar creación en el log de auditoría
+      await auditCreate("Asiento", asiento.id, result, userEmail, empresaId);
+
+      return { success: true, asiento: result };
     });
   } catch (error) {
     console.error("Error creating asiento:", error);
@@ -370,7 +376,12 @@ export async function updateAsiento(id: number, data: {
       });
 
       revalidatePath("/asientos");
-      return { success: true, asiento: JSON.parse(JSON.stringify(updated)) };
+      const updatedResult = JSON.parse(JSON.stringify(updated));
+
+      // Registrar edición con snapshot del estado anterior (cabecera) vs nuevo
+      await auditUpdate("Asiento", id, existing, updatedResult, userEmail, empresaId);
+
+      return { success: true, asiento: updatedResult };
     });
   } catch (error) {
     console.error("Error updating asiento:", error);

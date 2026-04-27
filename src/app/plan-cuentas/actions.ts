@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 
 /**
  * Obtiene las cuentas del plan de cuentas para la empresa y ejercicio activo en la sesión.
@@ -55,6 +56,9 @@ export async function createCuenta(data: {
       ejercicioId: parseInt(ejercicioId),
     },
   });
+
+  // Registrar creación en el log de auditoría
+  await auditCreate("Cuenta", cuenta.id, cuenta, session?.user?.email, parseInt(empresaId));
 
   revalidatePath("/plan-cuentas");
   return cuenta;
@@ -112,6 +116,9 @@ export async function updateCuenta(id: number, data: {
     where: { id },
     data,
   });
+
+  // Registrar modificación con snapshot de valores anteriores y nuevos
+  await auditUpdate("Cuenta", id, cuentaExistente, cuenta, session?.user?.email, parseInt(empresaId));
 
   revalidatePath("/plan-cuentas");
   return cuenta;
@@ -173,6 +180,9 @@ export async function deleteCuenta(id: number) {
   if (renglonesCount > 0) {
     throw new Error("No se puede eliminar una cuenta con movimientos contables registrados.");
   }
+
+  // Guardar snapshot antes de eliminar para el log de auditoría
+  await auditDelete("Cuenta", id, cuentaExistente, session?.user?.email, parseInt(empresaId));
 
   await prisma.cuenta.delete({
     where: { id },

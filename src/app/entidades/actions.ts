@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 
 export async function getEntidades() {
   const session = await auth();
@@ -56,6 +57,8 @@ export async function createEntidad(data: {
     } as any,
   });
 
+  await auditCreate("Entidad", entidad.id, entidad, session?.user?.email, parseInt(empresaId));
+
   revalidatePath("/entidades");
   return entidad;
 }
@@ -96,6 +99,9 @@ export async function updateEntidad(
       tipoId: data.tipoId,
     } as any,
   });
+
+  // Registrar modificación con valores anteriores y nuevos
+  await auditUpdate("Entidad", id, entidadExistente, entidad, session?.user?.email, parseInt(empresaId));
 
   revalidatePath("/entidades");
   return entidad;
@@ -170,6 +176,9 @@ export async function deleteEntidad(id: number) {
   if (docProvCount > 0 || docCliCount > 0) {
     throw new Error("No se puede eliminar una entidad con documentos asociados.");
   }
+
+  // Registrar eliminación con snapshot completo antes de borrar
+  await auditDelete("Entidad", id, entidadExistente, session?.user?.email, parseInt(empresaId));
 
   await prisma.entidad.delete({
     where: { id },
