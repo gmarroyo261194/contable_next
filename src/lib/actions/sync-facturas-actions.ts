@@ -313,6 +313,9 @@ export async function getDocumentosClientes(ejercicioId: number | null) {
           numero: true,
           fecha: true
         }
+      },
+      ejercicio: {
+        include: { empresa: true }
       }
     },
     orderBy: { fecha: 'desc' }

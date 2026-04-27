@@ -23,6 +23,9 @@ export async function getCuentas() {
     },
     include: {
       padre: true,
+      ejercicio: {
+        include: { empresa: true }
+      }
     },
     orderBy: {
       codigo: "asc",

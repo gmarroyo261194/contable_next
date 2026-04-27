@@ -174,6 +174,17 @@ export function FacturaDocenteClient({ initialData }: { initialData: any[] }) {
       }
     },
     {
+      header: "Empresa",
+      accessor: "empresa.razonSocial",
+      cell: (f: any) => (
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
+            {f.empresa?.nombreFantasia || f.empresa?.razonSocial}
+          </span>
+        </div>
+      )
+    },
+    {
       header: "Docente",
       accessor: "entidad.nombre",
       cell: (f: any) => (

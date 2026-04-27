@@ -22,6 +22,7 @@ export async function getCentrosCosto(empresaId?: number) {
   return await prisma.centroCosto.findMany({
     where: { empresaId: resolvedEmpresaId },
     include: {
+      empresa: true,
       cuentas: {
         select: {
           cuentaId: true

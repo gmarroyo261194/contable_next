@@ -17,6 +17,7 @@ export async function getEntidades() {
     },
     include: {
       tipo: true,
+      empresa: true,
     },
     orderBy: {
       nombre: "asc",

@@ -59,6 +59,19 @@ export function PagosClient({ initialData }: { initialData: any[] }) {
       )
     },
     {
+      header: "Empresa / Ejercicio",
+      cell: (p: any) => (
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
+            {p.ejercicio?.empresa?.nombreFantasia || p.ejercicio?.empresa?.razonSocial}
+          </span>
+          <span className="text-[9px] font-bold text-slate-400">
+            Eje. {p.ejercicio?.numero}
+          </span>
+        </div>
+      )
+    },
+    {
       header: "Beneficiario",
       accessor: "entidad.nombre",
       cell: (p: any) => (

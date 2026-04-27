@@ -95,14 +95,22 @@ export function CentrosCostoClient({
     {
       header: "Nombre",
       accessor: "nombre",
-      cell: (item: CentroCosto) => (
+      cell: (item: any) => (
         <span className="font-bold text-slate-800">{item.nombre}</span>
+      )
+    },
+    {
+      header: "Empresa",
+      cell: (item: any) => (
+        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
+          {item.empresa?.nombreFantasia || item.empresa?.razonSocial}
+        </span>
       )
     },
     {
       header: "Cuentas Asociadas",
       accessor: "cuentas",
-      cell: (item: CentroCosto) => (
+      cell: (item: any) => (
         <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg text-xs font-black">
           {item.cuentas.length} cuentas
         </span>

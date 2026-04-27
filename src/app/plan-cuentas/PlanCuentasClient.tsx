@@ -188,6 +188,19 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
       )
     },
     {
+      header: "Empresa / Ejercicio",
+      cell: (c: any) => (
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
+            {c.ejercicio?.empresa?.nombreFantasia || c.ejercicio?.empresa?.razonSocial}
+          </span>
+          <span className="text-[9px] font-bold text-slate-400">
+            Eje. {c.ejercicio?.numero}
+          </span>
+        </div>
+      )
+    },
+    {
       header: "Nombre / Cuenta",
       accessor: "nombre",
       cell: (c: any) => (

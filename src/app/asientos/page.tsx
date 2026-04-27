@@ -254,6 +254,9 @@ export default function AsientosPage() {
                 >
                   <div className="flex items-center justify-center">Asiento # <SortIcon column="numero" /></div>
                 </th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Empresa / Ejercicio
+                </th>
                 <th
                   onClick={() => handleSort('descripcion')}
                   className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-pointer hover:bg-slate-100 transition-colors group"
@@ -297,6 +300,16 @@ export default function AsientosPage() {
                       <span className="text-xs font-black bg-slate-100 text-slate-500 px-2 py-1 rounded-lg">
                         #{asiento.numero.toString().padStart(5, '0')}
                       </span>
+                    </td>
+                    <td className="px-6 py-1">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-primary uppercase tracking-tighter truncate max-w-[150px]">
+                          {asiento.ejercicio?.empresa?.nombreFantasia || asiento.ejercicio?.empresa?.razonSocial}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400">
+                          Ejercicio {asiento.ejercicio?.numero} ({asiento.ejercicio?.nombre})
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-1">
                       <div className="flex items-center gap-2">

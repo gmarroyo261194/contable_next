@@ -263,6 +263,7 @@ export default function DocumentosClientesPage() {
                 <thead>
                   <tr className="bg-slate-50/50">
                     <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Fecha</th>
+                    <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Empresa / Ejercicio</th>
                     <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Cliente</th>
                     <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Servicio</th>
                     <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Comprobante</th>
@@ -276,6 +277,16 @@ export default function DocumentosClientesPage() {
                     <tr key={doc.id} className="group hover:bg-slate-50/80 transition-all duration-200">
                       <td className="px-4 py-2 whitespace-nowrap">
                         <div className="text-slate-700 font-bold text-xs">{format(new Date(doc.fecha), 'dd/MM/yyyy')}</div>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
+                            {doc.ejercicio?.empresa?.nombreFantasia || doc.ejercicio?.empresa?.razonSocial}
+                          </span>
+                          <span className="text-[9px] font-bold text-slate-400">
+                            Eje. {doc.ejercicio?.numero}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-4 py-2">
                         <div>

@@ -217,7 +217,10 @@ export async function getPagosHistory() {
       entidad: true,
       medioPago: true,
       asiento: true,
-      facturasDocentes: true
+      facturasDocentes: true,
+      ejercicio: {
+        include: { empresa: true }
+      }
     },
     orderBy: { fecha: "desc" }
   });

@@ -123,6 +123,11 @@ export async function getAsientos(params: {
         anulaA: true,
         anulaciones: true,
         pagosGestion: true,
+        ejercicio: {
+          include: {
+            empresa: true
+          }
+        }
       },
       orderBy: { [actualSortBy]: sortOrder },
       skip,

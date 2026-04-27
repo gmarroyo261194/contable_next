@@ -52,6 +52,14 @@ export function EntidadClient({ initialEntidades, tipos }: { initialEntidades: a
         </div>
       )
     },
+    {
+      header: "Empresa",
+      cell: (e: any) => (
+        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
+          {e.empresa?.nombreFantasia || e.empresa?.razonSocial}
+        </span>
+      )
+    },
     { header: "CUIT / CUIL", accessor: "cuit", className: "font-mono text-xs" },
     { header: "DNI", accessor: "nroDoc", className: "font-mono text-xs" },
     {
