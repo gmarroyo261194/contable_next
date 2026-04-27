@@ -2,13 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { 
-  Rocket, 
-  ArrowRight, 
-  CheckCircle2, 
-  Shield, 
-  BarChart3, 
-  LogIn 
+import {
+  Rocket,
+  ArrowRight,
+  CheckCircle2,
+  Shield,
+  BarChart3,
+  LogIn,
+  Wallet
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -17,18 +18,18 @@ export default function LandingPage() {
       {/* Navigation Bar */}
       <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
-              <span className="text-white font-black text-xs leading-none">C</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center size-10 rounded-lg bg-primary text-white">
+              <Wallet className="size-6" />
             </div>
-            <span className="text-lg font-black text-slate-800 tracking-tight font-display">Contable<span className="text-primary font-black italic">Next</span></span>
+            <h2 className="text-[#0a192f] dark:text-white text-xl font-bold leading-tight tracking-tight">ContableNext</h2>
           </div>
-          <Link 
-            href="/login" 
+          <Link
+            href="/login"
             className="bg-primary hover:bg-primary/90 text-white px-8 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
           >
             <LogIn className="size-4" />
-            Acceder al Portal
+            Iniciar Sesión
           </Link>
         </div>
       </nav>
@@ -48,9 +49,9 @@ export default function LandingPage() {
             <p className="text-lg text-slate-500 max-w-lg leading-relaxed font-medium">
               Optimiza tu gestión contable con inteligencia y simplicidad. Diseñado para empresas argentinas que buscan eficiencia y transparencia.
             </p>
-            <div className="flex flex-wrap gap-4">
-              <Link 
-                href="/login" 
+            {/* <div className="flex flex-wrap gap-4">
+              <Link
+                href="/login"
                 className="bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-3"
               >
                 Probar ahora gratis
@@ -59,7 +60,7 @@ export default function LandingPage() {
               <button className="bg-white border border-slate-200 px-10 py-4 rounded-2xl font-bold text-lg text-slate-700 hover:bg-slate-50 transition-all">
                 Ver presentación
               </button>
-            </div>
+            </div> */}
             <div className="flex items-center gap-6 pt-4">
               <div className="flex items-center gap-2 font-bold text-sm text-slate-600">
                 <CheckCircle2 className="size-5 text-green-500" />
@@ -71,7 +72,7 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center gap-2 font-bold text-sm text-slate-600">
                 <CheckCircle2 className="size-5 text-green-500" />
-                Reportes AFIP
+                Centros de Costos
               </div>
             </div>
           </div>
@@ -99,34 +100,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Minimalist Section */}
-      <section className="py-24 bg-white border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-3 gap-12">
-            <div className="space-y-4">
-              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
-                <Shield className="size-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 font-display">Seguridad Total</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">Infraestructura robusta y auditoría completa para tus datos fiscales y financieros.</p>
-            </div>
-            <div className="space-y-4">
-              <div className="w-12 h-12 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center">
-                <BarChart3 className="size-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 font-display">Dashboard Analítico</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">Visualiza el estado de tu empresa en tiempo real con gráficos claros y KPIs personalizables.</p>
-            </div>
-            <div className="space-y-4">
-              <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
-                <LogIn className="size-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 font-display">Multi-Ejercicios</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">Gestiona múltiples periodos contables de forma simultánea sin pérdida de información.</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="mt-auto py-8 bg-slate-50 border-t border-slate-200">

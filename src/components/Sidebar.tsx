@@ -56,7 +56,7 @@ const navItems = [
     href: '/cliente-prov',
     children: [
       { icon: Users, label: 'Pers. Fisicas y Juridicas', href: '/entidades' },
-      { icon: Receipt, label: 'Facturas Recibidas', href: '/docprov' },
+      { icon: Receipt, label: 'Documentos Proveedores', href: '/docprov' },
       { icon: Receipt, label: 'Facturas Emitidas', href: '/doccli' },
     ]
   },

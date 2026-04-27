@@ -2,17 +2,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  X, 
-  Loader2, 
-  CheckCircle2, 
-  AlertCircle, 
-  FileText, 
-  Calendar, 
-  Hash, 
-  Tag, 
-  Layers, 
-  PlusCircle, 
+import {
+  X,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  FileText,
+  Calendar,
+  Hash,
+  Tag,
+  Layers,
+  PlusCircle,
   Briefcase,
   Edit3
 } from "lucide-react";
@@ -59,7 +59,7 @@ export default function EditarFacturaModal({
         importeTotal: Number(item.importeTotal)
       })) || []);
       setMontoTotal(Number(documento.montoTotal));
-      
+
       // Load rubros and services
       getRubros().then(setRubros).catch(console.error);
       if (empresaId) {
@@ -71,14 +71,14 @@ export default function EditarFacturaModal({
   const handleItemChange = (idx: number, field: string, value: any) => {
     const newItems = [...items];
     const item = { ...newItems[idx] };
-    
+
     if (field === 'cantidad') item.cantidad = parseFloat(value) || 0;
     else if (field === 'precioUnitario') item.precioUnitario = parseFloat(value) || 0;
     else if (field === 'descripcion') item.descripcion = value;
-    
+
     item.importeTotal = item.cantidad * item.precioUnitario;
     newItems[idx] = item;
-    
+
     const newTotal = newItems.reduce((acc, curr) => acc + curr.importeTotal, 0);
     setItems(newItems);
     setMontoTotal(newTotal);
@@ -135,11 +135,11 @@ export default function EditarFacturaModal({
   if (!isOpen || !documento) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-      <div className="bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-        
+    <div className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+      <div className="bg-white w-full max-w-7xl rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+
         {/* Header */}
-        <div className="p-8 border-b border-slate-50 bg-gradient-to-r from-slate-50 to-white flex items-center justify-between">
+        <div className="p-8 border-b border-slate-50 bg-linear-to-r from-slate-50 to-white flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100">
               <Edit3 className="text-white w-6 h-6" />
@@ -149,7 +149,7 @@ export default function EditarFacturaModal({
               <p className="text-slate-500 text-sm font-bold mt-1.5">{documento.numero} - {documento.entidad?.nombre}</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-600"
           >
@@ -166,8 +166,8 @@ export default function EditarFacturaModal({
             </div>
           )}
 
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
               {/* Fecha */}
               <div className="md:col-span-3 space-y-2">
                 <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2">
@@ -225,14 +225,14 @@ export default function EditarFacturaModal({
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                   <FileText className="w-3.5 h-3.5" /> Detalle de ítems
                 </h4>
-                <button 
+                <button
                   onClick={addItem}
                   className="text-[10px] font-black text-indigo-600 uppercase hover:text-indigo-700 flex items-center gap-1.5 transition-colors"
                 >
                   <PlusCircle className="w-3.5 h-3.5" /> Agregar ítem
                 </button>
               </div>
-              
+
               <div className="border border-slate-100 rounded-3xl overflow-hidden shadow-xs bg-slate-50/30">
                 <table className="w-full text-left bg-white text-[11px]">
                   <thead>
@@ -278,7 +278,7 @@ export default function EditarFacturaModal({
                           {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(item.importeTotal)}
                         </td>
                         <td className="px-5 py-3 text-center">
-                          <button 
+                          <button
                             onClick={() => removeItem(idx)}
                             className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                           >
@@ -311,7 +311,7 @@ export default function EditarFacturaModal({
           >
             Cancelar
           </button>
-          
+
           <button
             onClick={handleSave}
             disabled={loading}
