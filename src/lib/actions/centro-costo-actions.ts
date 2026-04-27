@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
+import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 import { MayorRenglon, MayorResult, getLibroMayor } from "./reportes-actions";
 
 /**
@@ -80,11 +81,14 @@ export async function upsertCentroCosto(data: {
         });
       }
 
+      // Registrar auditoría
+      await auditUpdate("CentroCosto", id, centroExistente, centro, session?.user?.email, empresaId);
+
       return centro;
     });
   } else {
     // Crear — usar empresaId de la sesión
-    return await prisma.centroCosto.create({
+    const centro = await prisma.centroCosto.create({
       data: {
         nombre,
         empresaId,
@@ -95,6 +99,9 @@ export async function upsertCentroCosto(data: {
         }
       }
     });
+
+    await auditCreate("CentroCosto", centro.id, centro, session?.user?.email, empresaId);
+    return centro;
   }
 }
 
@@ -116,6 +123,8 @@ export async function deleteCentroCosto(id: number) {
   if (!centroExistente) {
     throw new Error("No se puede eliminar este centro de costo. No pertenece a la empresa activa.");
   }
+
+  await auditDelete("CentroCosto", id, centroExistente, session?.user?.email, empresaId);
 
   return await prisma.centroCosto.delete({
     where: { id }

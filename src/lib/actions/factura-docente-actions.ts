@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 import { parseFacturaPDF } from "@/lib/facturas/facturaParser";
 
 export async function getFacturasDocentes() {
@@ -113,6 +114,8 @@ export async function createFacturaDocente(data: {
       },
     });
 
+    await auditCreate("FacturaDocente", factura.id, factura, userEmail, empresaId);
+
     revalidatePath("/facturas-docentes");
     return { success: true, data: JSON.parse(JSON.stringify(factura)) };
   } catch (error: any) {
@@ -192,7 +195,11 @@ export async function updateFacturaDocente(id: number, data: {
     }
 
     revalidatePath("/facturas-docentes");
-    return { success: true, data: JSON.parse(JSON.stringify(updated)) };
+    const updatedResult = JSON.parse(JSON.stringify(updated));
+
+    await auditUpdate("FacturaDocente", id, original, updatedResult, userEmail, empresaId);
+
+    return { success: true, data: updatedResult };
   } catch (error: any) {
     console.error("Error al actualizar factura de docente:", error);
     return { error: "Hubo un error al actualizar la factura." };
@@ -286,6 +293,8 @@ export async function deleteFacturaDocente(id: number) {
     if (factura?.asientoPagoId) {
       return { error: "No se puede eliminar una factura que ya ha sido pagada." };
     }
+
+    await auditDelete("FacturaDocente", id, factura, session?.user?.email, empresaId);
 
     await db.facturaDocente.delete({
       where: { id },

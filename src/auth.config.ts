@@ -30,6 +30,9 @@ export const authConfig = {
           ur.role.permissions.map((rp: any) => rp.permission.name)
         );
 
+        console.log("[Auth] Autorizando usuario:", user.email);
+        console.log("[Auth] Empresas vinculadas:", user.empresas.length);
+
         const selectedEmpresaId = credentials.empresaId ? parseInt(credentials.empresaId as string) : null;
         const selectedEjercicioId = credentials.ejercicioId ? parseInt(credentials.ejercicioId as string) : null;
 
@@ -39,6 +42,8 @@ export const authConfig = {
           if (ue) activeEmpresa = ue.empresa;
         }
 
+        console.log("[Auth] Empresa activa:", activeEmpresa?.nombre || "NINGUNA");
+
         let finalEjercicioId = selectedEjercicioId;
         let activeEjercicioNombre = "";
 
@@ -47,14 +52,15 @@ export const authConfig = {
             const ej = await (db as any).ejercicio.findUnique({ where: { id: finalEjercicioId } });
             if (ej) activeEjercicioNombre = ej.numero.toString();
           } else {
-            // Auto-seleccionar el primer ejercicio abierto de la empresa
+            // Auto-seleccionar el primer ejercicio de la empresa
             const firstEj = await (db as any).ejercicio.findFirst({
-              where: { empresaId: activeEmpresa.id, cerrado: false },
-              orderBy: { inicio: 'desc' }
+              where: { empresaId: activeEmpresa.id },
+              orderBy: { numero: 'desc' }
             });
             if (firstEj) {
               finalEjercicioId = firstEj.id;
               activeEjercicioNombre = firstEj.numero.toString();
+              console.log("[Auth] Ejercicio auto-seleccionado:", activeEjercicioNombre);
             }
           }
         }
@@ -94,20 +100,26 @@ export const authConfig = {
       
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
-        token.roles = (user as any).roles; // eslint-disable-line @typescript-eslint/no-explicit-any
-        token.permissions = (user as any).permissions; // eslint-disable-line @typescript-eslint/no-explicit-any
+        token.roles = (user as any).roles;
+        token.permissions = (user as any).permissions;
         token.empresaId = (user as any).empresaId;
         token.empresaNombre = (user as any).empresaNombre;
         token.ejercicioId = (user as any).ejercicioId;
         token.ejercicioNombre = (user as any).ejercicioNombre;
       }
+      
+      // Manejar actualización manual de sesión si fuera necesario
+      if (trigger === "update" && session) {
+        return { ...token, ...session.user };
+      }
+
       return token;
     },
     async session({ session, token }) {
-      if (token) {
+      if (token && session.user) {
         session.user.id = token.id as string;
         (session.user as any).roles = token.roles;
         (session.user as any).permissions = token.permissions;

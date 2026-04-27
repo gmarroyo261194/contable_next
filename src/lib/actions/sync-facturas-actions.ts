@@ -5,6 +5,7 @@ import dbFacturacion from "@/lib/dbFacturacion";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { auditUpdate } from "@/lib/audit/auditLogger";
 import { parseFacturaPDF } from "@/lib/facturas/facturaParser";
 
 export interface FacturaExterna {
@@ -177,6 +178,15 @@ export async function syncFacturasSeleccionadas(facturas: FacturaExterna[], ejer
 
   if (!empresaId) return { success: false, error: "No hay empresa activa." };
   if (!ejercicioId) return { success: false, error: "No hay ejercicio seleccionado." };
+
+  // Validar que el ejercicio no esté cerrado
+  const ejercicio = await prisma.ejercicio.findUnique({
+    where: { id: ejercicioId },
+    select: { cerrado: true }
+  });
+  if (!ejercicio) return { success: false, error: "Ejercicio no encontrado." };
+  if (ejercicio.cerrado) return { success: false, error: "El ejercicio está cerrado. No se pueden sincronizar facturas en este período." };
+
   if (facturas.length === 0) return { success: true, syncedCount: 0 };
 
   try {
@@ -417,6 +427,13 @@ export async function saveFacturaImportada(data: {
   const ejercicioId = await getDefaultEjercicio(empresaId);
   if (!ejercicioId) return { error: "No hay un ejercicio contable activo para esta empresa." };
 
+  // Validar que el ejercicio no esté cerrado
+  const ejercicio = await prisma.ejercicio.findUnique({
+    where: { id: ejercicioId },
+    select: { cerrado: true }
+  });
+  if (ejercicio?.cerrado) return { error: "El ejercicio contable está cerrado. No se pueden importar facturas." };
+
   try {
     return await prisma.$transaction(async (tx) => {
       let finalEntidadId = data.entidadId;
@@ -499,6 +516,12 @@ export async function deleteDocumentoCliente(id: number) {
     if (!doc) return { error: "Documento no encontrado." };
     if (doc.asientoId) return { error: "No se puede eliminar un documento ya contabilizado." };
 
+    // Validar ejercicio cerrado
+    const ej = await prisma.ejercicio.findFirst({
+      where: { documentosClientes: { some: { id } } }
+    });
+    if (ej?.cerrado) return { error: "No se puede eliminar documentos de un ejercicio cerrado." };
+
     await prisma.documentoClientes.delete({
       where: { id }
     });
@@ -526,6 +549,13 @@ export async function registrarPagoDocumento(id: number, fechaPago: Date, montoP
     const userEmail = session?.user?.email;
 
     if (!empresaId || !ejercicioId) throw new Error("No hay empresa o ejercicio activo en la sesión.");
+
+    // Validar ejercicio cerrado
+    const ejercicio = await prisma.ejercicio.findUnique({
+      where: { id: ejercicioId },
+      select: { cerrado: true }
+    });
+    if (ejercicio?.cerrado) return { error: "El ejercicio está cerrado. No se pueden registrar pagos ni generar asientos." };
 
     return await prisma.$transaction(async (tx) => {
       // 1. Obtener el documento con su servicio y configuración
@@ -727,6 +757,13 @@ export async function updateDocumentoCliente(
     if (doc.asientoId) return { error: "No se puede editar una factura ya contabilizada" };
     if (doc.montoPagado && doc.montoPagado.toNumber() > 0) return { error: "No se puede editar una factura con pagos registrados" };
 
+    // Validar ejercicio cerrado
+    const ej = await prisma.ejercicio.findUnique({
+      where: { id: doc.ejercicioId },
+      select: { cerrado: true }
+    });
+    if (ej?.cerrado) return { error: "El ejercicio está cerrado. No se permiten ediciones." };
+
     const updated = await prisma.documentoClientes.update({
       where: { id },
       data: {
@@ -747,6 +784,8 @@ export async function updateDocumentoCliente(
     });
     
     revalidatePath("/doccli");
+    await auditUpdate("DocumentoClientes", id, doc, updated, session?.user?.email, empresaId);
+
     return { success: true };
   } catch (error: any) {
     console.error("Error updating documento:", error);

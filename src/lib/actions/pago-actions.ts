@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { auditCreate, auditUpdate } from "@/lib/audit/auditLogger";
 
 export async function getMediosPago() {
   const session = await auth();
@@ -65,6 +66,14 @@ export async function processPaymentDocente(ids: number[], data: {
 
   try {
     return await db.$transaction(async (tx) => {
+      // Validar ejercicio cerrado
+      const ejercicio = await tx.ejercicio.findUnique({
+        where: { id: ejercicioId },
+        select: { cerrado: true }
+      });
+      if (!ejercicio) throw new Error("Ejercicio no encontrado.");
+      if (ejercicio.cerrado) return { error: "El ejercicio está cerrado. No se pueden procesar pagos." };
+
       // 1. Validar facturas
       const facturas = await tx.facturaDocente.findMany({
         where: { id: { in: ids } },
@@ -185,6 +194,9 @@ export async function processPaymentDocente(ids: number[], data: {
         }
       });
 
+      // 6. Auditoría
+      await auditCreate("GestionPago", gestionPago.id, JSON.parse(JSON.stringify(gestionPago)), userEmail, empresaId);
+
       return { success: true, pagoId: gestionPago.id };
     });
   } catch (error: any) {
@@ -222,6 +234,14 @@ export async function anularPago(pagoId: number) {
 
   try {
     return await db.$transaction(async (tx) => {
+      // Validar ejercicio cerrado
+      const ejercicio = await tx.ejercicio.findUnique({
+        where: { id: ejercicioId },
+        select: { cerrado: true }
+      });
+      if (!ejercicio) throw new Error("Ejercicio no encontrado.");
+      if (ejercicio.cerrado) return { error: "El ejercicio está cerrado. No se pueden anular pagos." };
+
       // 1. Obtener el pago
       const pago = await tx.gestionPago.findUnique({
         where: { id: pagoId },
@@ -285,6 +305,9 @@ export async function anularPago(pagoId: number) {
           updatedBy: userEmail
         }
       });
+
+      // 5. Auditoría
+      await auditUpdate("GestionPago", pagoId, pago, { ...pago, anulado: true }, userEmail, (session?.user as any)?.empresaId);
 
       return { success: true };
     });

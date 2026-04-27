@@ -195,6 +195,15 @@ export async function createAsiento(data: {
 
   try {
     return await db.$transaction(async (tx) => {
+      // Validar que el ejercicio no esté cerrado
+      const ejercicio = await tx.ejercicio.findUnique({
+        where: { id: ejercicioId },
+        select: { cerrado: true }
+      });
+
+      if (!ejercicio) throw new Error("Ejercicio no encontrado.");
+      if (ejercicio.cerrado) return { error: "El ejercicio contable está cerrado. No se permiten modificaciones." };
+
       // Obtener el último número de asiento para este ejercicio (Bloqueo implícito por transacción)
       const lastAsiento = await tx.asiento.findFirst({
         where: { ejercicioId },
@@ -257,6 +266,15 @@ export async function anularAsiento(asientoId: number) {
 
   try {
     return await db.$transaction(async (tx) => {
+      // Validar que el ejercicio no esté cerrado
+      const ejercicio = await tx.ejercicio.findUnique({
+        where: { id: ejercicioId },
+        select: { cerrado: true }
+      });
+
+      if (!ejercicio) throw new Error("Ejercicio no encontrado.");
+      if (ejercicio.cerrado) return { error: "El ejercicio contable está cerrado. No se puede anular en este período." };
+
       // 1. Buscar el asiento original validando que pertenezca al ejercicio activo
       const original = await tx.asiento.findFirst({
         where: { id: asientoId, ejercicioId },
@@ -333,6 +351,15 @@ export async function updateAsiento(id: number, data: {
 
   try {
     return await db.$transaction(async (tx) => {
+      // Validar que el ejercicio no esté cerrado
+      const ejercicio = await tx.ejercicio.findUnique({
+        where: { id: ejercicioId },
+        select: { cerrado: true }
+      });
+
+      if (!ejercicio) throw new Error("Ejercicio no encontrado.");
+      if (ejercicio.cerrado) return { error: "El ejercicio contable está cerrado. No se permiten ediciones." };
+
       // 1. Verificar existencia y pertenencia al ejercicio activo
       const existing = await tx.asiento.findFirst({
         where: { id, ejercicioId },

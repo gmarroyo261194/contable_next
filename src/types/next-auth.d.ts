@@ -8,6 +8,8 @@ declare module "next-auth" {
       permissions?: string[];
       empresaId?: number;
       empresaNombre?: string;
+      ejercicioId?: number;
+      ejercicioNombre?: string;
     } & DefaultSession["user"];
   }
 
@@ -16,6 +18,8 @@ declare module "next-auth" {
     permissions?: string[];
     empresaId?: number;
     empresaNombre?: string;
+    ejercicioId?: number;
+    ejercicioNombre?: string;
   }
 }
 
@@ -26,5 +30,7 @@ declare module "next-auth/jwt" {
     permissions?: string[];
     empresaId?: number;
     empresaNombre?: string;
+    ejercicioId?: number;
+    ejercicioNombre?: string;
   }
 }

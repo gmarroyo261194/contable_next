@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 
 export async function getEjercicios() {
   const session = await auth();
@@ -40,6 +41,8 @@ export async function createEjercicio(data: {
     },
   });
 
+  await auditCreate("Ejercicio", ejercicio.id, ejercicio, session?.user?.email, parseInt(empresaId));
+
   revalidatePath("/ejercicios");
   return ejercicio;
 }
@@ -72,6 +75,8 @@ export async function updateEjercicio(
     data,
   });
 
+  await auditUpdate("Ejercicio", id, ejercicioExistente, ejercicio, session?.user?.email, parseInt(empresaId));
+
   revalidatePath("/ejercicios");
   return ejercicio;
 }
@@ -99,6 +104,8 @@ export async function deleteEjercicio(id: number) {
     throw new Error("No se puede eliminar un ejercicio que ya tiene asientos contables registrados.");
   }
 
+  await auditDelete("Ejercicio", id, ejercicioExistente, session?.user?.email, parseInt(empresaId));
+
   await prisma.ejercicio.delete({
     where: { id },
   });
@@ -120,10 +127,13 @@ export async function toggleCerrarEjercicio(id: number, cerrado: boolean) {
     throw new Error("No se puede modificar este ejercicio. No pertenece a la empresa activa.");
   }
 
-  await prisma.ejercicio.update({
+  const ejercicio = await prisma.ejercicio.update({
     where: { id },
     data: { cerrado },
   });
+
+  await auditUpdate("Ejercicio", id, ejercicioExistente, ejercicio, session?.user?.email, parseInt(empresaId));
+
   revalidatePath("/ejercicios");
 }
 

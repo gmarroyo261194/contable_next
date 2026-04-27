@@ -28,7 +28,7 @@ export default async function RootLayout({
     <html lang="es" className={`${inter.variable}`}>
       <body className="font-sans antialiased text-slate-900 bg-slate-50">
         <Toaster position="top-right" richColors />
-        <AuthProvider>
+        <AuthProvider session={session}>
           <StoreInitializer />
           {isAuthenticated ? (
             <div className="flex min-h-screen">

@@ -8,13 +8,26 @@ import { generateInvoicePdf, PdfInvoiceData } from "../afip/generatePdf";
 
 export async function generatePaymentLinkAction(documentoId: number) {
   try {
+    const session = await auth();
+    const empresaId = (session?.user as any)?.empresaId;
+    const userEmail = session?.user?.email;
+
+    if (!empresaId) return { success: false, error: "No hay empresa activa." };
+
     const documento = await prisma.documentoClientes.findUnique({
-      where: { id: documentoId },
-      include: { entidad: true }
+      where: { id: documentoId, empresaId }, // Validar pertenencia a empresa
+      include: { 
+        entidad: true,
+        ejercicio: { select: { cerrado: true } }
+      }
     });
 
     if (!documento) {
-      return { success: false, error: "Documento no encontrado." };
+      return { success: false, error: "Documento no encontrado o no pertenece a su empresa." };
+    }
+
+    if (documento.ejercicio?.cerrado) {
+      return { success: false, error: "El ejercicio contable está cerrado. No se pueden generar links de pago." };
     }
 
     if (documento.pagos360Url) {
@@ -43,7 +56,7 @@ export async function generatePaymentLinkAction(documentoId: number) {
     }
 
     // Actualizar documento con el link
-    await prisma.documentoClientes.update({
+    const updated = await prisma.documentoClientes.update({
       where: { id: documento.id },
       data: {
         pagos360Id: BigInt(result.data.id),
@@ -51,6 +64,9 @@ export async function generatePaymentLinkAction(documentoId: number) {
         pagos360Estado: result.data.state
       }
     });
+
+    // Auditoría
+    await auditUpdate("DocumentoClientes", documentoId, documento, updated, userEmail, empresaId);
 
     return { success: true, url: result.data.checkout_url };
 
