@@ -393,8 +393,8 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
                           type="text"
                           onFocus={() => setFocusedField(r.id + '-debe')}
                           onBlur={() => setFocusedField(null)}
-                          value={focusedField === r.id + '-debe' 
-                            ? (r.debe === 0 ? '' : r.debe.toString()) 
+                          value={focusedField === r.id + '-debe'
+                            ? (r.debe === 0 ? '' : r.debe.toString())
                             : r.debe.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           onChange={(e) => {
                             const val = parseFloat(e.target.value.replace(',', '.'));
@@ -415,8 +415,8 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
                           type="text"
                           onFocus={() => setFocusedField(r.id + '-haber')}
                           onBlur={() => setFocusedField(null)}
-                          value={focusedField === r.id + '-haber' 
-                            ? (r.haber === 0 ? '' : r.haber.toString()) 
+                          value={focusedField === r.id + '-haber'
+                            ? (r.haber === 0 ? '' : r.haber.toString())
                             : r.haber.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           onChange={(e) => {
                             const val = parseFloat(e.target.value.replace(',', '.'));
@@ -531,7 +531,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
 
       {/* Custom Confirmation Modal */}
       {showExitConfirm && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" onClick={() => setShowExitConfirm(false)} />
           <div className="relative bg-card rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-border animate-in fade-in zoom-in duration-200">
             <div className="flex items-center gap-3 mb-4 text-orange-500">

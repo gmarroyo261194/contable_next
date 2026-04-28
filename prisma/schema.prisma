@@ -718,3 +718,15 @@ model AuditLog {
   @@index([cambiadoPor])
   @@map("audit_logs")
 }
+
+model Modulo {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  codigo      String   @unique
+  activo      Boolean  @default(true)
+  descripcion String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@map("modulos")
+}

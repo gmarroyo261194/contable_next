@@ -17,6 +17,7 @@ import {
   FileUp,
   Trash2,
   Send,
+  AlertCircle,
 } from "lucide-react";
 import RegistrarPagoModal from "@/components/asientos/RegistrarPagoModal";
 import { SyncFacturasModal } from "@/components/asientos/SyncFacturasModal";
@@ -28,12 +29,15 @@ import { getCuentas } from "@/lib/actions/asiento-actions";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
+import { getModulos } from "@/lib/actions/module-actions";
+import { toast } from "sonner";
 import { X, DollarSign, Edit, Link as LinkIcon, Mail, Download } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { generatePaymentLinkAction, sendPaymentEmailAction, downloadInvoicePdfAction } from "@/lib/actions/payment-actions";
 
 export default function DocumentosClientesPage() {
   const [documentos, setDocumentos] = useState<any[]>([]);
+  const [activeModules, setActiveModules] = useState<string[]>([]);
   const [cuentas, setCuentas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -52,6 +56,8 @@ export default function DocumentosClientesPage() {
   const { ejercicioId: storeEjercicioId } = useAppStore();
 
   const ejercicioId = storeEjercicioId || (session?.user as any)?.ejercicioId;
+
+  const isContabilidadEnabled = activeModules.includes("CONTABILIDAD");
 
   const loadDocumentos = useCallback(async () => {
     if (!ejercicioId) {
@@ -83,6 +89,7 @@ export default function DocumentosClientesPage() {
   useEffect(() => {
     loadDocumentos();
     loadCuentas();
+    getModulos().then(mods => setActiveModules(mods.filter(m => m.activo).map(m => m.codigo)));
   }, [loadDocumentos, loadCuentas]);
 
   const filteredDocs = documentos.filter(doc =>
@@ -179,6 +186,17 @@ export default function DocumentosClientesPage() {
     <>
       <div className="min-h-screen bg-[#F8FAFC] p-4 lg:p-8">
         <div className="w-full mx-auto space-y-4">
+          {!isContabilidadEnabled && (
+            <div className="bg-amber-50 border border-amber-200 rounded-3xl p-4 flex items-center gap-3 text-amber-800 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="w-10 h-10 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 shadow-inner">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-black text-sm uppercase tracking-tight">Módulo Contable Desactivado</p>
+                <p className="text-xs font-medium opacity-80">Las funciones de registro de cobros y generación de asientos están suspendidas.</p>
+              </div>
+            </div>
+          )}
 
           {/* Header Section */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -358,9 +376,13 @@ export default function DocumentosClientesPage() {
                                   <Edit className="w-4 h-4" />
                                 </button>
                                 <button
-                                  className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-all"
+                                  className={`p-1.5 rounded-lg transition-all ${!isContabilidadEnabled ? 'text-slate-200 cursor-not-allowed bg-slate-50' : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'}`}
                                   title="Registrar Cobro"
                                   onClick={() => {
+                                    if (!isContabilidadEnabled) {
+                                      toast.error("El módulo contable está desactivado. No se pueden registrar cobros.");
+                                      return;
+                                    }
                                     setSelectedDocForPago(doc);
                                     setIsPagoModalOpen(true);
                                   }}

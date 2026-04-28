@@ -1,9 +1,10 @@
 "use server";
 
-import { db } from "@/lib/db";
+import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
+import { isModuleEnabled } from "./module-actions";
 
 /**
  * Obtiene todos los documentos de proveedores para la empresa actual.
@@ -13,7 +14,7 @@ export async function getDocumentosProveedores() {
   const empresaId = parseInt((session?.user as any)?.empresaId);
   if (!empresaId) return [];
 
-  const docs = await db.documentoProveedores.findMany({
+  const docs = await prisma.documentoProveedores.findMany({
     where: { empresaId },
     include: {
       entidad: true,
@@ -65,7 +66,7 @@ export async function upsertDocumentoProveedor(data: {
   }
 
   try {
-    return await db.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx) => {
       const { id, generarAsiento, cuentaDebeId, cuentaHaberId, leyendaDebe, leyendaHaber, ...fields } = data;
 
       // Validar ejercicio cerrado
@@ -115,6 +116,10 @@ export async function upsertDocumentoProveedor(data: {
 
       // 4. Manejo de Asiento Automático
       if (generarAsiento && cuentaDebeId && cuentaHaberId) {
+        const contabilidadHabilitada = await isModuleEnabled("CONTABILIDAD");
+        if (!contabilidadHabilitada) {
+          throw new Error("El módulo contable está deshabilitado. No se pueden generar asientos automáticos.");
+        }
         let asientoId = doc.asientoId;
 
         // Estructura de renglones para el asiento
@@ -213,7 +218,7 @@ export async function anularDocumentoProveedor(id: number) {
   const userEmail = session?.user?.email;
 
   try {
-    return await db.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx) => {
       const doc = await tx.documentoProveedores.findUnique({
         where: { id },
         include: { asiento: { include: { renglones: true } } }
@@ -234,6 +239,10 @@ export async function anularDocumentoProveedor(id: number) {
 
       // 2. Si tiene asiento, anularlo
       if (doc.asientoId && doc.asiento) {
+        const contabilidadHabilitada = await isModuleEnabled("CONTABILIDAD");
+        if (!contabilidadHabilitada) {
+           throw new Error("El módulo contable está deshabilitado. No se puede anular el asiento.");
+        }
         const lastAsiento = await tx.asiento.findFirst({
           where: { ejercicioId },
           orderBy: { numero: "desc" },
@@ -288,7 +297,7 @@ export async function autorizarDocumentoProveedor(id: number, fechaAutorizacionP
   if (!empresaId) return { error: "Sesión no válida." };
 
   try {
-    const doc = await db.documentoProveedores.update({
+    const doc = await prisma.documentoProveedores.update({
       where: { id },
       data: {
         autorizado: true,
@@ -316,11 +325,11 @@ export async function deleteDocumentoProveedor(id: number) {
   const userEmail = session?.user?.email;
 
   try {
-    const doc = await db.documentoProveedores.findUnique({ where: { id } });
+    const doc = await prisma.documentoProveedores.findUnique({ where: { id } });
     if (!doc) throw new Error("Documento no encontrado.");
     if (doc.asientoId) throw new Error("No se puede eliminar un documento con asiento contable. Debe anularlo.");
 
-    await db.documentoProveedores.delete({ where: { id } });
+    await prisma.documentoProveedores.delete({ where: { id } });
     await auditDelete("DocumentoProveedores", id, doc, userEmail, empresaId);
 
     revalidatePath("/docprov");
@@ -341,8 +350,13 @@ export async function pagarDocumentoProveedor(id: number, cuentaPagadoraId: numb
 
   if (!empresaId || !ejercicioId) return { error: "Sesión no válida." };
 
+  const contabilidadHabilitada = await isModuleEnabled("CONTABILIDAD");
+  if (!contabilidadHabilitada) {
+    return { error: "El módulo contable está deshabilitado. No se puede registrar el pago." };
+  }
+
   try {
-    return await db.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx) => {
       const doc = await tx.documentoProveedores.findUnique({
         where: { id },
         include: { entidad: true }

@@ -23,6 +23,7 @@ import { getAsientos, anularAsiento, getAsientoById } from '@/lib/actions/asient
 import { anularPago } from '@/lib/actions/pago-actions';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { getModulos } from '@/lib/actions/module-actions';
 
 type SortOrder = 'asc' | 'desc';
 
@@ -33,8 +34,15 @@ export default function AsientosPage() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [asientos, setAsientos] = useState<any[]>([]);
+  const [activeModules, setActiveModules] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    getModulos().then(mods => setActiveModules(mods.filter(m => m.activo).map(m => m.codigo)));
+  }, []);
+
+  const isContabilidadEnabled = activeModules.length === 0 || activeModules.includes("CONTABILIDAD");
 
   // Read from URL Search Params
   const page = Number(searchParams.get('page')) || 1;
@@ -166,6 +174,34 @@ export default function AsientosPage() {
   };
 
   const totalPages = pageSize === 'all' ? 1 : Math.ceil(total / (pageSize as number));
+
+  if (activeModules.length > 0 && !isContabilidadEnabled) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center animate-in fade-in zoom-in-95 duration-500">
+        <div className="w-24 h-24 bg-amber-50 rounded-[2.5rem] flex items-center justify-center text-amber-500 mb-8 shadow-inner border border-amber-100">
+          <AlertCircle className="w-12 h-12" />
+        </div>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Módulo Contable Desactivado</h1>
+        <p className="text-slate-500 max-w-md mx-auto font-medium leading-relaxed">
+          El acceso al Libro Diario y la gestión de asientos ha sido restringido por la administración desde la configuración de módulos.
+        </p>
+        <div className="flex gap-4 mt-10">
+          <button 
+            onClick={() => router.push('/settings/modulos')}
+            className="bg-white border border-slate-200 text-slate-700 px-8 py-3.5 rounded-2xl font-bold hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+          >
+            IR A MÓDULOS
+          </button>
+          <button 
+            onClick={() => router.push('/')}
+            className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200"
+          >
+            VOLVER AL INICIO
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 space-y-6">

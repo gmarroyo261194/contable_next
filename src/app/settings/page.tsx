@@ -60,6 +60,14 @@ const categories = [
     disabled: false
   },
   {
+    title: "Módulos",
+    description: "Activa o desactiva funciones del sistema (Contabilidad, etc.)",
+    icon: Database,
+    href: "/settings/modulos",
+    color: "bg-indigo-50 text-indigo-600",
+    disabled: false
+  },
+  {
     title: "Auditoría",
     description: "Historial de cambios, quién hizo qué y cuándo",
     icon: History,

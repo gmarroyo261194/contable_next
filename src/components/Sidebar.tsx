@@ -26,6 +26,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { logout } from '@/lib/actions/auth-actions';
+import { getModulos } from '@/lib/actions/module-actions';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
@@ -35,18 +36,18 @@ const navItems = [
     label: 'Contabilidad',
     href: '/contabilidad',
     children: [
-      { icon: ReceiptText, label: 'Asientos Contables', href: '/asientos' },
-      { icon: Network, label: 'Plan de Cuentas', href: '/plan-cuentas' },
+      { icon: ReceiptText, label: 'Asientos Contables', href: '/asientos', moduleCode: 'CONTABILIDAD' },
+      { icon: Network, label: 'Plan de Cuentas', href: '/plan-cuentas', moduleCode: 'CONTABILIDAD' },
       { icon: Calendar, label: 'Ejercicios', href: '/ejercicios' },
-      { icon: Tags, label: 'Centros de Costo', href: '/centros-costos' },
-      { icon: BarChart3, label: 'Reportes', href: '/reportes' },
+      { icon: Tags, label: 'Centros de Costo', href: '/centros-costos', moduleCode: 'CONTABILIDAD' },
+      { icon: BarChart3, label: 'Reportes', href: '/reportes', moduleCode: 'CONTABILIDAD' },
     ]
   },
   {
     icon: GraduationCap,
     label: 'Honorarios Docentes',
     href: '/honorarios-docentes',
-     children: [
+    children: [
       { icon: Users, label: 'Docentes', href: '/docentes' },
       { icon: ReceiptText, label: 'Facturas Docentes', href: '/facturas-docentes' },
     ]
@@ -75,6 +76,15 @@ export function Sidebar() {
   const { data: session } = useSession();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['Contabilidad']);
+  const [activeModules, setActiveModules] = useState<string[]>([]);
+
+  React.useEffect(() => {
+    async function loadModules() {
+      const modulos = await getModulos();
+      setActiveModules(modulos.filter(m => m.activo).map(m => m.codigo));
+    }
+    loadModules();
+  }, []);
 
   const toggleMenu = (label: string) => {
     setExpandedMenus(prev =>
@@ -83,6 +93,19 @@ export function Sidebar() {
         : [...prev, label]
     );
   };
+
+  const filteredNavItems = navItems.map(item => {
+    const children = item.children?.filter(child => 
+      !child.moduleCode || activeModules.includes(child.moduleCode)
+    );
+    
+    // Si el item principal tiene moduleCode y no está activo, o si tenía hijos y ahora no tiene ninguno (y no es Dashboard/Empresas/Ajustes)
+    // Pero en este caso, Contabilidad siempre tiene Ejercicios, así que no se filtrará completamente.
+    return { ...item, children };
+  }).filter(item => {
+    if ((item as any).moduleCode && !activeModules.includes((item as any).moduleCode)) return false;
+    return true;
+  });
 
   const userInitial = session?.user?.name
     ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -115,7 +138,7 @@ export function Sidebar() {
 
       {/* Navigation Links */}
       <nav className={`flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar`}>
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const hasChildren = item.children && item.children.length > 0;
           const isExpanded = expandedMenus.includes(item.label);
           const isActive = pathname === item.href || (hasChildren && item.children?.some(child => pathname === child.href));

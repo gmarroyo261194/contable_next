@@ -24,7 +24,7 @@
  * ```
  */
 
-import { db } from "@/lib/db";
+import prisma from "@/lib/prisma";
 
 /** Tipo de acción de auditoría */
 export type AuditAccion = "CREATE" | "UPDATE" | "DELETE";
@@ -65,7 +65,7 @@ export async function auditCreate(
   empresaId?: number | null
 ): Promise<void> {
   try {
-    await db.auditLog.create({
+    await prisma.auditLog.create({
       data: {
         entidad,
         entidadId: String(entidadId),
@@ -102,7 +102,7 @@ export async function auditUpdate(
   empresaId?: number | null
 ): Promise<void> {
   try {
-    await db.auditLog.create({
+    await prisma.auditLog.create({
       data: {
         entidad,
         entidadId: String(entidadId),
@@ -136,7 +136,7 @@ export async function auditDelete(
   empresaId?: number | null
 ): Promise<void> {
   try {
-    await db.auditLog.create({
+    await prisma.auditLog.create({
       data: {
         entidad,
         entidadId: String(entidadId),
@@ -160,7 +160,7 @@ export async function auditDelete(
  * @returns Array de entradas de auditoría ordenadas de más reciente a más antiguo
  */
 export async function getAuditHistory(entidad: string, entidadId: number | string) {
-  return db.auditLog.findMany({
+  return prisma.auditLog.findMany({
     where: {
       entidad,
       entidadId: String(entidadId),
@@ -193,13 +193,13 @@ export async function getAuditLogEmpresa(
   if (accion) where.accion = accion;
 
   const [data, total] = await Promise.all([
-    db.auditLog.findMany({
+    prisma.auditLog.findMany({
       where,
       orderBy: { cambiadoEn: "desc" },
       skip,
       take: pageSize,
     }),
-    db.auditLog.count({ where }),
+    prisma.auditLog.count({ where }),
   ]);
 
   return { data, total };

@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
+import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { auditCreate, auditUpdate } from "@/lib/audit/auditLogger";
@@ -11,7 +11,7 @@ export async function getAsientoById(id: number) {
 
   if (!ejercicioId) return null;
 
-  const asiento = await db.asiento.findFirst({
+  const asiento = await prisma.asiento.findFirst({
     where: { id, ejercicioId },
     include: {
       renglones: {
@@ -112,7 +112,7 @@ export async function getAsientos(params: {
   const actualSortBy = validSortColumns.includes(sortBy) ? sortBy : 'numero';
 
   const [asientos, total] = await Promise.all([
-    db.asiento.findMany({
+    prisma.asiento.findMany({
       where,
       include: {
         renglones: {
@@ -133,7 +133,7 @@ export async function getAsientos(params: {
       skip,
       take,
     }),
-    db.asiento.count({ where })
+    prisma.asiento.count({ where })
   ]);
 
   // Serialización para Client Components
@@ -170,11 +170,13 @@ export async function getCuentas(prefix?: string) {
     where.codigo = { startsWith: prefix };
   }
 
-  return await db.cuenta.findMany({
+  return await prisma.cuenta.findMany({
     where,
     orderBy: { codigo: "asc" },
   });
 }
+
+import { isModuleEnabled } from "./module-actions";
 
 export async function createAsiento(data: {
   fecha: string;
@@ -196,6 +198,12 @@ export async function createAsiento(data: {
     return { error: "No hay sesión activa de ejercicio o empresa." };
   }
 
+  // Validar si el módulo contable está habilitado
+  const contabilidadHabilitada = await isModuleEnabled("CONTABILIDAD");
+  if (!contabilidadHabilitada) {
+    return { error: "El módulo contable está deshabilitado. No se pueden generar asientos." };
+  }
+
   // Validar balance
   const totalDebe = data.renglones.reduce((sum, r) => sum + r.debe, 0);
   const totalHaber = data.renglones.reduce((sum, r) => sum + r.haber, 0);
@@ -205,7 +213,7 @@ export async function createAsiento(data: {
   }
 
   try {
-    return await db.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx) => {
       // Validar que el ejercicio no esté cerrado
       const ejercicio = await tx.ejercicio.findUnique({
         where: { id: ejercicioId },
@@ -275,8 +283,13 @@ export async function anularAsiento(asientoId: number) {
 
   if (!ejercicioId) return { error: "No hay sesión activa." };
 
+  const contabilidadHabilitada = await isModuleEnabled("CONTABILIDAD");
+  if (!contabilidadHabilitada) {
+    return { error: "El módulo contable está deshabilitado." };
+  }
+
   try {
-    return await db.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx) => {
       // Validar que el ejercicio no esté cerrado
       const ejercicio = await tx.ejercicio.findUnique({
         where: { id: ejercicioId },
@@ -352,6 +365,11 @@ export async function updateAsiento(id: number, data: {
 
   if (!ejercicioId || !empresaId) return { error: "No hay sesión activa." };
 
+  const contabilidadHabilitada = await isModuleEnabled("CONTABILIDAD");
+  if (!contabilidadHabilitada) {
+    return { error: "El módulo contable está deshabilitado." };
+  }
+
   // Validar balance
   const totalDebe = data.renglones.reduce((sum, r) => sum + r.debe, 0);
   const totalHaber = data.renglones.reduce((sum, r) => sum + r.haber, 0);
@@ -361,7 +379,7 @@ export async function updateAsiento(id: number, data: {
   }
 
   try {
-    return await db.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx) => {
       // Validar que el ejercicio no esté cerrado
       const ejercicio = await tx.ejercicio.findUnique({
         where: { id: ejercicioId },

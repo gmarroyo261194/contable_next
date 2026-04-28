@@ -552,6 +552,8 @@ export async function deleteDocumentoCliente(id: number) {
  * Server action para enviar un PDF directamente al backend y procesarlo con pdf-parse
  */
 
+import { isModuleEnabled } from "./module-actions";
+
 /**
  * Registra el pago (cobro) de un documento de cliente y genera los asientos contables correspondientes.
  */
@@ -563,6 +565,11 @@ export async function registrarPagoDocumento(id: number, fechaPago: Date, montoP
     const userEmail = session?.user?.email;
 
     if (!empresaId || !ejercicioId) throw new Error("No hay empresa o ejercicio activo en la sesión.");
+
+    const contabilidadHabilitada = await isModuleEnabled("CONTABILIDAD");
+    if (!contabilidadHabilitada) {
+      return { error: "El módulo contable está deshabilitado. No se pueden registrar cobros ni generar asientos." };
+    }
 
     // Validar ejercicio cerrado
     const ejercicio = await prisma.ejercicio.findUnique({

@@ -27,11 +27,13 @@ import { getDocumentosProveedores, anularDocumentoProveedor, deleteDocumentoProv
 import DocumentoProveedorModal from "@/components/proveedores/DocumentoProveedorModal";
 import { getCuentas } from "@/lib/actions/asiento-actions";
 import { AccountSearchDialog } from "@/components/AccountSearchDialog";
+import { getModulos } from "@/lib/actions/module-actions";
 import { toast } from "sonner";
 
 export default function DocumentosProveedoresPage() {
   const [documentos, setDocumentos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeModules, setActiveModules] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocForEdit, setSelectedDocForEdit] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -51,6 +53,8 @@ export default function DocumentosProveedoresPage() {
   const { ejercicioId: storeEjercicioId } = useAppStore();
   const ejercicioId = storeEjercicioId || (session?.user as any)?.ejercicioId;
 
+  const isContabilidadEnabled = activeModules.includes("CONTABILIDAD");
+
   const loadDocumentos = useCallback(async () => {
     setLoading(true);
     try {
@@ -67,6 +71,7 @@ export default function DocumentosProveedoresPage() {
   useEffect(() => {
     loadDocumentos();
     getCuentas().then(setCuentas);
+    getModulos().then(mods => setActiveModules(mods.filter(m => m.activo).map(m => m.codigo)));
   }, [loadDocumentos, ejercicioId]);
 
   const filteredDocs = documentos.filter(doc =>
@@ -157,6 +162,18 @@ export default function DocumentosProveedoresPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-4 lg:p-8">
       <div className="w-full mx-auto space-y-6">
+
+        {!isContabilidadEnabled && (
+          <div className="bg-amber-50 border border-amber-200 rounded-3xl p-4 flex items-center gap-3 text-amber-800 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="w-10 h-10 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 shadow-inner">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-black text-sm uppercase tracking-tight">Módulo Contable Desactivado</p>
+              <p className="text-xs font-medium opacity-80">Las funciones de registro de pagos y generación de asientos automáticos están suspendidas.</p>
+            </div>
+          </div>
+        )}
 
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -366,12 +383,16 @@ export default function DocumentosProveedoresPage() {
                               )}
                               {doc.autorizado && !doc.pagado && (
                                 <button
-                                  className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                                   title="Pagar"
                                   onClick={() => {
+                                    if (!isContabilidadEnabled) {
+                                      toast.error("El módulo contable está desactivado. No se pueden procesar pagos.");
+                                      return;
+                                    }
                                     setDocToPay(doc);
                                     setIsPaymentModalOpen(true);
                                   }}
+                                  className={`p-2 rounded-xl transition-all ${!isContabilidadEnabled ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
                                 >
                                   <DollarSign className="w-4 h-4" />
                                 </button>
@@ -386,13 +407,19 @@ export default function DocumentosProveedoresPage() {
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
-                              <button
-                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                                title="Anular"
-                                onClick={() => handleAnular(doc.id)}
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
+                                <button
+                                  className={`p-2 rounded-xl transition-all ${!isContabilidadEnabled && doc.asientoId ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'}`}
+                                  title="Anular"
+                                  onClick={() => {
+                                    if (!isContabilidadEnabled && doc.asientoId) {
+                                      toast.error("El módulo contable está desactivado. No se puede anular un documento con asiento.");
+                                      return;
+                                    }
+                                    handleAnular(doc.id);
+                                  }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
                             </>
                           )}
                           {doc.asientoId && (

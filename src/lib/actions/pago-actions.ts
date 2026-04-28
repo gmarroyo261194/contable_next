@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
+import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { auditCreate, auditUpdate } from "@/lib/audit/auditLogger";
@@ -12,9 +12,9 @@ export async function getMediosPago() {
   if (!empresaId) return [];
 
   // Seed default if not exists
-  const count = await db.medioPago.count({ where: { empresaId } });
+  const count = await prisma.medioPago.count({ where: { empresaId } });
   if (count === 0) {
-    await db.medioPago.create({
+    await prisma.medioPago.create({
       data: {
         nombre: "Transferencia",
         empresaId,
@@ -22,7 +22,7 @@ export async function getMediosPago() {
     });
   }
 
-  return await db.medioPago.findMany({
+  return await prisma.medioPago.findMany({
     where: { empresaId },
     include: { cuenta: true },
     orderBy: { nombre: "asc" }
@@ -34,7 +34,7 @@ export async function updateMedioPagoAccount(id: number, cuentaId: number | null
     const session = await auth();
     const userEmail = session?.user?.email;
 
-    await db.medioPago.update({
+    await prisma.medioPago.update({
       where: { id },
       data: {
         cuentaId,
@@ -59,7 +59,7 @@ export async function createMedioPago(nombre: string, cuentaId?: number | null) 
 
     if (!empresaId) return { error: "No hay empresa activa." };
 
-    const medio = await db.medioPago.create({
+    const medio = await prisma.medioPago.create({
       data: {
         nombre,
         cuentaId: cuentaId || null,
@@ -85,7 +85,7 @@ export async function deleteMedioPago(id: number) {
     if (!empresaId) return { error: "No hay empresa activa." };
 
     // Validar si tiene pagos asociados
-    const count = await db.gestionPago.count({
+    const count = await prisma.gestionPago.count({
       where: { medioPagoId: id }
     });
 
@@ -93,7 +93,7 @@ export async function deleteMedioPago(id: number) {
       return { error: "No se puede eliminar un medio de pago con registros asociados." };
     }
 
-    await db.medioPago.delete({
+    await prisma.medioPago.delete({
       where: { id }
     });
 
@@ -111,7 +111,7 @@ export async function updateMedioPagoName(id: number, nombre: string) {
     const session = await auth();
     const userEmail = session?.user?.email;
 
-    await db.medioPago.update({
+    await prisma.medioPago.update({
       where: { id },
       data: {
         nombre,
@@ -128,6 +128,8 @@ export async function updateMedioPagoName(id: number, nombre: string) {
   }
 }
 
+import { isModuleEnabled } from "./module-actions";
+
 export async function processPaymentDocente(ids: number[], data: {
   fecha: string;
   medioPagoId: number;
@@ -142,8 +144,13 @@ export async function processPaymentDocente(ids: number[], data: {
     return { error: "Faltan datos de sesión (empresa o ejercicio)." };
   }
 
+  const contabilidadHabilitada = await isModuleEnabled("CONTABILIDAD");
+  if (!contabilidadHabilitada) {
+    return { error: "El módulo contable está deshabilitado. No se pueden procesar pagos con asientos." };
+  }
+
   try {
-    return await db.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx) => {
       // Validar ejercicio cerrado
       const ejercicio = await tx.ejercicio.findUnique({
         where: { id: ejercicioId },
@@ -292,7 +299,7 @@ export async function getPagosHistory() {
 
   if (!empresaId) return [];
 
-  const pagos = await db.gestionPago.findMany({
+  const pagos = await prisma.gestionPago.findMany({
     where: { empresaId },
     include: {
       entidad: true,
@@ -316,8 +323,13 @@ export async function anularPago(pagoId: number) {
 
   if (!ejercicioId) return { error: "No hay sesión activa." };
 
+  const contabilidadHabilitada = await isModuleEnabled("CONTABILIDAD");
+  if (!contabilidadHabilitada) {
+    return { error: "El módulo contable está deshabilitado." };
+  }
+
   try {
-    return await db.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx) => {
       // Validar ejercicio cerrado
       const ejercicio = await tx.ejercicio.findUnique({
         where: { id: ejercicioId },
