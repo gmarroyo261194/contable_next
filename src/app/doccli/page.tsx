@@ -50,6 +50,8 @@ export default function DocumentosClientesPage() {
   const [filterEstado, setFilterEstado] = useState<'todos' | 'pendientes' | 'contabilizados'>("todos");
   const [filterEntidadId, setFilterEntidadId] = useState<number | undefined>();
   const [filterServicioId, setFilterServicioId] = useState<number | undefined>();
+  const [filterFechaDesde, setFilterFechaDesde] = useState<string>("");
+  const [filterFechaHasta, setFilterFechaHasta] = useState<string>("");
   const [entidades, setEntidades] = useState<any[]>([]);
   const [servicios, setServicios] = useState<any[]>([]);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
@@ -100,7 +102,9 @@ export default function DocumentosClientesPage() {
         orderDir,
         estado: filterEstado,
         entidadId: filterEntidadId,
-        servicioId: filterServicioId
+        servicioId: filterServicioId,
+        fechaDesde: filterFechaDesde,
+        fechaHasta: filterFechaHasta
       });
       setDocumentos(res.data);
       setTotal(res.total);
@@ -109,7 +113,7 @@ export default function DocumentosClientesPage() {
     } finally {
       setLoading(false);
     }
-  }, [ejercicioId, page, pageSize, debouncedSearch, orderBy, orderDir, filterEstado, filterEntidadId, filterServicioId]);
+  }, [ejercicioId, page, pageSize, debouncedSearch, orderBy, orderDir, filterEstado, filterEntidadId, filterServicioId, filterFechaDesde, filterFechaHasta]);
 
   const loadCuentas = useCallback(async () => {
     if (!ejercicioId) return;
@@ -317,14 +321,14 @@ export default function DocumentosClientesPage() {
                 <button 
                   onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
                   className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold transition-all ${
-                    isFilterPanelOpen || filterEstado !== 'todos' || filterEntidadId || filterServicioId
+                    isFilterPanelOpen || filterEstado !== 'todos' || filterEntidadId || filterServicioId || filterFechaDesde || filterFechaHasta
                     ? 'bg-indigo-50 text-indigo-600 shadow-inner' 
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
                   <Filter className="w-4 h-4" />
                   Filtros
-                  {(filterEstado !== 'todos' || filterEntidadId || filterServicioId) && (
+                  {(filterEstado !== 'todos' || filterEntidadId || filterServicioId || filterFechaDesde || filterFechaHasta) && (
                     <span className="w-2 h-2 bg-indigo-600 rounded-full" />
                   )}
                 </button>
@@ -338,6 +342,8 @@ export default function DocumentosClientesPage() {
                           setFilterEstado('todos');
                           setFilterEntidadId(undefined);
                           setFilterServicioId(undefined);
+                          setFilterFechaDesde("");
+                          setFilterFechaHasta("");
                           setPage(1);
                         }}
                         className="text-[10px] font-bold text-indigo-600 hover:underline"
@@ -395,6 +401,33 @@ export default function DocumentosClientesPage() {
                             <option key={serv.id} value={serv.id}>{serv.nombre}</option>
                           ))}
                         </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-50">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Desde</label>
+                          <input 
+                            type="date"
+                            value={filterFechaDesde}
+                            onChange={(e) => {
+                              setFilterFechaDesde(e.target.value);
+                              setPage(1);
+                            }}
+                            className="w-full bg-slate-50 border-none rounded-xl px-2 py-2 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Hasta</label>
+                          <input 
+                            type="date"
+                            value={filterFechaHasta}
+                            onChange={(e) => {
+                              setFilterFechaHasta(e.target.value);
+                              setPage(1);
+                            }}
+                            className="w-full bg-slate-50 border-none rounded-xl px-2 py-2 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100"
+                          />
+                        </div>
                       </div>
                     </div>
 

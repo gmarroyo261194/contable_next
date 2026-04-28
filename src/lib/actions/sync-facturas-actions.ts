@@ -299,10 +299,29 @@ export async function getDocumentosClientes(params: {
   page?: number;
   pageSize?: number | 'all';
   search?: string;
+  orderBy?: string;
+  orderDir?: 'asc' | 'desc';
+  estado?: 'todos' | 'pendientes' | 'contabilizados';
+  entidadId?: number;
+  servicioId?: number;
+  fechaDesde?: string;
+  fechaHasta?: string;
 }) {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
-  const { ejercicioId, page = 1, pageSize = 10, search = "" } = params;
+  const { 
+    ejercicioId, 
+    page = 1, 
+    pageSize = 10, 
+    search = "",
+    orderBy = "fecha",
+    orderDir = "desc",
+    estado = "todos",
+    entidadId,
+    servicioId,
+    fechaDesde,
+    fechaHasta
+  } = params;
 
   if (!empresaId || !ejercicioId) return { data: [], total: 0 };
 
@@ -312,12 +331,33 @@ export async function getDocumentosClientes(params: {
   const where: any = {
     empresaId,
     ejercicioId,
-    OR: search ? [
+  };
+
+  // Filtro de búsqueda textual
+  if (search) {
+    where.OR = [
       { entidad: { nombre: { contains: search } } },
       { numero: { contains: search } },
       { tipo: { contains: search } }
-    ] : undefined
-  };
+    ];
+  }
+
+  // Filtros adicionales
+  if (entidadId) where.entidadId = entidadId;
+  if (servicioId) where.servicioId = servicioId;
+  if (estado === 'pendientes') where.asientoId = null;
+  if (estado === 'contabilizados') where.asientoId = { not: null };
+
+  if (fechaDesde || fechaHasta) {
+    where.fecha = {};
+    if (fechaDesde) where.fecha.gte = new Date(fechaDesde);
+    if (fechaHasta) where.fecha.lte = new Date(fechaHasta);
+  }
+
+  // Construcción del ordenamiento
+  let sortObj: any = { [orderBy]: orderDir };
+  if (orderBy === 'cliente') sortObj = { entidad: { nombre: orderDir } };
+  if (orderBy === 'servicio') sortObj = { servicio: { nombre: orderDir } };
 
   const [docs, total] = await Promise.all([
     prisma.documentoClientes.findMany({
@@ -338,7 +378,7 @@ export async function getDocumentosClientes(params: {
           include: { empresa: true }
         }
       },
-      orderBy: { fecha: 'desc' },
+      orderBy: sortObj,
       skip,
       take,
     }),
