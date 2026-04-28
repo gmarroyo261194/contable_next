@@ -12,13 +12,16 @@ export interface CategoryStats {
 
 export interface DashboardStats {
   proveedores: CategoryStats;
-  facturasEmitidas: CategoryStats;
+  facturasEmitidas: CategoryStats & {
+    totalFundacion: number;
+    totalDepartamentos: number;
+  };
   honorariosDocentes: CategoryStats;
 }
 
 /**
  * Obtiene las estadísticas principales para el dashboard, separando montos pagados y pendientes.
- * Filtra por la empresa y ejercicio activos en la sesión del usuario.
+ * También desglosa participaciones de fundación y departamentos para las facturas.
  * 
  * @returns {Promise<DashboardStats>} Objeto con las estadísticas detalladas.
  */
@@ -31,7 +34,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const emptyStats: CategoryStats = { totalPagado: 0, totalPendiente: 0, countPagado: 0, countPendiente: 0 };
     return {
       proveedores: emptyStats,
-      facturasEmitidas: emptyStats,
+      facturasEmitidas: { ...emptyStats, totalFundacion: 0, totalDepartamentos: 0 },
       honorariosDocentes: emptyStats,
     };
   }
@@ -48,16 +51,28 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     _sum: { montoTotal: true }
   });
 
-  // 2. Facturas Emitidas (DocumentoClientes)
-  // Nota: Consideramos pagada si el montoPagado es mayor o igual al montoTotal
+  // 2. Facturas Emitidas (DocumentoClientes) + Participaciones
   const todasFacturas = await prisma.documentoClientes.findMany({
     where: { empresaId, ejercicioId },
-    select: { montoTotal: true, montoPagado: true }
+    select: { 
+      montoTotal: true, 
+      montoPagado: true,
+      servicio: {
+        select: {
+          participacionFundacion: true,
+          porcentajeFundacion: true,
+          participacionDepto: true,
+          porcentajeDepto: true
+        }
+      }
+    }
   });
 
   const factStats = todasFacturas.reduce((acc, f) => {
     const total = Number(f.montoTotal || 0);
     const pagado = Number(f.montoPagado || 0);
+    
+    // Estadísticas de pago
     if (pagado >= total && total > 0) {
       acc.totalPagado += total;
       acc.countPagado++;
@@ -65,8 +80,19 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       acc.totalPendiente += (total - pagado);
       acc.countPendiente++;
     }
+
+    // Estadísticas de participaciones
+    if (f.servicio) {
+      if (f.servicio.participacionFundacion && f.servicio.porcentajeFundacion) {
+        acc.totalFundacion += (total * Number(f.servicio.porcentajeFundacion) / 100);
+      }
+      if (f.servicio.participacionDepto && f.servicio.porcentajeDepto) {
+        acc.totalDepartamentos += (total * Number(f.servicio.porcentajeDepto) / 100);
+      }
+    }
+
     return acc;
-  }, { totalPagado: 0, totalPendiente: 0, countPagado: 0, countPendiente: 0 });
+  }, { totalPagado: 0, totalPendiente: 0, countPagado: 0, countPendiente: 0, totalFundacion: 0, totalDepartamentos: 0 });
 
   // 3. Honorarios Docentes (FacturaDocente)
   const docentesPagados = await prisma.facturaDocente.aggregate({

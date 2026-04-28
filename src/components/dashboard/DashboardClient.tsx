@@ -86,6 +86,35 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
         />
       </div>
 
+      {/* Income Distribution (Participations) */}
+      <div className="mb-8">
+        <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 font-display">Distribución de Ingresos (Participaciones)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="card bg-indigo-50/50 dark:bg-indigo-500/5 border-indigo-100 dark:border-indigo-500/20">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center">
+                <Receipt className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-tighter">Total Fundación</p>
+                <p className="text-2xl font-black text-foreground">{formatCurrency(stats.facturasEmitidas.totalFundacion)}</p>
+              </div>
+            </div>
+          </div>
+          <div className="card bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                <GraduationCap className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">Total Departamentos</p>
+                <p className="text-2xl font-black text-foreground">{formatCurrency(stats.facturasEmitidas.totalDepartamentos)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-8">
         {/* Main Content Area - Simplified for now as requested to remove test data */}
         <div className="space-y-8">
