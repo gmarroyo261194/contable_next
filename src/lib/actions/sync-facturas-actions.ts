@@ -391,6 +391,7 @@ export async function getDocumentosClientes(params: {
     iva: Number(doc.iva),
     fechaPago: doc.fechaPago,
     montoPagado: doc.montoPagado ? Number(doc.montoPagado) : null,
+    pagos360Id: doc.pagos360Id ? doc.pagos360Id.toString() : null,
     items: doc.items.map(item => ({
       ...item,
       cantidad: Number(item.cantidad),
