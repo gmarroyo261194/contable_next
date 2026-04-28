@@ -6,7 +6,9 @@ import {
   Receipt,
   GraduationCap,
   Upload,
-  Plus
+  Plus,
+  Building,
+  Building2
 } from 'lucide-react';
 import { SummaryCard } from '@/components/SummaryCard';
 import { Dialog } from '@/components/Dialog';
@@ -40,7 +42,7 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
   return (
     <div className="p-8 animate-in fade-in duration-500">
       {/* Header Actions */}
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+      {/* <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground font-display italic">
             Hola, {session?.user?.name || 'Usuario'}
@@ -50,7 +52,7 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
             {(session?.user as any)?.ejercicioNombre && ` (Ejercicio ${(session?.user as any)?.ejercicioNombre})`}
           </p>
         </div>
-      </header>
+      </header> */}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -62,7 +64,7 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
           pendingLabel={`Adeudados (${stats.proveedores.countPendiente})`}
           icon={FileText}
           iconColor="text-blue-600 dark:text-blue-400"
-          bgColor="bg-blue-500"
+          bgColor="bg-transparent border-none"
         />
         <SummaryCard
           title="Facturas Emitidas"
@@ -72,7 +74,7 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
           pendingLabel={`Pendientes (${stats.facturasEmitidas.countPendiente})`}
           icon={Receipt}
           iconColor="text-green-600 dark:text-green-400"
-          bgColor="bg-green-500"
+          bgColor="bg-transparent border-none"
         />
         <SummaryCard
           title="Honorarios Docentes"
@@ -82,7 +84,7 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
           pendingLabel={`Pendientes (${stats.honorariosDocentes.countPendiente})`}
           icon={GraduationCap}
           iconColor="text-purple-600 dark:text-purple-400"
-          bgColor="bg-purple-500"
+          bgColor="bg-transparent border-none"
         />
       </div>
 
@@ -118,14 +120,14 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
           <div className="card bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20 flex flex-col">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                <Building2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
                 <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">Total Departamentos</p>
                 <p className="text-2xl font-black text-foreground">{formatCurrency(stats.facturasEmitidas.totalDepartamentos)}</p>
               </div>
             </div>
-            
+
             {/* Department Breakdown */}
             <div className="space-y-2 mt-2 pt-4 border-t border-emerald-100 dark:border-emerald-500/10 overflow-y-auto max-h-32 pr-2 custom-scrollbar">
               {stats.facturasEmitidas.participacionesDepto.length > 0 ? (
