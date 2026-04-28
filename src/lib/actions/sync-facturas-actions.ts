@@ -292,39 +292,60 @@ export async function syncFacturasSeleccionadas(facturas: FacturaExterna[], ejer
 }
 
 /**
- * Obtiene los documentos de clientes locales para la empresa activa.
+ * Obtiene los documentos de clientes locales para la empresa activa con soporte para paginación y búsqueda.
  */
-export async function getDocumentosClientes(ejercicioId: number | null) {
+export async function getDocumentosClientes(params: {
+  ejercicioId: number | null;
+  page?: number;
+  pageSize?: number | 'all';
+  search?: string;
+}) {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
+  const { ejercicioId, page = 1, pageSize = 10, search = "" } = params;
 
-  if (!empresaId || !ejercicioId) return [];
+  if (!empresaId || !ejercicioId) return { data: [], total: 0 };
 
-  const docs = await prisma.documentoClientes.findMany({
-    where: { 
-      empresaId,
-      ejercicioId
-    },
-    include: {
-      entidad: true,
-      servicio: {
-        select: { nombre: true }
-      },
-      items: true,
-      asiento: {
-        select: {
-          numero: true,
-          fecha: true
+  const skip = pageSize === 'all' ? 0 : (page - 1) * Number(pageSize);
+  const take = pageSize === 'all' ? undefined : Number(pageSize);
+
+  const where: any = {
+    empresaId,
+    ejercicioId,
+    OR: search ? [
+      { entidad: { nombre: { contains: search } } },
+      { numero: { contains: search } },
+      { tipo: { contains: search } }
+    ] : undefined
+  };
+
+  const [docs, total] = await Promise.all([
+    prisma.documentoClientes.findMany({
+      where,
+      include: {
+        entidad: true,
+        servicio: {
+          select: { nombre: true }
+        },
+        items: true,
+        asiento: {
+          select: {
+            numero: true,
+            fecha: true
+          }
+        },
+        ejercicio: {
+          include: { empresa: true }
         }
       },
-      ejercicio: {
-        include: { empresa: true }
-      }
-    },
-    orderBy: { fecha: 'desc' }
-  });
+      orderBy: { fecha: 'desc' },
+      skip,
+      take,
+    }),
+    prisma.documentoClientes.count({ where })
+  ]);
 
-  return docs.map(doc => ({
+  const serialized = docs.map(doc => ({
     ...doc,
     montoTotal: Number(doc.montoTotal),
     iva: Number(doc.iva),
@@ -337,6 +358,13 @@ export async function getDocumentosClientes(ejercicioId: number | null) {
       importeTotal: Number(item.importeTotal)
     }))
   }));
+
+  return {
+    data: JSON.parse(JSON.stringify(serialized)),
+    total,
+    page,
+    pageSize: pageSize === 'all' ? total : Number(pageSize)
+  };
 }
 
 /**

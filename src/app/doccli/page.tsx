@@ -40,12 +40,16 @@ export default function DocumentosClientesPage() {
   const [activeModules, setActiveModules] = useState<string[]>([]);
   const [cuentas, setCuentas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [isPagoModalOpen, setIsPagoModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAfipModalOpen, setIsAfipModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedDocForItems, setSelectedDocForItems] = useState<any | null>(null);
   const [selectedDocForPago, setSelectedDocForPago] = useState<any | null>(null);
   const [selectedDocForEdit, setSelectedDocForEdit] = useState<any | null>(null);
@@ -59,22 +63,38 @@ export default function DocumentosClientesPage() {
 
   const isContabilidadEnabled = activeModules.includes("CONTABILIDAD");
 
+  // Debounce para la búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1); // Resetear a la primera página al buscar
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const loadDocumentos = useCallback(async () => {
     if (!ejercicioId) {
       setDocumentos([]);
+      setTotal(0);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const data = await getDocumentosClientes(ejercicioId);
-      setDocumentos(data);
+      const res = await getDocumentosClientes({ 
+        ejercicioId, 
+        page, 
+        pageSize, 
+        search: debouncedSearch 
+      });
+      setDocumentos(res.data);
+      setTotal(res.total);
     } catch (error) {
       console.error("Error loading documentos:", error);
     } finally {
       setLoading(false);
     }
-  }, [ejercicioId]);
+  }, [ejercicioId, page, pageSize, debouncedSearch]);
 
   const loadCuentas = useCallback(async () => {
     if (!ejercicioId) return;
@@ -92,11 +112,8 @@ export default function DocumentosClientesPage() {
     getModulos().then(mods => setActiveModules(mods.filter(m => m.activo).map(m => m.codigo)));
   }, [loadDocumentos, loadCuentas]);
 
-  const filteredDocs = documentos.filter(doc =>
-    doc.entidad?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.numero?.includes(searchTerm) ||
-    doc.tipo?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // filteredDocs ya viene filtrado del servidor
+  const filteredDocs = documentos;
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Está seguro de que desea eliminar esta factura físicamente? Esta acción no se puede deshacer.")) {
@@ -433,6 +450,80 @@ export default function DocumentosClientesPage() {
                 </table>
               )}
             </div>
+
+            {/* Pagination Controls */}
+            {total > 0 && (
+              <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Mostrando <span className="text-indigo-600">{documentos.length}</span> de <span className="text-indigo-600">{total}</span> facturas
+                  </p>
+                  <div className="flex items-center gap-2 ml-4 border-l border-slate-200 pl-4">
+                    <span className="text-[10px] font-black text-slate-400 uppercase">Ver:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setPage(1);
+                      }}
+                      className="bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 py-1 px-2 outline-none focus:ring-2 focus:ring-indigo-100"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1 || loading}
+                    className="p-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.ceil(total / pageSize) }).map((_, i) => {
+                      const p = i + 1;
+                      // Mostrar solo algunas páginas si hay muchas
+                      if (
+                        p === 1 || 
+                        p === Math.ceil(total / pageSize) || 
+                        (p >= page - 1 && p <= page + 1)
+                      ) {
+                        return (
+                          <button
+                            key={p}
+                            onClick={() => setPage(p)}
+                            className={`w-10 h-10 rounded-xl text-sm font-black transition-all ${
+                              page === p 
+                                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100" 
+                                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        );
+                      }
+                      if (p === page - 2 || p === page + 2) {
+                        return <span key={p} className="text-slate-400">...</span>;
+                      }
+                      return null;
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setPage(p => Math.min(Math.ceil(total / pageSize), p + 1))}
+                    disabled={page === Math.ceil(total / pageSize) || loading}
+                    className="p-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
