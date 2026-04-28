@@ -26,6 +26,8 @@ import EditarFacturaModal from "@/components/asientos/EditarFacturaModal";
 import EmitirFacturaAfipModal from "@/components/asientos/EmitirFacturaAfipModal";
 import { getDocumentosClientes, deleteDocumentoCliente } from "@/lib/actions/sync-facturas-actions";
 import { getCuentas } from "@/lib/actions/asiento-actions";
+import { getEntidades } from "@/lib/actions/entidad-actions";
+import { getServicios } from "@/lib/actions/servicio-actions";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getTipoComprobanteNombre } from "@/lib/utils/voucher-utils";
