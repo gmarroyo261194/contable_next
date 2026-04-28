@@ -15,12 +15,18 @@ export interface DeptoParticipation {
   total: number;
 }
 
+export interface ServiceParticipation {
+  nombre: string;
+  total: number;
+}
+
 export interface DashboardStats {
   proveedores: CategoryStats;
   facturasEmitidas: CategoryStats & {
     totalFundacion: number;
     totalDepartamentos: number;
     participacionesDepto: DeptoParticipation[];
+    participacionesFundacion: ServiceParticipation[];
   };
   honorariosDocentes: CategoryStats;
 }
@@ -40,7 +46,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const emptyStats: CategoryStats = { totalPagado: 0, totalPendiente: 0, countPagado: 0, countPendiente: 0 };
     return {
       proveedores: emptyStats,
-      facturasEmitidas: { ...emptyStats, totalFundacion: 0, totalDepartamentos: 0, participacionesDepto: [] },
+      facturasEmitidas: { 
+        ...emptyStats, 
+        totalFundacion: 0, 
+        totalDepartamentos: 0, 
+        participacionesDepto: [],
+        participacionesFundacion: []
+      },
       honorariosDocentes: emptyStats,
     };
   }
@@ -65,6 +77,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       montoPagado: true,
       servicio: {
         select: {
+          nombre: true,
           participacionFundacion: true,
           porcentajeFundacion: true,
           participacionDepto: true,
@@ -78,6 +91,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   });
 
   const deptosMap = new Map<string, number>();
+  const fundacionMap = new Map<string, number>();
 
   const factStats = todasFacturas.reduce((acc, f) => {
     const total = Number(f.montoTotal || 0);
@@ -94,9 +108,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
     // Estadísticas de participaciones
     if (f.servicio) {
+      const servicioNombre = f.servicio.nombre;
+
       if (f.servicio.participacionFundacion && f.servicio.porcentajeFundacion) {
-        acc.totalFundacion += (total * Number(f.servicio.porcentajeFundacion) / 100);
+        const montoFund = (total * Number(f.servicio.porcentajeFundacion) / 100);
+        acc.totalFundacion += montoFund;
+        fundacionMap.set(servicioNombre, (fundacionMap.get(servicioNombre) || 0) + montoFund);
       }
+      
       if (f.servicio.participacionDepto && f.servicio.porcentajeDepto) {
         const montoDepto = (total * Number(f.servicio.porcentajeDepto) / 100);
         acc.totalDepartamentos += montoDepto;
@@ -114,10 +133,16 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     countPendiente: 0, 
     totalFundacion: 0, 
     totalDepartamentos: 0,
-    participacionesDepto: [] as DeptoParticipation[]
+    participacionesDepto: [] as DeptoParticipation[],
+    participacionesFundacion: [] as ServiceParticipation[]
   });
 
   factStats.participacionesDepto = Array.from(deptosMap.entries()).map(([nombre, total]) => ({
+    nombre,
+    total
+  })).sort((a, b) => b.total - a.total);
+
+  factStats.participacionesFundacion = Array.from(fundacionMap.entries()).map(([nombre, total]) => ({
     nombre,
     total
   })).sort((a, b) => b.total - a.total);

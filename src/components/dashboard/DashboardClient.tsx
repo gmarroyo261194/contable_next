@@ -90,8 +90,8 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
       <div className="mb-8">
         <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 font-display">Distribución de Ingresos (Participaciones)</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="card bg-indigo-50/50 dark:bg-indigo-500/5 border-indigo-100 dark:border-indigo-500/20">
-            <div className="flex items-center gap-4">
+          <div className="card bg-indigo-50/50 dark:bg-indigo-500/5 border-indigo-100 dark:border-indigo-500/20 flex flex-col">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center">
                 <Receipt className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               </div>
@@ -99,6 +99,20 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
                 <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-tighter">Total Fundación</p>
                 <p className="text-2xl font-black text-foreground">{formatCurrency(stats.facturasEmitidas.totalFundacion)}</p>
               </div>
+            </div>
+
+            {/* Foundation Breakdown */}
+            <div className="space-y-2 mt-2 pt-4 border-t border-indigo-100 dark:border-indigo-500/10 overflow-y-auto max-h-32 pr-2 custom-scrollbar">
+              {stats.facturasEmitidas.participacionesFundacion.length > 0 ? (
+                stats.facturasEmitidas.participacionesFundacion.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-[11px]">
+                    <span className="text-muted-foreground font-medium truncate max-w-[180px]">{item.nombre}</span>
+                    <span className="font-bold text-indigo-700 dark:text-indigo-300">{formatCurrency(item.total)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[10px] text-muted-foreground italic">No hay participaciones de fundación</p>
+              )}
             </div>
           </div>
           <div className="card bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20 flex flex-col">
