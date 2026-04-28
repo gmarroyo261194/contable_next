@@ -566,7 +566,9 @@ export async function saveFacturaImportada(data: {
       });
 
       revalidatePath("/doccli");
-      const result = JSON.parse(JSON.stringify(factura));
+      const result = JSON.parse(JSON.stringify(factura, (key, value) => 
+        typeof value === 'bigint' ? value.toString() : value
+      ));
       
       // Auditoría de creación manual
       await auditCreate("DocumentoClientes", factura.id, result, userEmail, empresaId);
