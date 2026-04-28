@@ -31,6 +31,7 @@ export function RubrosServiciosClient({
   empresaId
 }: RubrosServiciosClientProps) {
   const [activeTab, setActiveTab] = useState<'servicios' | 'rubros' | 'departamentos'>('servicios');
+  const [showAll, setShowAll] = useState(false);
   
   // Modals state
   const [rubroModal, setRubroModal] = useState<{ isOpen: boolean; data: any | null }>({ isOpen: false, data: null });
@@ -91,14 +92,27 @@ export function RubrosServiciosClient({
             </div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">Rubros y Servicios</h1>
           </div>
-          {/* Botón de sincronización */}
-          <button
-            onClick={() => setSyncModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all shadow-sm"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Sincronizar PagosFundacion
-          </button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg border border-slate-200">
+              <span className="text-xs font-bold text-slate-600">Ver Inactivos</span>
+              <button
+                onClick={() => setShowAll(!showAll)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showAll ? 'bg-primary' : 'bg-slate-300'}`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showAll ? 'translate-x-6' : 'translate-x-1'}`}
+                />
+              </button>
+            </div>
+            
+            <button
+              onClick={() => setSyncModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all shadow-sm"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Sincronizar PagosFundacion
+            </button>
+          </div>
         </div>
         <p className="text-slate-500 text-sm ml-11">Configuración global de rubros, departamentos y servicios con imputación por empresa.</p>
       </div>
@@ -142,7 +156,7 @@ export function RubrosServiciosClient({
         <div className="animate-in fade-in zoom-in-95 duration-300">
           {activeTab === 'servicios' && (
             <ServicioTable 
-              servicios={initialServicios} 
+              servicios={showAll ? initialServicios : initialServicios.filter(s => s.activo)} 
               onEdit={(s) => setServicioModal({ isOpen: true, data: s })}
               onAdd={() => setServicioModal({ isOpen: true, data: null })}
               onDelete={(s) => setDeleteModal({ isOpen: true, type: 'servicio', id: s.id, name: s.nombre, loading: false })}
@@ -150,7 +164,7 @@ export function RubrosServiciosClient({
           )}
           {activeTab === 'rubros' && (
             <RubroTable 
-              rubros={initialRubros} 
+              rubros={showAll ? initialRubros : initialRubros.filter(r => r.activo)} 
               onEdit={(r) => setRubroModal({ isOpen: true, data: r })}
               onAdd={() => setRubroModal({ isOpen: true, data: null })}
               onDelete={(r) => setDeleteModal({ isOpen: true, type: 'rubro', id: r.id, name: r.nombre, loading: false })}
@@ -158,7 +172,7 @@ export function RubrosServiciosClient({
           )}
           {activeTab === 'departamentos' && (
             <DeptoTable 
-              departamentos={initialDepartamentos} 
+              departamentos={showAll ? initialDepartamentos : initialDepartamentos.filter(d => d.activo)} 
               onEdit={(d) => setDeptoModal({ isOpen: true, data: d })}
               onAdd={() => setDeptoModal({ isOpen: true, data: null })}
               onDelete={(d) => setDeleteModal({ isOpen: true, type: 'depto', id: d.id, name: d.nombre, loading: false })}
