@@ -15,6 +15,11 @@ export async function getEjercicios() {
     where: {
       empresaId: parseInt(empresaId),
     },
+    include: {
+      _count: {
+        select: { asientos: true }
+      }
+    },
     orderBy: {
       numero: "desc",
     },

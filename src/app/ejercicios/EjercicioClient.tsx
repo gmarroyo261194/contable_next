@@ -87,11 +87,14 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
     },
     {
       header: "Asientos",
-      cell: (e: any) => (
-        <span className="text-xs font-semibold text-slate-500">
-          Sin asientos registrados
-        </span>
-      )
+      cell: (e: any) => {
+        const count = e._count?.asientos || 0;
+        return (
+          <span className={`text-xs font-bold ${count > 0 ? 'text-primary' : 'text-slate-400'}`}>
+            {count > 0 ? `${count} asientos registrados` : 'Sin asientos'}
+          </span>
+        );
+      }
     },
   ];
 
