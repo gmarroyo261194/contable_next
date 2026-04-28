@@ -126,18 +126,18 @@ export default function AsientosPage() {
 
   const handleAnular = async () => {
     if (!asientoToAnular) return;
-    
+
     const payment = asientoToAnular.pagosGestion?.[0];
     const isPayment = !!payment;
-    
+
     try {
-      const result = isPayment 
+      const result = isPayment
         ? await anularPago(payment.id)
         : await anularAsiento(asientoToAnular.id);
 
       if ('success' in result && result.success) {
-        toast.success(isPayment 
-          ? "Pago y asiento anulados correctamente. Las facturas han vuelto al estado Autorizado." 
+        toast.success(isPayment
+          ? "Pago y asiento anulados correctamente. Las facturas han vuelto al estado Autorizado."
           : "Asiento anulado correctamente. Se ha generado un contra-asiento."
         );
         fetchAsientos();
@@ -159,10 +159,10 @@ export default function AsientosPage() {
 
   const handleSort = (column: string) => {
     const newOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
-    updateFilters({ 
-      sortBy: column, 
-      sortOrder: newOrder, 
-      page: 1 
+    updateFilters({
+      sortBy: column,
+      sortOrder: newOrder,
+      page: 1
     });
   };
 
@@ -186,13 +186,13 @@ export default function AsientosPage() {
           El acceso al Libro Diario y la gestión de asientos ha sido restringido por la administración desde la configuración de módulos.
         </p>
         <div className="flex gap-4 mt-10">
-          <button 
+          <button
             onClick={() => router.push('/settings/modulos')}
             className="bg-white border border-slate-200 text-slate-700 px-8 py-3.5 rounded-2xl font-bold hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
           >
             IR A MÓDULOS
           </button>
-          <button 
+          <button
             onClick={() => router.push('/')}
             className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200"
           >
@@ -258,8 +258,8 @@ export default function AsientosPage() {
         <div className="flex items-center gap-4 flex-1 max-w-md ml-8">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Buscar por descripción, leyenda, número, importe o fecha (DD/MM/YYYY)..."
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
@@ -280,19 +280,19 @@ export default function AsientosPage() {
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th
                   onClick={() => handleSort('fecha')}
-                  className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-pointer hover:bg-slate-100 transition-colors group"
+                  className="w-1 whitespace-nowrap pl-6 pr-2 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-pointer hover:bg-slate-100 transition-colors group"
                 >
                   <div className="flex items-center">Fecha <SortIcon column="fecha" /></div>
                 </th>
                 <th
                   onClick={() => handleSort('numero')}
-                  className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-pointer hover:bg-slate-100 transition-colors group text-center"
+                  className="w-1 whitespace-nowrap px-2 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-pointer hover:bg-slate-100 transition-colors group text-center"
                 >
                   <div className="flex items-center justify-center">Asiento # <SortIcon column="numero" /></div>
                 </th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                {/*<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
                   Empresa / Ejercicio
-                </th>
+                </th>*/}
                 <th
                   onClick={() => handleSort('descripcion')}
                   className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-pointer hover:bg-slate-100 transition-colors group"
@@ -325,19 +325,19 @@ export default function AsientosPage() {
                     onDoubleClick={() => handleEdit(asiento)}
                     className={`hover:bg-slate-50/50 transition-colors group cursor-pointer ${isAnulacion ? 'opacity-60 italic' : ''}`}
                   >
-                    <td className="px-6 py-1 text-sm font-bold text-slate-600">
+                    <td className="w-1 whitespace-nowrap pl-6 pr-2 py-1 text-sm font-bold text-slate-600 text-center">
                       {(() => {
                         const d = new Date(asiento.fecha);
                         const normalized = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
                         return normalized.toLocaleDateString();
                       })()}
                     </td>
-                    <td className="px-6 py-1 text-center">
+                    <td className="w-1 whitespace-nowrap px-2 py-1 text-center">
                       <span className="text-xs font-black bg-slate-100 text-slate-500 px-2 py-1 rounded-lg">
-                        #{asiento.numero.toString().padStart(5, '0')}
+                        {asiento.numero}
                       </span>
                     </td>
-                    <td className="px-6 py-1">
+                    {/* <td className="px-6 py-1">
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black text-primary uppercase tracking-tighter truncate max-w-[150px]">
                           {asiento.ejercicio?.empresa?.nombreFantasia || asiento.ejercicio?.empresa?.razonSocial}
@@ -346,7 +346,7 @@ export default function AsientosPage() {
                           Ejercicio {asiento.ejercicio?.numero} ({asiento.ejercicio?.nombre})
                         </span>
                       </div>
-                    </td>
+                    </td> */}
                     <td className="px-6 py-1">
                       <div className="flex items-center gap-2">
                         <div className="text-sm font-black text-slate-800">{asiento.descripcion}</div>
@@ -465,7 +465,7 @@ export default function AsientosPage() {
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleAnular}
         title={asientoToAnular?.pagosGestion?.[0] ? "Anular Pago y Asiento" : "Anular Asiento"}
-        description={asientoToAnular?.pagosGestion?.[0] 
+        description={asientoToAnular?.pagosGestion?.[0]
           ? "Este asiento está asociado al pago de facturas docentes. Al anularlo, el pago se cancelará y las facturas volverán al estado 'Autorizado'. ¿Desea proceder?"
           : "¿Está seguro que desea anular este asiento? Se generará un contra-asiento compensatorio."
         }
