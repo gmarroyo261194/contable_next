@@ -263,7 +263,7 @@ export default function DocumentosClientesPage() {
                   <thead>
                     <tr className="bg-slate-50/50">
                       <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Fecha</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Empresa / Ejercicio</th>
+                      {/* <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Empresa / Ejercicio</th> */}
                       <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Cliente</th>
                       <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Servicio</th>
                       <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Comprobante</th>
@@ -278,7 +278,7 @@ export default function DocumentosClientesPage() {
                         <td className="px-4 py-2 whitespace-nowrap">
                           <div className="text-slate-700 font-bold text-xs">{format(new Date(doc.fecha), 'dd/MM/yyyy')}</div>
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap">
+                        {/* <td className="px-4 py-2 whitespace-nowrap">
                           <div className="flex flex-col">
                             <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
                               {doc.ejercicio?.empresa?.nombreFantasia || doc.ejercicio?.empresa?.razonSocial}
@@ -287,7 +287,7 @@ export default function DocumentosClientesPage() {
                               Eje. {doc.ejercicio?.numero}
                             </span>
                           </div>
-                        </td>
+                        </td> */}
                         <td className="px-4 py-2">
                           <div>
                             <div className="font-bold text-slate-900 text-sm truncate max-w-[280px]">{doc.entidad?.nombre}</div>

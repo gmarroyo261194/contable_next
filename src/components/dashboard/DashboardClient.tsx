@@ -50,19 +50,6 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
             {(session?.user as any)?.ejercicioNombre && ` (Ejercicio ${(session?.user as any)?.ejercicioNombre})`}
           </p>
         </div>
-        {/* <div className="flex gap-3">
-          <button className="flex items-center gap-2 bg-card border border-border px-4 py-2.5 rounded-xl font-bold text-sm text-foreground hover:bg-muted transition-colors shadow-sm font-sans">
-            <Upload className="w-4 h-4 text-muted-foreground" />
-            Subir Documento
-          </button>
-          <button
-            onClick={() => setIsAsientoDialogOpen(true)}
-            className="flex items-center gap-2 bg-primary px-6 py-2.5 rounded-xl font-bold text-sm text-primary-foreground hover:opacity-90 shadow-lg shadow-primary/20 transition-all font-display"
-          >
-            <Plus className="w-4 h-4" />
-            Nueva Entrada
-          </button>
-        </div> */}
       </header>
 
       {/* Summary Cards */}
