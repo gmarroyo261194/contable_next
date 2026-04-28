@@ -122,13 +122,14 @@ export default function DocumentosClientesPage() {
   }, [ejercicioId]);
 
   const loadFilterData = useCallback(async () => {
+    const empresaId = (session?.user as any)?.empresaId;
+    if (!empresaId) return;
+
     try {
       const entData = await getEntidades();
       setEntidades(entData);
-      if (session?.user?.empresaId) {
-        const servData = await getServicios(Number(session.user.empresaId));
-        setServicios(servData);
-      }
+      const servData = await getServicios(Number(empresaId));
+      setServicios(servData);
     } catch (error) {
       console.error("Error loading filter data:", error);
     }
