@@ -1,3 +1,15 @@
+"use server";
+
+import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
+
+export interface CategoryStats {
+  totalPagado: number;
+  totalPendiente: number;
+  countPagado: number;
+  countPendiente: number;
+}
+
 export interface DeptoParticipation {
   nombre: string;
   total: number;
