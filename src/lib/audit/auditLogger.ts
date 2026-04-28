@@ -70,10 +70,10 @@ export async function auditCreate(
         entidad,
         entidadId: String(entidadId),
         accion: "CREATE",
-        valoresAnt: null,
-        valoresNuev: serializarValores(valoresNuev),
-        cambiadoPor: cambiadoPor ?? null,
-        empresaId: empresaId ?? null,
+        valoresAnt: undefined,
+        valoresNuev: serializarValores(valoresNuev) ?? undefined,
+        cambiadoPor: cambiadoPor || undefined,
+        empresaId: empresaId || undefined,
       },
     });
   } catch (error) {
@@ -107,10 +107,10 @@ export async function auditUpdate(
         entidad,
         entidadId: String(entidadId),
         accion: "UPDATE",
-        valoresAnt: serializarValores(valoresAnt),
-        valoresNuev: serializarValores(valoresNuev),
-        cambiadoPor: cambiadoPor ?? null,
-        empresaId: empresaId ?? null,
+        valoresAnt: serializarValores(valoresAnt) ?? undefined,
+        valoresNuev: serializarValores(valoresNuev) ?? undefined,
+        cambiadoPor: cambiadoPor || undefined,
+        empresaId: empresaId || undefined,
       },
     });
   } catch (error) {
@@ -141,10 +141,10 @@ export async function auditDelete(
         entidad,
         entidadId: String(entidadId),
         accion: "DELETE",
-        valoresAnt: serializarValores(valoresAnt),
-        valoresNuev: null,
-        cambiadoPor: cambiadoPor ?? null,
-        empresaId: empresaId ?? null,
+        valoresAnt: serializarValores(valoresAnt) ?? undefined,
+        valoresNuev: undefined,
+        cambiadoPor: cambiadoPor || undefined,
+        empresaId: empresaId || undefined,
       },
     });
   } catch (error) {
