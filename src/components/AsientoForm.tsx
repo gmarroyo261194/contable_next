@@ -32,6 +32,13 @@ interface AsientoFormProps {
   readOnly?: boolean;
 }
 
+/**
+ * Formulario para la creación y edición de asientos contables.
+ * Permite el ingreso de múltiples líneas, búsqueda de cuentas y validación de balance.
+ * 
+ * @param {AsientoFormProps} props - Propiedades del formulario.
+ * @returns {JSX.Element} Formulario de asiento contable.
+ */
 export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }: AsientoFormProps) {
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
   const [descripcion, setDescripcion] = useState('');
@@ -215,19 +222,19 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[90vh] bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100">
+    <div className="flex flex-col h-full max-h-[90vh] bg-card rounded-3xl overflow-hidden shadow-2xl border border-border">
       {/* Header Section */}
-      <header className="p-6 border-b border-slate-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-20">
+      <header className="p-6 border-b border-border flex items-center justify-between bg-card/80 backdrop-blur-md sticky top-0 z-20">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight font-display">
+            <h1 className="text-2xl font-black text-foreground tracking-tight font-display">
               {readOnly
                 ? `Asiento #${asientoToEdit?.numero.toString().padStart(5, '0')}`
                 : asientoToEdit
                   ? `Editar Asiento #${asientoToEdit.numero.toString().padStart(5, '0')}`
                   : 'Nuevo Asiento Contable'}
             </h1>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
+            <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest mt-1">
               {readOnly
                 ? 'Consulta de registro'
                 : asientoToEdit
@@ -239,7 +246,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
         <div className="flex items-center gap-3">
           <button
             onClick={handleCloseAttempt}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-slate-500 font-bold text-sm hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-muted-foreground font-bold text-sm hover:bg-muted transition-colors"
           >
             <X className="w-4 h-4" />
             {readOnly ? 'Cerrar' : 'Cancelar'}
@@ -248,7 +255,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="flex items-center gap-2 bg-primary px-6 py-2.5 rounded-xl font-bold text-sm text-white hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 bg-primary px-6 py-2.5 rounded-xl font-bold text-sm text-primary-foreground hover:opacity-90 shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               {asientoToEdit ? 'Guardar Cambios' : 'Registrar Asiento'}
@@ -260,17 +267,17 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
 
       {/* Banners de relación (Anulaciones) */}
       {asientoToEdit?.anulaA && (
-        <div className="bg-orange-50 border-b border-orange-100 p-3 px-8 flex items-center justify-between">
+        <div className="bg-orange-500/10 border-b border-orange-500/20 p-3 px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-4 h-4 text-orange-500" />
-            <p className="text-xs font-bold text-orange-700 uppercase tracking-wide">
+            <p className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide">
               Este asiento es un CONTRA-ASIENTO que anula al Asiento #{asientoToEdit.anulaA.numero.toString().padStart(5, '0')}
             </p>
           </div>
           {onJump && (
             <button
               onClick={() => onJump(asientoToEdit.anulaAId)}
-              className="flex items-center gap-1.5 text-[10px] font-black uppercase text-orange-600 hover:text-orange-800 transition-colors bg-white px-3 py-1.5 rounded-lg border border-orange-100 shadow-sm"
+              className="flex items-center gap-1.5 text-[10px] font-black uppercase text-orange-600 hover:text-orange-700 transition-colors bg-card px-3 py-1.5 rounded-lg border border-orange-500/20 shadow-sm"
             >
               Ver Original <FileSearch className="w-3 h-3" />
             </button>
@@ -279,17 +286,17 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
       )}
 
       {asientoToEdit?.anulaciones?.length > 0 && (
-        <div className="bg-red-50 border-b border-red-100 p-3 px-8 flex items-center justify-between">
+        <div className="bg-red-500/10 border-b border-red-500/20 p-3 px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <XCircle className="w-4 h-4 text-red-500" />
-            <p className="text-xs font-bold text-red-700 uppercase tracking-wide">
+            <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">
               Este asiento ha sido ANULADO por el Asiento #{asientoToEdit.anulaciones[0].numero.toString().padStart(5, '0')}
             </p>
           </div>
           {onJump && (
             <button
               onClick={() => onJump(asientoToEdit.anulaciones[0].id)}
-              className="flex items-center gap-1.5 text-[10px] font-black uppercase text-red-600 hover:text-red-800 transition-colors bg-white px-3 py-1.5 rounded-lg border border-red-100 shadow-sm"
+              className="flex items-center gap-1.5 text-[10px] font-black uppercase text-red-600 hover:text-red-700 transition-colors bg-card px-3 py-1.5 rounded-lg border border-red-500/20 shadow-sm"
             >
               Ver Anulación <FileSearch className="w-3 h-3" />
             </button>
@@ -301,13 +308,13 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <section className="p-2 space-y-2">
           {/* Form Header Info */}
-          <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-2 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-2 bg-muted/30 p-4 rounded-2xl border border-border">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1" htmlFor="entry_date">Fecha Asiento</label>
+              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1" htmlFor="entry_date">Fecha Asiento</label>
               <div className="relative">
                 <input
-                  className="w-[200px] bg-white border-slate-200 rounded-xl 
-                  text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary focus:border-primary outline-hidden p-3 shadow-sm transition-all"
+                  className="w-[200px] bg-card border-border rounded-xl 
+                  text-sm font-bold text-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-hidden p-3 shadow-sm transition-all"
                   id="entry_date"
                   type="date"
                   disabled={readOnly}
@@ -317,10 +324,10 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1" htmlFor="main_desc">Concepto</label>
+              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1" htmlFor="main_desc">Concepto</label>
               <textarea
-                className="w-full bg-white border-slate-200 rounded-xl text-sm font-medium text-slate-600 
-                focus:ring-2 focus:ring-primary focus:border-primary outline-hidden p-3 shadow-sm transition-all min-h-[46px] resize-none"
+                className="w-full bg-card border-border rounded-xl text-sm font-medium text-foreground 
+                focus:ring-2 focus:ring-primary focus:border-primary outline-hidden p-3 shadow-sm transition-all min-h-[46px] resize-none placeholder:text-muted-foreground"
                 id="main_desc"
                 placeholder="Ej: Pago de alquiler Octubre 2023..."
                 disabled={readOnly}
@@ -332,25 +339,25 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
           </div>
 
           {/* Table Area */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-slate-100 border-b border-slate-100">
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-40">Código</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Cuenta</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Leyenda / Comentario</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-44">Débito</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-44">Crédito</th>
+                <tr className="bg-muted/50 border-b border-border">
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground w-40">Código</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cuenta</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Leyenda / Comentario</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right w-44">Débito</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right w-44">Crédito</th>
                   <th className="px-4 py-4 w-12"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-border">
                 {renglones.map((r, idx) => (
-                  <tr key={r.id} className="hover:bg-slate-50/30 transition-colors group">
+                  <tr key={r.id} className="hover:bg-muted/30 transition-colors group">
                     <td className="px-6 py-4">
                       <input
                         data-row-id={r.id}
-                        className="w-full border-none p-0 focus:ring-0 text-sm font-black text-primary placeholder-slate-200 bg-transparent"
+                        className="w-full border-none p-0 focus:ring-0 text-sm font-black text-primary placeholder:text-muted-foreground/30 bg-transparent"
                         placeholder="F7 para buscar"
                         type="text"
                         disabled={readOnly}
@@ -360,13 +367,13 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
                       />
                     </td>
                     <td className="px-6 py-4">
-                      <div className={`text-sm font-bold ${r.cuentaId ? 'text-slate-700' : 'text-slate-300 italic'}`}>
+                      <div className={`text-sm font-bold ${r.cuentaId ? 'text-foreground' : 'text-muted-foreground/50 italic'}`}>
                         {r.cuentaNombre || 'Seleccione cuenta (F7)'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <input
-                        className="w-full border-none p-0 focus:ring-0 text-sm text-slate-500 placeholder-slate-200 bg-transparent font-medium"
+                        className="w-full border-none p-0 focus:ring-0 text-sm text-foreground placeholder:text-muted-foreground/30 bg-transparent font-medium"
                         placeholder="Referencia de línea..."
                         type="text"
                         disabled={readOnly}
@@ -376,12 +383,12 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
                     </td>
                     <td className="px-6 py-4">
                       {readOnly ? (
-                        <div className={`text-sm text-right font-black whitespace-nowrap ${r.debe > 0 ? 'text-slate-900' : 'text-slate-200'}`}>
+                        <div className={`text-sm text-right font-black whitespace-nowrap ${r.debe > 0 ? 'text-foreground' : 'text-muted-foreground/20'}`}>
                           {r.debe > 0 ? r.debe.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
                         </div>
                       ) : (
                         <input
-                          className="w-full border-none p-0 focus:ring-0 text-sm text-right text-slate-900 font-black placeholder-slate-100 bg-transparent"
+                          className="w-full border-none p-0 focus:ring-0 text-sm text-right text-foreground font-black placeholder:text-muted-foreground/20 bg-transparent"
                           placeholder="0,00"
                           type="text"
                           onFocus={() => setFocusedField(r.id + '-debe')}
@@ -398,12 +405,12 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
                     </td>
                     <td className="px-6 py-4">
                       {readOnly ? (
-                        <div className={`text-sm text-right font-black whitespace-nowrap ${r.haber > 0 ? 'text-slate-900' : 'text-slate-200'}`}>
+                        <div className={`text-sm text-right font-black whitespace-nowrap ${r.haber > 0 ? 'text-foreground' : 'text-muted-foreground/20'}`}>
                           {r.haber > 0 ? r.haber.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
                         </div>
                       ) : (
                         <input
-                          className="w-full border-none p-0 focus:ring-0 text-sm text-right text-slate-900 font-black placeholder-slate-100 bg-transparent"
+                          className="w-full border-none p-0 focus:ring-0 text-sm text-right text-foreground font-black placeholder:text-muted-foreground/20 bg-transparent"
                           placeholder="0,00"
                           type="text"
                           onFocus={() => setFocusedField(r.id + '-haber')}
@@ -445,7 +452,7 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
                       {!readOnly && (
                         <button
                           onClick={() => removeLine(r.id)}
-                          className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                          className="p-1.5 text-muted-foreground/30 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -457,15 +464,15 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
             </table>
 
             {!readOnly && (
-              <div className="p-4 bg-slate-50/30 flex justify-between items-center">
+              <div className="p-4 bg-muted/20 flex justify-between items-center">
                 <button
                   onClick={addLine}
-                  className="flex items-center gap-2 text-primary hover:text-blue-700 text-xs font-black uppercase tracking-widest transition-all px-4 py-2 rounded-xl hover:bg-primary/5"
+                  className="flex items-center gap-2 text-primary hover:opacity-80 text-xs font-black uppercase tracking-widest transition-all px-4 py-2 rounded-xl hover:bg-primary/5"
                 >
                   <Plus className="w-4 h-4" />
                   Añadir Línea
                 </button>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Enter en Monto para nueva fila • F7 para búsqueda avanzada</p>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide">Enter en Monto para nueva fila • F7 para búsqueda avanzada</p>
               </div>
             )}
           </div>
@@ -473,15 +480,15 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
       </div>
 
       {/* Footer / Balance Compacto */}
-      <footer className="bg-slate-50 p-4 border-t border-slate-200">
+      <footer className="bg-muted p-4 border-t border-border">
         <div className="flex flex-row justify-between items-center gap-4 max-w-7xl mx-auto">
           {/* Info de Estado */}
           <div className="flex items-center gap-3">
-            <div className={`p-1.5 rounded-lg ${isCuadrado ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600 animate-pulse'}`}>
+            <div className={`p-1.5 rounded-lg ${isCuadrado ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-red-500/20 text-red-600 dark:text-red-400 animate-pulse'}`}>
               {isCuadrado ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
             </div>
             <div>
-              <h4 className={`text-[10px] font-black uppercase tracking-widest ${isCuadrado ? 'text-green-700' : 'text-red-700'}`}>
+              <h4 className={`text-[10px] font-black uppercase tracking-widest ${isCuadrado ? 'text-green-700 dark:text-green-500' : 'text-red-700 dark:text-red-500'}`}>
                 {isCuadrado ? 'Asiento Cuadrado' : 'Asiento Desbalanceado'}
               </h4>
               {!isCuadrado && (
@@ -493,20 +500,20 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
           </div>
 
           {/* Totales Horizontales */}
-          <div className="flex items-center gap-8 bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-8 bg-card px-6 py-3 rounded-2xl border border-border shadow-sm">
             <div className="flex flex-col items-end">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Débito</span>
-              <span className="text-sm font-black text-slate-700">$ {totalDebe.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Total Débito</span>
+              <span className="text-sm font-black text-foreground">$ {totalDebe.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
-            <div className="w-px h-8 bg-slate-100"></div>
+            <div className="w-px h-8 bg-border"></div>
             <div className="flex flex-col items-end">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Crédito</span>
-              <span className="text-sm font-black text-slate-700">$ {totalHaber.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Total Crédito</span>
+              <span className="text-sm font-black text-foreground">$ {totalHaber.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
-            <div className="w-px h-8 bg-slate-100"></div>
+            <div className="w-px h-8 bg-border"></div>
             <div className="flex flex-col items-end">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Balance</span>
-              <span className={`text-base font-black ${isCuadrado ? 'text-green-600' : 'text-slate-900'}`}>$ {diferencia.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Balance</span>
+              <span className={`text-base font-black ${isCuadrado ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>$ {diferencia.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
         </div>
@@ -525,25 +532,25 @@ export function AsientoForm({ onClose, asientoToEdit, onJump, readOnly = false }
       {/* Custom Confirmation Modal */}
       {showExitConfirm && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowExitConfirm(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-100 animate-in fade-in zoom-in duration-200">
+          <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" onClick={() => setShowExitConfirm(false)} />
+          <div className="relative bg-card rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-border animate-in fade-in zoom-in duration-200">
             <div className="flex items-center gap-3 mb-4 text-orange-500">
               <AlertCircle className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-slate-800">¿Cerrar sin guardar?</h3>
+              <h3 className="text-lg font-bold text-foreground">¿Cerrar sin guardar?</h3>
             </div>
-            <p className="text-sm text-slate-600 mb-6">
+            <p className="text-sm text-muted-foreground mb-6">
               Tienes cambios sin registrar en este asiento. Si sales ahora, se perderán permanentemente.
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowExitConfirm(false)}
-                className="flex-1 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl font-bold text-sm text-muted-foreground hover:bg-muted transition-colors"
               >
                 Volver
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl font-bold text-sm hover:bg-red-600 shadow-lg shadow-red-200 transition-all"
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl font-bold text-sm hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all"
               >
                 SÍ, SALIR
               </button>
