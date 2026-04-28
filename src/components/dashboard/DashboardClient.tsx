@@ -69,27 +69,30 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <SummaryCard
           title="Documentos Proveedores"
-          value={formatCurrency(stats.proveedores.total)}
-          change={`${stats.proveedores.count} documentos`}
-          isPositive={true}
+          paidValue={formatCurrency(stats.proveedores.totalPagado)}
+          pendingValue={formatCurrency(stats.proveedores.totalPendiente)}
+          paidLabel={`Pagados (${stats.proveedores.countPagado})`}
+          pendingLabel={`Adeudados (${stats.proveedores.countPendiente})`}
           icon={FileText}
           iconColor="text-blue-600 dark:text-blue-400"
           bgColor="bg-blue-500"
         />
         <SummaryCard
           title="Facturas Emitidas"
-          value={formatCurrency(stats.facturasEmitidas.total)}
-          change={`${stats.facturasEmitidas.count} comprobantes`}
-          isPositive={true}
+          paidValue={formatCurrency(stats.facturasEmitidas.totalPagado)}
+          pendingValue={formatCurrency(stats.facturasEmitidas.totalPendiente)}
+          paidLabel={`Cobradas (${stats.facturasEmitidas.countPagado})`}
+          pendingLabel={`Pendientes (${stats.facturasEmitidas.countPendiente})`}
           icon={Receipt}
           iconColor="text-green-600 dark:text-green-400"
           bgColor="bg-green-500"
         />
         <SummaryCard
           title="Honorarios Docentes"
-          value={formatCurrency(stats.honorariosDocentes.total)}
-          change={`${stats.honorariosDocentes.count} registros`}
-          isPositive={true}
+          paidValue={formatCurrency(stats.honorariosDocentes.totalPagado)}
+          pendingValue={formatCurrency(stats.honorariosDocentes.totalPendiente)}
+          paidLabel={`Pagados (${stats.honorariosDocentes.countPagado})`}
+          pendingLabel={`Pendientes (${stats.honorariosDocentes.countPendiente})`}
           icon={GraduationCap}
           iconColor="text-purple-600 dark:text-purple-400"
           bgColor="bg-purple-500"
