@@ -109,15 +109,16 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     // Estadísticas de participaciones
     if (f.servicio) {
       const servicioNombre = f.servicio.nombre;
+      const pagadoParaParticipar = Number(f.montoPagado || 0);
 
-      if (f.servicio.participacionFundacion && f.servicio.porcentajeFundacion) {
-        const montoFund = (total * Number(f.servicio.porcentajeFundacion) / 100);
+      if (f.servicio.participacionFundacion && f.servicio.porcentajeFundacion && pagadoParaParticipar > 0) {
+        const montoFund = (pagadoParaParticipar * Number(f.servicio.porcentajeFundacion) / 100);
         acc.totalFundacion += montoFund;
         fundacionMap.set(servicioNombre, (fundacionMap.get(servicioNombre) || 0) + montoFund);
       }
       
-      if (f.servicio.participacionDepto && f.servicio.porcentajeDepto) {
-        const montoDepto = (total * Number(f.servicio.porcentajeDepto) / 100);
+      if (f.servicio.participacionDepto && f.servicio.porcentajeDepto && pagadoParaParticipar > 0) {
+        const montoDepto = (pagadoParaParticipar * Number(f.servicio.porcentajeDepto) / 100);
         acc.totalDepartamentos += montoDepto;
         
         const deptoNombre = f.servicio.departamento?.nombre || "Sin Departamento";
