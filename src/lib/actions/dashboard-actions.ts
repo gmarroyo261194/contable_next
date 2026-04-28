@@ -1,13 +1,6 @@
-"use server";
-
-import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
-
-export interface CategoryStats {
-  totalPagado: number;
-  totalPendiente: number;
-  countPagado: number;
-  countPendiente: number;
+export interface DeptoParticipation {
+  nombre: string;
+  total: number;
 }
 
 export interface DashboardStats {
@@ -15,6 +8,7 @@ export interface DashboardStats {
   facturasEmitidas: CategoryStats & {
     totalFundacion: number;
     totalDepartamentos: number;
+    participacionesDepto: DeptoParticipation[];
   };
   honorariosDocentes: CategoryStats;
 }
@@ -34,7 +28,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const emptyStats: CategoryStats = { totalPagado: 0, totalPendiente: 0, countPagado: 0, countPendiente: 0 };
     return {
       proveedores: emptyStats,
-      facturasEmitidas: { ...emptyStats, totalFundacion: 0, totalDepartamentos: 0 },
+      facturasEmitidas: { ...emptyStats, totalFundacion: 0, totalDepartamentos: 0, participacionesDepto: [] },
       honorariosDocentes: emptyStats,
     };
   }
@@ -62,11 +56,16 @@ export async function getDashboardStats(): Promise<DashboardStats> {
           participacionFundacion: true,
           porcentajeFundacion: true,
           participacionDepto: true,
-          porcentajeDepto: true
+          porcentajeDepto: true,
+          departamento: {
+            select: { nombre: true }
+          }
         }
       }
     }
   });
+
+  const deptosMap = new Map<string, number>();
 
   const factStats = todasFacturas.reduce((acc, f) => {
     const total = Number(f.montoTotal || 0);
@@ -87,12 +86,29 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         acc.totalFundacion += (total * Number(f.servicio.porcentajeFundacion) / 100);
       }
       if (f.servicio.participacionDepto && f.servicio.porcentajeDepto) {
-        acc.totalDepartamentos += (total * Number(f.servicio.porcentajeDepto) / 100);
+        const montoDepto = (total * Number(f.servicio.porcentajeDepto) / 100);
+        acc.totalDepartamentos += montoDepto;
+        
+        const deptoNombre = f.servicio.departamento?.nombre || "Sin Departamento";
+        deptosMap.set(deptoNombre, (deptosMap.get(deptoNombre) || 0) + montoDepto);
       }
     }
 
     return acc;
-  }, { totalPagado: 0, totalPendiente: 0, countPagado: 0, countPendiente: 0, totalFundacion: 0, totalDepartamentos: 0 });
+  }, { 
+    totalPagado: 0, 
+    totalPendiente: 0, 
+    countPagado: 0, 
+    countPendiente: 0, 
+    totalFundacion: 0, 
+    totalDepartamentos: 0,
+    participacionesDepto: [] as DeptoParticipation[]
+  });
+
+  factStats.participacionesDepto = Array.from(deptosMap.entries()).map(([nombre, total]) => ({
+    nombre,
+    total
+  })).sort((a, b) => b.total - a.total);
 
   // 3. Honorarios Docentes (FacturaDocente)
   const docentesPagados = await prisma.facturaDocente.aggregate({

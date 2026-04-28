@@ -101,8 +101,8 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
               </div>
             </div>
           </div>
-          <div className="card bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20">
-            <div className="flex items-center gap-4">
+          <div className="card bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20 flex flex-col">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center">
                 <GraduationCap className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
@@ -110,6 +110,20 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
                 <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">Total Departamentos</p>
                 <p className="text-2xl font-black text-foreground">{formatCurrency(stats.facturasEmitidas.totalDepartamentos)}</p>
               </div>
+            </div>
+            
+            {/* Department Breakdown */}
+            <div className="space-y-2 mt-2 pt-4 border-t border-emerald-100 dark:border-emerald-500/10 overflow-y-auto max-h-32 pr-2 custom-scrollbar">
+              {stats.facturasEmitidas.participacionesDepto.length > 0 ? (
+                stats.facturasEmitidas.participacionesDepto.map((depto, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-[11px]">
+                    <span className="text-muted-foreground font-medium truncate max-w-[180px]">{depto.nombre}</span>
+                    <span className="font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(depto.total)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[10px] text-muted-foreground italic">No hay participaciones por departamento</p>
+              )}
             </div>
           </div>
         </div>
