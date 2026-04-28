@@ -43,6 +43,14 @@ export default function DocumentosClientesPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [orderBy, setOrderBy] = useState("fecha");
+  const [orderDir, setOrderDir] = useState<'asc' | 'desc'>("desc");
+  const [filterEstado, setFilterEstado] = useState<'todos' | 'pendientes' | 'contabilizados'>("todos");
+  const [filterEntidadId, setFilterEntidadId] = useState<number | undefined>();
+  const [filterServicioId, setFilterServicioId] = useState<number | undefined>();
+  const [entidades, setEntidades] = useState<any[]>([]);
+  const [servicios, setServicios] = useState<any[]>([]);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [isPagoModalOpen, setIsPagoModalOpen] = useState(false);
@@ -85,7 +93,12 @@ export default function DocumentosClientesPage() {
         ejercicioId, 
         page, 
         pageSize, 
-        search: debouncedSearch 
+        search: debouncedSearch,
+        orderBy,
+        orderDir,
+        estado: filterEstado,
+        entidadId: filterEntidadId,
+        servicioId: filterServicioId
       });
       setDocumentos(res.data);
       setTotal(res.total);
@@ -94,7 +107,7 @@ export default function DocumentosClientesPage() {
     } finally {
       setLoading(false);
     }
-  }, [ejercicioId, page, pageSize, debouncedSearch]);
+  }, [ejercicioId, page, pageSize, debouncedSearch, orderBy, orderDir, filterEstado, filterEntidadId, filterServicioId]);
 
   const loadCuentas = useCallback(async () => {
     if (!ejercicioId) return;
@@ -106,11 +119,35 @@ export default function DocumentosClientesPage() {
     }
   }, [ejercicioId]);
 
+  const loadFilterData = useCallback(async () => {
+    try {
+      const entData = await getEntidades();
+      setEntidades(entData);
+      if (session?.user?.empresaId) {
+        const servData = await getServicios(Number(session.user.empresaId));
+        setServicios(servData);
+      }
+    } catch (error) {
+      console.error("Error loading filter data:", error);
+    }
+  }, [session?.user?.empresaId]);
+
   useEffect(() => {
     loadDocumentos();
     loadCuentas();
+    loadFilterData();
     getModulos().then(mods => setActiveModules(mods.filter(m => m.activo).map(m => m.codigo)));
-  }, [loadDocumentos, loadCuentas]);
+  }, [loadDocumentos, loadCuentas, loadFilterData]);
+
+  const toggleSort = (field: string) => {
+    if (orderBy === field) {
+      setOrderDir(orderDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setOrderBy(field);
+      setOrderDir('asc');
+    }
+    setPage(1);
+  };
 
   // filteredDocs ya viene filtrado del servidor
   const filteredDocs = documentos;
@@ -218,14 +255,14 @@ export default function DocumentosClientesPage() {
           {/* Header Section */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm uppercase tracking-widest">
+              {/* <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm uppercase tracking-widest">
                 <FileText className="w-4 h-4" />
                 Gestión de Ventas
-              </div>
+              </div> */}
               <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Facturas Emitidas</h1>
-              <p className="text-slate-500 font-medium">
+              {/* <p className="text-slate-500 font-medium">
                 Administra y sincroniza comprobantes externos para su contabilización.
-              </p>
+              </p> */}
             </div>
 
             <div className="flex items-center gap-3">
@@ -273,10 +310,100 @@ export default function DocumentosClientesPage() {
                 />
               </div>
 
-              <button className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all">
-                <Filter className="w-4 h-4" />
-                Filtros
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold transition-all ${
+                    isFilterPanelOpen || filterEstado !== 'todos' || filterEntidadId || filterServicioId
+                    ? 'bg-indigo-50 text-indigo-600 shadow-inner' 
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <Filter className="w-4 h-4" />
+                  Filtros
+                  {(filterEstado !== 'todos' || filterEntidadId || filterServicioId) && (
+                    <span className="w-2 h-2 bg-indigo-600 rounded-full" />
+                  )}
+                </button>
+
+                {isFilterPanelOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Filtros Avanzados</h3>
+                      <button 
+                        onClick={() => {
+                          setFilterEstado('todos');
+                          setFilterEntidadId(undefined);
+                          setFilterServicioId(undefined);
+                          setPage(1);
+                        }}
+                        className="text-[10px] font-bold text-indigo-600 hover:underline"
+                      >
+                        Limpiar Todo
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Estado</label>
+                        <select 
+                          value={filterEstado}
+                          onChange={(e) => {
+                            setFilterEstado(e.target.value as any);
+                            setPage(1);
+                          }}
+                          className="w-full bg-slate-50 border-none rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100"
+                        >
+                          <option value="todos">Todos los estados</option>
+                          <option value="pendientes">Pendientes de Asiento</option>
+                          <option value="contabilizados">Contabilizados</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Cliente</label>
+                        <select 
+                          value={filterEntidadId || ""}
+                          onChange={(e) => {
+                            setFilterEntidadId(e.target.value ? Number(e.target.value) : undefined);
+                            setPage(1);
+                          }}
+                          className="w-full bg-slate-50 border-none rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100"
+                        >
+                          <option value="">Todos los clientes</option>
+                          {entidades.map(ent => (
+                            <option key={ent.id} value={ent.id}>{ent.nombre}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Servicio</label>
+                        <select 
+                          value={filterServicioId || ""}
+                          onChange={(e) => {
+                            setFilterServicioId(e.target.value ? Number(e.target.value) : undefined);
+                            setPage(1);
+                          }}
+                          className="w-full bg-slate-50 border-none rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100"
+                        >
+                          <option value="">Todos los servicios</option>
+                          {servicios.map(serv => (
+                            <option key={serv.id} value={serv.id}>{serv.nombre}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => setIsFilterPanelOpen(false)}
+                      className="w-full mt-6 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                    >
+                      Aplicar Filtros
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="overflow-x-auto min-h-[400px]">
@@ -291,18 +418,49 @@ export default function DocumentosClientesPage() {
                     <Search className="w-10 h-10" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900">Sin resultados</h3>
-                  <p className="text-slate-500 font-medium">No se encontraron documentos sincronizados que coincidan con la búsqueda.</p>
+                  <p className="text-slate-500 font-medium">No se encontraron documentos sincronizados que coincidan con los filtros aplicados.</p>
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/50">
-                      <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Fecha</th>
-                      {/* <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Empresa / Ejercicio</th> */}
-                      <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Cliente</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Servicio</th>
+                      <th 
+                        className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider cursor-pointer hover:text-indigo-600 transition-colors"
+                        onClick={() => toggleSort('fecha')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Fecha
+                          {orderBy === 'fecha' && (orderDir === 'asc' ? <ChevronLeft className="w-3 h-3 rotate-90" /> : <ChevronLeft className="w-3 h-3 -rotate-90" />)}
+                        </div>
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider cursor-pointer hover:text-indigo-600 transition-colors"
+                        onClick={() => toggleSort('cliente')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Cliente
+                          {orderBy === 'cliente' && (orderDir === 'asc' ? <ChevronLeft className="w-3 h-3 rotate-90" /> : <ChevronLeft className="w-3 h-3 -rotate-90" />)}
+                        </div>
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider cursor-pointer hover:text-indigo-600 transition-colors"
+                        onClick={() => toggleSort('servicio')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Servicio
+                          {orderBy === 'servicio' && (orderDir === 'asc' ? <ChevronLeft className="w-3 h-3 rotate-90" /> : <ChevronLeft className="w-3 h-3 -rotate-90" />)}
+                        </div>
+                      </th>
                       <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider">Comprobante</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider text-right">Total</th>
+                      <th 
+                        className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider text-right cursor-pointer hover:text-indigo-600 transition-colors"
+                        onClick={() => toggleSort('montoTotal')}
+                      >
+                        <div className="flex items-center justify-end gap-1">
+                          Total
+                          {orderBy === 'montoTotal' && (orderDir === 'asc' ? <ChevronLeft className="w-3 h-3 rotate-90" /> : <ChevronLeft className="w-3 h-3 -rotate-90" />)}
+                        </div>
+                      </th>
                       <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Estado</th>
                       <th className="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Acciones</th>
                     </tr>
@@ -489,19 +647,18 @@ export default function DocumentosClientesPage() {
                       const p = i + 1;
                       // Mostrar solo algunas páginas si hay muchas
                       if (
-                        p === 1 || 
-                        p === Math.ceil(total / pageSize) || 
+                        p === 1 ||
+                        p === Math.ceil(total / pageSize) ||
                         (p >= page - 1 && p <= page + 1)
                       ) {
                         return (
                           <button
                             key={p}
                             onClick={() => setPage(p)}
-                            className={`w-10 h-10 rounded-xl text-sm font-black transition-all ${
-                              page === p 
-                                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100" 
-                                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                            }`}
+                            className={`w-10 h-10 rounded-xl text-sm font-black transition-all ${page === p
+                              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100"
+                              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                              }`}
                           >
                             {p}
                           </button>
