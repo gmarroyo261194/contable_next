@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, LogIn, Building2, Calendar, ArrowRight, Loader2 } from 'lucide-react';
 import { login, getLoginData } from "@/lib/actions/auth-actions";
@@ -23,8 +21,6 @@ export default function LoginForm() {
     setError(null);
 
     try {
-      // In a real app, you might want to validate password here too before showing companies
-      // For this implementation, we fetch the companies associated with the email
       const data = await getLoginData(email);
       if (!data || data.length === 0) {
         setError("No se encontraron empresas asociadas a este correo.");
@@ -72,25 +68,27 @@ export default function LoginForm() {
 
   if (step === 2) {
     return (
-      <form className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300" onSubmit={handleSubmit}>
-        <div className="text-center space-y-2 mb-4">
-          <p className="text-sm text-slate-500">Bienvenido de nuevo</p>
-          <p className="font-bold text-slate-800">{email}</p>
+      <form className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500" onSubmit={handleSubmit}>
+        <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-6">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Identificado como</p>
+          <p className="font-bold text-slate-900 tracking-tight">{email}</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-red-600 text-sm font-medium">
+          <div className="bg-red-50 border border-red-100 p-4 rounded-2xl text-red-600 text-sm font-bold animate-in fade-in slide-in-from-top-2">
             {error}
           </div>
         )}
 
-        <div className="space-y-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-slate-700">Seleccionar Empresa</label>
+        <div className="space-y-5">
+          <div className="flex flex-col gap-2.5">
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Seleccionar Empresa</label>
             <div className="relative group">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors flex items-center justify-center">
+                <Building2 className="size-4" />
+              </div>
               <select 
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-slate-900 appearance-none cursor-pointer"
+                className="w-full pl-12 pr-10 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold text-slate-900 appearance-none cursor-pointer"
                 value={selectedEmpresa}
                 onChange={(e) => {
                   const empId = e.target.value;
@@ -107,15 +105,22 @@ export default function LoginForm() {
                   <option key={emp.id} value={emp.id}>{emp.nombre}</option>
                 ))}
               </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="size-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-slate-700">Seleccionar Ejercicio</label>
+          <div className="flex flex-col gap-2.5">
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Seleccionar Ejercicio</label>
             <div className="relative group">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors flex items-center justify-center">
+                <Calendar className="size-4" />
+              </div>
               <select 
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-slate-900 appearance-none cursor-pointer"
+                className="w-full pl-12 pr-10 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold text-slate-900 appearance-none cursor-pointer"
                 value={selectedEjercicio}
                 onChange={(e) => setSelectedEjercicio(e.target.value)}
                 disabled={!currentEmpresaData || currentEmpresaData.ejercicios.length === 0}
@@ -128,13 +133,18 @@ export default function LoginForm() {
                   <option value="">No hay ejercicios abiertos</option>
                 )}
               </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="size-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4 pt-4">
           <button 
-            className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-lg shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2" 
+            className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2 transform active:scale-[0.98]" 
             type="submit"
             disabled={loading || !selectedEmpresa}
           >
@@ -144,9 +154,9 @@ export default function LoginForm() {
           <button 
             type="button" 
             onClick={() => setStep(1)}
-            className="text-sm text-slate-500 hover:text-slate-700 font-medium"
+            className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-primary transition-colors"
           >
-            Volver
+            Volver a Credenciales
           </button>
         </div>
       </form>
@@ -154,18 +164,21 @@ export default function LoginForm() {
   }
 
   return (
-    <form className="space-y-5 animate-in fade-in slide-in-from-left-4 duration-300" onSubmit={handleNextStep}>
+    <form className="space-y-6 animate-in fade-in slide-in-from-left-8 duration-500" onSubmit={handleNextStep}>
       {error && (
-        <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-red-600 text-sm font-medium">
+        <div className="bg-red-50 border border-red-100 p-4 rounded-2xl text-red-600 text-sm font-bold animate-in fade-in slide-in-from-top-2">
           {error}
         </div>
       )}
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-slate-700">Correo electrónico</label>
+      
+      <div className="flex flex-col gap-2.5">
+        <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Correo electrónico</label>
         <div className="relative group">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors flex items-center justify-center">
+            <Mail className="size-4" />
+          </div>
           <input 
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-slate-900" 
+            className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-medium" 
             placeholder="ejemplo@contablenext.com" 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -175,14 +188,14 @@ export default function LoginForm() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center">
-          <label className="text-sm font-semibold text-slate-700">Contraseña</label>
-        </div>
+      <div className="flex flex-col gap-2.5">
+        <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Contraseña</label>
         <div className="relative group">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors flex items-center justify-center">
+            <Lock className="size-4" />
+          </div>
           <input 
-            className="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-slate-900" 
+            className="w-full pl-12 pr-12 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-400" 
             placeholder="••••••••" 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -190,17 +203,17 @@ export default function LoginForm() {
             required
           />
           <button 
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" 
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1" 
             type="button"
             onClick={() => setShowPassword(!showPassword)}
           >
-            {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
       </div>
 
       <button 
-        className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-lg shadow-lg shadow-primary/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2" 
+        className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 transform active:scale-[0.98] mt-4" 
         type="submit"
         disabled={loading}
       >

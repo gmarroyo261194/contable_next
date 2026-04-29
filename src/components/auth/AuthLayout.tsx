@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Wallet } from 'lucide-react';
+import { Wallet, CheckCircle2 } from 'lucide-react';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -9,110 +9,129 @@ interface AuthLayoutProps {
 
 export default function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   return (
-    <div className="bg-[#f8f6f6] dark:bg-[#221610] font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
-      <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
-        <div className="layout-container flex h-full grow flex-col">
-          {/* Header */}
-          <header className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4 lg:px-20 bg-white dark:bg-[#0a192f]">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center size-10 rounded-lg bg-[#ec5b13] text-white">
-                <Wallet className="size-6" />
-              </div>
-              <h2 className="text-[#0a192f] dark:text-white text-xl font-bold leading-tight tracking-tight">ContableNext</h2>
-            </div>
-            <div className="hidden md:block">
-              {title === "Iniciar Sesión" ? (
-                <p className="text-slate-500 dark:text-slate-400 text-sm">
-                  ¿No tienes cuenta? <Link className="text-[#ec5b13] font-semibold hover:underline" href="/register">Regístrate ahora</Link>
-                </p>
-              ) : (
-                <p className="text-slate-500 dark:text-slate-400 text-sm">
-                  ¿Ya tienes cuenta? <Link className="text-[#ec5b13] font-semibold hover:underline" href="/login">Inicia Sesión</Link>
-                </p>
-              )}
-            </div>
-          </header>
-
-          {/* Main Content */}
-          <main className="flex-1 flex items-center justify-center p-6">
-            <div className="w-full max-w-[1000px] grid lg:grid-cols-2 bg-white dark:bg-[#0a192f] rounded-xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-800">
-              {/* Left Side - Branding (Hidden on mobile) */}
-              <div className="hidden lg:block relative bg-[#ec5b13]/10">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#ec5b13]/20 to-[#0a192f]/40"></div>
-                <div className="relative h-full flex flex-col justify-center p-12 text-[#0a192f] dark:text-white">
-                  <h1 className="text-4xl font-black mb-6 leading-tight">Optimiza tu contabilidad con ContableNext</h1>
-                  <p className="text-lg opacity-90 mb-8">La plataforma líder para la gestión financiera de tu empresa. Simple, rápida y segura.</p>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="size-5 rounded-full bg-[#ec5b13] flex items-center justify-center text-white">
-                        <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span>Informes en tiempo real</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="size-5 rounded-full bg-[#ec5b13] flex items-center justify-center text-white">
-                        <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span>Facturación automatizada</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="size-5 rounded-full bg-[#ec5b13] flex items-center justify-center text-white">
-                        <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span>Seguridad de grado bancario</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Side - Form */}
-              <div className="p-8 lg:p-12 flex flex-col justify-center">
-                <div className="mb-8">
-                  <h2 className="text-3xl font-bold text-[#0a192f] dark:text-white mb-2">{title}</h2>
-                  <p className="text-slate-500 dark:text-slate-400">{subtitle}</p>
-                </div>
-                
-                {children}
-
-                {/* Mobile Links */}
-                <div className="mt-8 text-center md:hidden">
-                  {title === "Iniciar Sesión" ? (
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">
-                      ¿No tienes cuenta? <Link className="text-[#ec5b13] font-semibold hover:underline" href="/register">Regístrate ahora</Link>
-                    </p>
-                  ) : (
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">
-                      ¿Ya tienes cuenta? <Link className="text-[#ec5b13] font-semibold hover:underline" href="/login">Inicia Sesión</Link>
-                    </p>
-                  )}
-                </div>
-
-                <div className="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800">
-                  <p className="text-center text-xs text-slate-400 dark:text-slate-500 italic">
-                    Protegido por ContableNext Security. © 2024 Todos los derechos reservados.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </main>
-
-          {/* Footer */}
-          <footer className="px-6 py-8 flex flex-col items-center gap-4 bg-[#f8f6f6] dark:bg-[#221610]">
-            <div className="flex gap-6 text-slate-500 dark:text-slate-400 text-sm">
-              <a className="hover:text-[#ec5b13] transition-colors" href="#">Términos de Servicio</a>
-              <a className="hover:text-[#ec5b13] transition-colors" href="#">Privacidad</a>
-              <a className="hover:text-[#ec5b13] transition-colors" href="#">Ayuda</a>
-            </div>
-          </footer>
-        </div>
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans antialiased">
+      {/* Background decoration */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full"></div>
+        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full"></div>
       </div>
+
+      {/* Header */}
+      <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center size-10 rounded-lg bg-primary text-white">
+              <Wallet className="size-6" />
+            </div>
+            <h2 className="text-slate-950 text-xl font-bold leading-tight tracking-tight">ContableNext</h2>
+          </div>
+          <div className="hidden sm:block">
+            {title === "Iniciar Sesión" ? (
+              <p className="text-slate-500 text-sm font-medium">
+                ¿No tienes cuenta? <Link className="text-primary font-bold hover:underline ml-1" href="/register">Regístrate ahora</Link>
+              </p>
+            ) : (
+              <p className="text-slate-500 text-sm font-medium">
+                ¿Ya tienes cuenta? <Link className="text-primary font-bold hover:underline ml-1" href="/login">Inicia Sesión</Link>
+              </p>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 pt-24 pb-12 relative z-10">
+        <div className="w-full max-w-[1100px] grid lg:grid-cols-2 bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 overflow-hidden border border-slate-200/60 animate-in fade-in zoom-in-95 duration-700">
+          
+          {/* Left Side - Branding Section */}
+          <div className="hidden lg:block relative bg-slate-950 overflow-hidden">
+            {/* Background Image */}
+            <div className="absolute inset-0 opacity-40">
+              <img 
+                src="/hero-dashboard.png" 
+                alt="Background" 
+                className="w-full h-full object-cover scale-110 blur-[2px]"
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-950/80 to-primary/30"></div>
+            
+            <div className="relative h-full flex flex-col justify-between p-12 py-16">
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/10">
+                  <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Plataforma Inteligente</span>
+                </div>
+                <h1 className="text-4xl font-black text-white leading-[1.1] tracking-tight">
+                  Gestiona tu <br />
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">contabilidad</span> con precisión.
+                </h1>
+                <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-sm">
+                  La herramienta definitiva para el crecimiento de tu empresa en Argentina.
+                </p>
+              </div>
+
+              <div className="space-y-5">
+                {[
+                  "Informes inteligentes en tiempo real",
+                  "Facturación automatizada AFIP",
+                  "Seguridad y respaldo de grado bancario"
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3.5 group">
+                    <div className="size-6 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-400/20 group-hover:bg-blue-500/30 transition-colors">
+                      <CheckCircle2 className="size-3.5 text-blue-400" />
+                    </div>
+                    <span className="text-sm font-bold text-slate-200 tracking-tight">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Side - Form Section */}
+          <div className="p-8 sm:p-12 lg:p-16 flex flex-col justify-center bg-white relative">
+            <div className="max-w-md mx-auto w-full">
+              <div className="mb-10 text-center lg:text-left">
+                <h2 className="text-4xl font-black text-slate-950 mb-3 tracking-tight">{title}</h2>
+                <p className="text-slate-500 font-medium tracking-tight leading-relaxed">{subtitle}</p>
+              </div>
+              
+              <div className="relative z-10">
+                {children}
+              </div>
+
+              {/* Mobile Auth Links */}
+              <div className="mt-10 text-center sm:hidden">
+                {title === "Iniciar Sesión" ? (
+                  <p className="text-slate-500 text-sm font-medium">
+                    ¿No tienes cuenta? <Link className="text-primary font-bold hover:underline ml-1" href="/register">Regístrate ahora</Link>
+                  </p>
+                ) : (
+                  <p className="text-slate-500 text-sm font-medium">
+                    ¿Ya tienes cuenta? <Link className="text-primary font-bold hover:underline ml-1" href="/login">Inicia Sesión</Link>
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col items-center gap-4">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
+                  ContableNext Security
+                </p>
+                <div className="flex gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <a href="#" className="hover:text-primary transition-colors">Términos</a>
+                  <a href="#" className="hover:text-primary transition-colors">Privacidad</a>
+                  <a href="#" className="hover:text-primary transition-colors">Ayuda</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer minimal */}
+      <footer className="py-6 text-center">
+        <p className="text-[11px] font-medium text-slate-400 tracking-tight">
+          © 2026 ContableNext. Todos los derechos reservados.
+        </p>
+      </footer>
     </div>
   );
 }

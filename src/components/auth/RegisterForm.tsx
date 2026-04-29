@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, Briefcase, CheckCircle, Hash } from 'lucide-react';
+import { Mail, Lock, User, Briefcase, CheckCircle, Hash, Loader2 } from 'lucide-react';
 import { register } from "@/lib/actions/auth-actions";
 
 export default function RegisterForm() {
@@ -27,7 +27,6 @@ export default function RegisterForm() {
         setError(result.error);
         setLoading(false);
       }
-      // Success is handled by redirect in register action
     } catch (err) {
       setError("Algo salió mal. Inténtalo de nuevo.");
       setLoading(false);
@@ -35,20 +34,22 @@ export default function RegisterForm() {
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-5 animate-in fade-in slide-in-from-left-8 duration-500" onSubmit={handleSubmit}>
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg text-red-600 dark:text-red-400 text-sm font-medium">
+        <div className="bg-red-50 border border-red-100 p-4 rounded-2xl text-red-600 text-sm font-bold animate-in fade-in slide-in-from-top-2">
           {error}
         </div>
       )}
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-5">
         {/* Full Name */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Nombre completo</label>
+        <div className="flex flex-col gap-2.5">
+          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Nombre completo</label>
           <div className="relative group">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors flex items-center justify-center">
+              <User className="size-4" />
+            </div>
             <input
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+              className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-400"
               placeholder="Ej. Juan Pérez"
               name="name"
               type="text"
@@ -58,12 +59,14 @@ export default function RegisterForm() {
         </div>
 
         {/* Email */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Correo electrónico</label>
+        <div className="flex flex-col gap-2.5">
+          <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Correo electrónico</label>
           <div className="relative group">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors flex items-center justify-center">
+              <Mail className="size-4" />
+            </div>
             <input
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+              className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-400"
               placeholder="correo@ejemplo.com"
               name="email"
               type="email"
@@ -73,13 +76,15 @@ export default function RegisterForm() {
         </div>
 
         {/* Company and CUIT */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Empresa</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="flex flex-col gap-2.5">
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Empresa</label>
             <div className="relative group">
-              <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors flex items-center justify-center">
+                <Briefcase className="size-4" />
+              </div>
               <input
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-400"
                 placeholder="Nombre de tu empresa"
                 name="company"
                 type="text"
@@ -87,12 +92,14 @@ export default function RegisterForm() {
               />
             </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">CUIT</label>
+          <div className="flex flex-col gap-2.5">
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">CUIT</label>
             <div className="relative group">
-              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors flex items-center justify-center">
+                <Hash className="size-4" />
+              </div>
               <input
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-400"
                 placeholder="20-12345678-9"
                 name="cuit"
                 type="text"
@@ -103,13 +110,15 @@ export default function RegisterForm() {
         </div>
 
         {/* Password Fields */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Contraseña</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="flex flex-col gap-2.5">
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Contraseña</label>
             <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors flex items-center justify-center">
+                <Lock className="size-4" />
+              </div>
               <input
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-400"
                 placeholder="••••••••"
                 name="password"
                 type="password"
@@ -117,12 +126,14 @@ export default function RegisterForm() {
               />
             </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Confirmar</label>
+          <div className="flex flex-col gap-2.5">
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Confirmar</label>
             <div className="relative group">
-              <CheckCircle className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-[#ec5b13] transition-colors" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400 group-focus-within:text-primary transition-colors flex items-center justify-center">
+                <CheckCircle className="size-4" />
+              </div>
               <input
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold text-slate-900 placeholder:text-slate-400"
                 placeholder="••••••••"
                 name="confirmPassword"
                 type="password"
@@ -133,45 +144,15 @@ export default function RegisterForm() {
         </div>
       </div>
 
-      {/* Terms */}
-      {/* <div className="flex items-start gap-3 py-2">
-        <input 
-          className="mt-1 size-4 rounded text-[#ec5b13] focus:ring-[#ec5b13] border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 cursor-pointer" 
-          id="terms" 
-          type="checkbox"
-          required
-        />
-        <label className="text-sm text-slate-500 dark:text-slate-400 leading-tight cursor-pointer" htmlFor="terms">
-          Acepto los <a className="text-[#ec5b13] font-medium hover:underline" href="#">términos y condiciones</a> y la <a className="text-[#ec5b13] font-medium hover:underline" href="#">política de privacidad</a>.
-        </label>
-      </div> */}
-
       {/* Submit Button */}
       <button
-        className="w-full py-4 bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white font-bold rounded-xl transition-all shadow-lg shadow-[#ec5b13]/25 active:scale-[0.98] disabled:opacity-50"
+        className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2 transform active:scale-[0.98] mt-4"
         type="submit"
         disabled={loading}
       >
+        {loading ? <Loader2 className="size-5 animate-spin mr-2" /> : null}
         {loading ? "Creando Cuenta..." : "Crear Cuenta"}
       </button>
-
-      {/* <div className="mt-6 flex flex-col gap-4 text-center">
-        <div className="flex items-center gap-4">
-          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
-          <span className="text-xs text-slate-400 uppercase font-bold tracking-widest">O continúa con</span>
-          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" type="button">
-            <div className="size-5 bg-slate-100 rounded-sm"></div>
-            <span className="text-xs font-semibold">Google</span>
-          </button>
-          <button className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" type="button">
-            <div className="size-5 bg-slate-100 rounded-sm"></div>
-            <span className="text-xs font-semibold">Microsoft</span>
-          </button>
-        </div>
-      </div> */}
     </form>
   );
 }
