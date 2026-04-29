@@ -15,7 +15,13 @@ import {
   AlertTriangle,
   Wrench,
 } from "lucide-react";
-import { getRubrosExternos, syncRubrosSeleccionados, RubroExterno } from "@/lib/actions/sync-rubros-actions";
+import { 
+  getRubrosExternos, 
+  syncRubrosSeleccionados, 
+  getRubrosLegacy,
+  syncRubrosLegacySeleccionados,
+  RubroExterno 
+} from "@/lib/actions/sync-rubros-actions";
 import { toast } from "sonner";
 
 interface SyncRubrosModalProps {
@@ -43,23 +49,27 @@ export function SyncRubrosModal({ isOpen, onClose, rubrosLocales }: SyncRubrosMo
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastSync, setLastSync] = useState<string | null>(null);
+  const [source, setSource] = useState<'fundacion' | 'legacy'>('legacy'); // Legacy por defecto
 
   // Carga los rubros externos al abrir el modal
   const loadRubros = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const rubros = await getRubrosExternos();
+      const rubros = source === 'fundacion' 
+        ? await getRubrosExternos() 
+        : await getRubrosLegacy();
+        
       setRubrosExternos(rubros);
       // Pre-seleccionar los que NO están sincronizados aún
       const newOnes = rubros.filter((r) => !rubrosLocales.includes(r.nombre));
       setSelected(new Set(newOnes.map((r) => r.id)));
     } catch (err: any) {
-      setError(err.message || "No se pudo conectar con PagosFundacion.");
+      setError(err.message || `No se pudo conectar con ${source === 'fundacion' ? 'PagosFundacion' : 'Facturación Legacy'}.`);
     } finally {
       setLoading(false);
     }
-  }, [rubrosLocales]);
+  }, [rubrosLocales, source]);
 
   useEffect(() => {
     if (isOpen) {
@@ -94,7 +104,9 @@ export function SyncRubrosModal({ isOpen, onClose, rubrosLocales }: SyncRubrosMo
 
     setSyncing(true);
     try {
-      const result = await syncRubrosSeleccionados(Array.from(selected));
+      const result = source === 'fundacion'
+        ? await syncRubrosSeleccionados(Array.from(selected))
+        : await syncRubrosLegacySeleccionados(Array.from(selected));
 
       if (result.success) {
         const ts = new Date().toLocaleString("es-AR");
@@ -154,10 +166,12 @@ export function SyncRubrosModal({ isOpen, onClose, rubrosLocales }: SyncRubrosMo
                     </div>
                     <div>
                       <h2 className="text-lg font-black text-slate-800 tracking-tight">
-                        Sincronizar desde PagosFundacion
+                        Sincronizar {source === 'fundacion' ? 'desde PagosFundacion' : 'desde Facturación Legacy'}
                       </h2>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Solo rubros y servicios activos en el origen.
+                        {source === 'fundacion' 
+                          ? 'Solo rubros y servicios activos en PagosFundacion.' 
+                          : 'Rubros y servicios (DetalleRubros) habilitados en Facturación.'}
                       </p>
                     </div>
                   </div>
@@ -169,11 +183,37 @@ export function SyncRubrosModal({ isOpen, onClose, rubrosLocales }: SyncRubrosMo
                   </button>
                 </div>
 
+                {/* Source selector */}
+                <div className="mt-4 p-1 bg-slate-100 rounded-2xl flex gap-1">
+                  <button
+                    onClick={() => setSource('legacy')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                      source === 'legacy' 
+                        ? 'bg-white text-blue-600 shadow-sm' 
+                        : 'text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Database className="w-3.5 h-3.5" />
+                    Facturación Legacy (192.168.16.29)
+                  </button>
+                  <button
+                    onClick={() => setSource('fundacion')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                      source === 'fundacion' 
+                        ? 'bg-white text-blue-600 shadow-sm' 
+                        : 'text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Database className="w-3.5 h-3.5" />
+                    PagosFundacion (192.168.16.35)
+                  </button>
+                </div>
+
                 {/* Info bar */}
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-3 py-1.5 rounded-full font-semibold">
                     <Wifi className="w-3.5 h-3.5" />
-                    192.168.16.35 / PagosFundacion
+                    {source === 'fundacion' ? '192.168.16.35 / PagosFundacion' : '192.168.16.29 / Facturación'}
                   </div>
                   {lastSync && (
                     <div className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-50 px-3 py-1.5 rounded-full">
@@ -198,7 +238,9 @@ export function SyncRubrosModal({ isOpen, onClose, rubrosLocales }: SyncRubrosMo
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-16 gap-3">
                     <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-                    <p className="text-sm text-slate-500">Consultando PagosFundacion...</p>
+                    <p className="text-sm text-slate-500">
+                      Consultando {source === 'fundacion' ? 'PagosFundacion' : 'Facturación Legacy'}...
+                    </p>
                   </div>
                 ) : error ? (
                   <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -301,7 +343,8 @@ export function SyncRubrosModal({ isOpen, onClose, rubrosLocales }: SyncRubrosMo
                       <p className="text-xs text-blue-700 leading-relaxed">
                         Se sincronizarán <strong>{selected.size} rubro{selected.size !== 1 ? "s" : ""}</strong>{" "}
                         con <strong>{totalServiciosSeleccionados} servicio{totalServiciosSeleccionados !== 1 ? "s" : ""}</strong>{" "}
-                        activos. Los campos locales (departamento, % retención, cuentas) no serán modificados.
+                        {source === 'legacy' ? 'habilitados' : 'activos'}. Los campos locales (departamento, % retención, cuentas) no serán modificados.
+                        {source === 'legacy' && <span className="block mt-1 font-black text-blue-800 uppercase">Se mantendrán los IDs originales.</span>}
                       </p>
                     </div>
                   )}

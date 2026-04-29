@@ -1,6 +1,6 @@
 "use server";
 
-import dbFacturacion from "@/lib/dbFacturacion";
+import dbFacturacion, { dbLegacyFacturacion } from "@/lib/dbFacturacion";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
@@ -51,6 +51,168 @@ export async function getRubrosExternos(): Promise<RubroExterno[]> {
   } catch (error) {
     console.error("Error al conectar con PagosFundacion:", error);
     throw new Error("No se pudo conectar con la base de datos PagosFundacion.");
+  }
+}
+
+/**
+ * Obtiene los rubros de la tabla Rubros de la base de datos LEGACY (Facturacion).
+ * Se considera habilitado si tiene al menos un servicio habilitado (Habilitado = 'S').
+ */
+export async function getRubrosLegacy(): Promise<RubroExterno[]> {
+  try {
+    const rows = await dbLegacyFacturacion.$queryRaw<
+      Array<{ id_rubro: number; nombrerubro: string; TotalServicios: number }>
+    >`
+      SELECT 
+        r.id_rubro,
+        r.nombrerubro,
+        (SELECT COUNT(*) FROM DetalleRubros s WHERE s.id_rubro = r.id_rubro AND s.Habilitado = 'S') AS TotalServicios
+      FROM Rubros r
+      WHERE (SELECT COUNT(*) FROM DetalleRubros s WHERE s.id_rubro = r.id_rubro AND s.Habilitado = 'S') > 0
+      ORDER BY r.nombrerubro
+    `;
+
+    return rows.map((row) => ({
+      id: row.id_rubro,
+      nombre: row.nombrerubro.trim(),
+      activo: true,
+      totalServicios: Number(row.TotalServicios),
+    }));
+  } catch (error) {
+    console.error("Error al conectar con DB Legacy:", error);
+    throw new Error("No se pudo conectar con la base de datos Legacy Facturación.");
+  }
+}
+
+/**
+ * Sincroniza los rubros seleccionados y sus servicios habilitados desde la DB LEGACY.
+ * IMPORTANTE: Inserta con los mismos IDs de origen.
+ */
+export async function syncRubrosLegacySeleccionados(rubroIds: number[]): Promise<{
+  success: boolean;
+  rubrosSync: number;
+  serviciosSync: number;
+  error?: string;
+}> {
+  if (!rubroIds || rubroIds.length === 0) {
+    return { success: false, rubrosSync: 0, serviciosSync: 0, error: "No se seleccionaron rubros." };
+  }
+
+  try {
+    const idsValidos = rubroIds.map((id) => parseInt(String(id), 10)).filter(Number.isFinite);
+    if (idsValidos.length === 0) {
+      return { success: false, rubrosSync: 0, serviciosSync: 0, error: "IDs de rubros inválidos." };
+    }
+
+    // 1. Traer rubros seleccionados desde Legacy
+    const rubrosExternos = await dbLegacyFacturacion.$queryRawUnsafe<
+      Array<{ id_rubro: number; nombrerubro: string }>
+    >(`
+      SELECT id_rubro, nombrerubro
+      FROM Rubros
+      WHERE id_rubro IN (${idsValidos.join(",")})
+    `);
+
+    if (rubrosExternos.length === 0) {
+      return { success: false, rubrosSync: 0, serviciosSync: 0, error: "No se encontraron los rubros seleccionados en el origen." };
+    }
+
+    // 2. Traer servicios habilitados (Habilitado = 'S') de esos rubros desde Legacy
+    const externalRubroIds = rubrosExternos.map((r) => Number(r.id_rubro));
+    const serviciosExternos = await dbLegacyFacturacion.$queryRawUnsafe<
+      Array<{ id_detallerubro: number; id_rubro: number; nombredetalle: string }>
+    >(`
+      SELECT id_detallerubro, id_rubro, nombredetalle
+      FROM DetalleRubros
+      WHERE Habilitado = 'S'
+        AND id_rubro IN (${externalRubroIds.join(",")})
+    `);
+
+    // 3. Upsert en ContableNext con IDs originales
+    let rubrosSync = 0;
+    let serviciosSync = 0;
+
+    await prisma.$transaction(async (tx) => {
+      // Para permitir insertar IDs específicos en SQL Server (IDENTITY_INSERT)
+      // Prisma no lo hace automático con upsert/create si la columna es IDENTITY.
+      // Usamos $executeRaw para activar y luego hacemos el upsert.
+      
+      for (const rubroExt of rubrosExternos) {
+        const nombreTrim = rubroExt.nombrerubro.trim();
+        const idExt = Number(rubroExt.id_rubro);
+
+        // Prioridad: buscar por ID original
+        const existeId = await tx.rubro.findUnique({ where: { id: idExt } });
+        
+        if (existeId) {
+          // Si existe el ID, actualizamos el nombre y aseguramos que esté activo
+          await tx.rubro.update({
+            where: { id: idExt },
+            data: { nombre: nombreTrim, activo: true }
+          });
+        } else {
+          // Si no existe el ID, verificamos si existe el NOMBRE (conflicto de ID)
+          const existeNombre = await tx.rubro.findUnique({ where: { nombre: nombreTrim } });
+          if (existeNombre) {
+            // Si el nombre existe con otro ID, lo eliminamos para poder insertar el ID correcto
+            // (Asumiendo que no hay FKs restrictivas que impidan esto en este momento)
+            await tx.rubro.delete({ where: { id: existeNombre.id } });
+          }
+          
+          // Insertamos con el ID original
+          await tx.$executeRawUnsafe(`
+            SET IDENTITY_INSERT rubros ON;
+            INSERT INTO rubros (id, nombre, activo, createdAt, updatedAt)
+            VALUES (${idExt}, '${nombreTrim.replace(/'/g, "''")}', 1, GETDATE(), GETDATE());
+            SET IDENTITY_INSERT rubros OFF;
+          `);
+        }
+        rubrosSync++;
+      }
+
+      for (const svcExt of serviciosExternos) {
+        const nombreTrim = svcExt.nombredetalle.trim();
+        const idExt = Number(svcExt.id_detallerubro);
+        const rubroIdExt = Number(svcExt.id_rubro);
+
+        const existeId = await tx.servicio.findUnique({ where: { id: idExt } });
+
+        if (existeId) {
+          await tx.servicio.update({
+            where: { id: idExt },
+            data: { 
+              nombre: nombreTrim, 
+              activo: true,
+              rubroId: rubroIdExt
+            }
+          });
+        } else {
+          const existeNombre = await tx.servicio.findUnique({ where: { nombre: nombreTrim } });
+          if (existeNombre) {
+            await tx.servicio.delete({ where: { id: existeNombre.id } });
+          }
+
+          await tx.$executeRawUnsafe(`
+            SET IDENTITY_INSERT servicios ON;
+            INSERT INTO servicios (id, nombre, activo, rubroId, participacionFundacion, participacionDepto, createdAt, updatedAt)
+            VALUES (${idExt}, '${nombreTrim.replace(/'/g, "''")}', 1, ${rubroIdExt}, 0, 0, GETDATE(), GETDATE());
+            SET IDENTITY_INSERT servicios OFF;
+          `);
+        }
+        serviciosSync++;
+      }
+    });
+
+    revalidatePath("/settings/rubros-servicios");
+    return { success: true, rubrosSync, serviciosSync };
+  } catch (error: any) {
+    console.error("Error en syncRubrosLegacySeleccionados:", error);
+    return {
+      success: false,
+      rubrosSync: 0,
+      serviciosSync: 0,
+      error: error?.message || "Error inesperado durante la sincronización legacy.",
+    };
   }
 }
 
