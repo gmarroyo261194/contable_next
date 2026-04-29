@@ -42,19 +42,19 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 pt-24 pb-12 relative z-10">
         <div className="w-full max-w-[1100px] grid lg:grid-cols-2 bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 overflow-hidden border border-slate-200/60 animate-in fade-in zoom-in-95 duration-700">
-          
+
           {/* Left Side - Branding Section */}
           <div className="hidden lg:block relative bg-slate-950 overflow-hidden">
             {/* Background Image */}
             <div className="absolute inset-0 opacity-40">
-              <img 
-                src="/hero-dashboard.png" 
-                alt="Background" 
+              <img
+                src="/hero-dashboard.png"
+                alt="Background"
                 className="w-full h-full object-cover scale-110 blur-[2px]"
               />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-950/80 to-primary/30"></div>
-            
+            <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-slate-950/80 to-primary/30"></div>
+
             <div className="relative h-full flex flex-col justify-between p-12 py-16">
               <div className="space-y-6">
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/10">
@@ -62,7 +62,7 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
                 </div>
                 <h1 className="text-4xl font-black text-white leading-[1.1] tracking-tight">
                   Gestiona tu <br />
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">contabilidad</span> con precisión.
+                  <span className="bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-indigo-400">contabilidad</span> con precisión.
                 </h1>
                 <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-sm">
                   La herramienta definitiva para el crecimiento de tu empresa en Argentina.
@@ -73,7 +73,7 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
                 {[
                   "Informes inteligentes en tiempo real",
                   "Facturación automatizada AFIP",
-                  "Seguridad y respaldo de grado bancario"
+                  "Integracion con pasarelas de pagos"
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3.5 group">
                     <div className="size-6 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-400/20 group-hover:bg-blue-500/30 transition-colors">
@@ -87,13 +87,13 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
           </div>
 
           {/* Right Side - Form Section */}
-          <div className="p-8 sm:p-12 lg:p-16 flex flex-col justify-center bg-white relative">
+          <div className="p-8 sm:p-12 lg:p-16 flex flex-col justify-center bg-gray-100 relative">
             <div className="max-w-md mx-auto w-full">
               <div className="mb-10 text-center lg:text-left">
                 <h2 className="text-4xl font-black text-slate-950 mb-3 tracking-tight">{title}</h2>
                 <p className="text-slate-500 font-medium tracking-tight leading-relaxed">{subtitle}</p>
               </div>
-              
+
               <div className="relative z-10">
                 {children}
               </div>
@@ -113,13 +113,13 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
 
               <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col items-center gap-4">
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
-                  ContableNext Security
+                  ContableNext
                 </p>
-                <div className="flex gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                {/* <div className="flex gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <a href="#" className="hover:text-primary transition-colors">Términos</a>
                   <a href="#" className="hover:text-primary transition-colors">Privacidad</a>
                   <a href="#" className="hover:text-primary transition-colors">Ayuda</a>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
