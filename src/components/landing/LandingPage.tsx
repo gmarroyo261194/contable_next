@@ -18,12 +18,14 @@ export default function LandingPage() {
       {/* Navigation Bar */}
       <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center size-10 rounded-lg bg-primary text-white">
-              <Wallet className="size-6" />
+          <Link href="/" className="flex items-center gap-2 group transition-all">
+            <div className="flex items-center justify-center p-1">
+              <Wallet className="size-8 text-primary group-hover:scale-110 transition-transform duration-300" />
             </div>
-            <h2 className="text-[#0a192f] dark:text-white text-xl font-bold leading-tight tracking-tight">ContableNext</h2>
-          </div>
+            <h2 className="text-slate-950 text-2xl font-black leading-tight tracking-tighter">
+              Contable<span className="bg-clip-text text-transparent bg-linear-to-r from-primary to-blue-600">Next</span>
+            </h2>
+          </Link>
           <Link
             href="/login"
             className="bg-primary hover:bg-primary/90 text-white px-8 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center gap-2"

@@ -19,13 +19,15 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
       {/* Header */}
       <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center size-10 rounded-lg bg-primary text-white">
-              <Wallet className="size-6" />
+          <Link href="/" className="flex items-center gap-2 group transition-all hover:opacity-90">
+            <div className="flex items-center justify-center p-1">
+              <Wallet className="size-8 text-primary group-hover:scale-110 transition-transform duration-300" />
             </div>
-            <h2 className="text-slate-950 text-xl font-bold leading-tight tracking-tight">ContableNext</h2>
-          </div>
-          <div className="hidden sm:block">
+            <h2 className="text-slate-950 text-2xl font-black leading-tight tracking-tighter">
+              Contable<span className="bg-clip-text text-transparent bg-linear-to-r from-primary to-blue-600">Next</span>
+            </h2>
+          </Link>
+          {/* <div className="hidden sm:block">
             {title === "Iniciar Sesión" ? (
               <p className="text-slate-500 text-sm font-medium">
                 ¿No tienes cuenta? <Link className="text-primary font-bold hover:underline ml-1" href="/register">Regístrate ahora</Link>
@@ -35,7 +37,7 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
                 ¿Ya tienes cuenta? <Link className="text-primary font-bold hover:underline ml-1" href="/login">Inicia Sesión</Link>
               </p>
             )}
-          </div>
+          </div> */}
         </div>
       </nav>
 
@@ -73,10 +75,12 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
                 {[
                   "Informes inteligentes en tiempo real",
                   "Facturación automatizada AFIP",
+                  "Importacion de Comprobantes desde PDF",
                   "Integracion con pasarelas de pagos"
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3.5 group">
-                    <div className="size-6 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-400/20 group-hover:bg-blue-500/30 transition-colors">
+                    <div className="size-6 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-400/20
+                     group-hover:bg-blue-500/30 transition-colors">
                       <CheckCircle2 className="size-3.5 text-blue-400" />
                     </div>
                     <span className="text-sm font-bold text-slate-200 tracking-tight">{item}</span>
@@ -87,11 +91,10 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
           </div>
 
           {/* Right Side - Form Section */}
-          <div className="p-8 sm:p-12 lg:p-16 flex flex-col justify-center bg-gray-100 relative">
+          <div className="p-4 sm:p-6 lg:p-4 flex flex-col justify-center bg-gray-100 relative">
             <div className="max-w-md mx-auto w-full">
               <div className="mb-10 text-center lg:text-left">
                 <h2 className="text-4xl font-black text-slate-950 mb-3 tracking-tight">{title}</h2>
-                <p className="text-slate-500 font-medium tracking-tight leading-relaxed">{subtitle}</p>
               </div>
 
               <div className="relative z-10">
@@ -111,16 +114,16 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
                 )}
               </div>
 
-              <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col items-center gap-4">
+              {/* <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col items-center gap-4">
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
                   ContableNext
                 </p>
-                {/* <div className="flex gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <div className="flex gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <a href="#" className="hover:text-primary transition-colors">Términos</a>
                   <a href="#" className="hover:text-primary transition-colors">Privacidad</a>
                   <a href="#" className="hover:text-primary transition-colors">Ayuda</a>
-                </div> */}
-              </div>
+                </div>
+              </div> */}
             </div>
           </div>
         </div>
