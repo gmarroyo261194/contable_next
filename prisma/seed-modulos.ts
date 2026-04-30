@@ -9,6 +9,24 @@ async function main() {
       codigo: "CONTABILIDAD",
       activo: true,
       descripcion: "Gestión de asientos contables, plan de cuentas y reportes financieros."
+    },
+    {
+      nombre: "Honorarios Docentes",
+      codigo: "HONORARIOS",
+      activo: true,
+      descripcion: "Gestión de honorarios y facturación de docentes."
+    },
+    {
+      nombre: "Clientes y Proveedores",
+      codigo: "ENTIDADES",
+      activo: true,
+      descripcion: "Gestión de entidades, documentos de proveedores y facturación a clientes."
+    },
+    {
+      nombre: "Cursos y Cuponeras",
+      codigo: "CURSOS",
+      activo: true,
+      descripcion: "Administración de alumnos, cursos y seguimiento de cuponeras."
     }
   ]
 

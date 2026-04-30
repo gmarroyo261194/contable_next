@@ -20,7 +20,9 @@ import {
   BadgeDollarSign,
   Tags,
   BookOpen,
-  GraduationCap
+  GraduationCap,
+  FileText,
+  ListCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -35,10 +37,11 @@ const navItems = [
     icon: BookOpen,
     label: 'Contabilidad',
     href: '/contabilidad',
+    moduleCode: 'CONTABILIDAD',
     children: [
       { icon: ReceiptText, label: 'Asientos Contables', href: '/asientos', moduleCode: 'CONTABILIDAD' },
       { icon: Network, label: 'Plan de Cuentas', href: '/plan-cuentas', moduleCode: 'CONTABILIDAD' },
-      { icon: Calendar, label: 'Ejercicios', href: '/ejercicios' },
+      { icon: Calendar, label: 'Ejercicios', href: '/ejercicios', moduleCode: 'CONTABILIDAD' },
       { icon: Tags, label: 'Centros de Costo', href: '/centros-costos', moduleCode: 'CONTABILIDAD' },
       { icon: BarChart3, label: 'Reportes', href: '/reportes', moduleCode: 'CONTABILIDAD' },
     ]
@@ -47,19 +50,32 @@ const navItems = [
     icon: GraduationCap,
     label: 'Honorarios Docentes',
     href: '/honorarios-docentes',
+    moduleCode: 'HONORARIOS',
     children: [
-      { icon: Users, label: 'Docentes', href: '/docentes' },
-      { icon: ReceiptText, label: 'Facturas Docentes', href: '/facturas-docentes' },
+      { icon: Users, label: 'Docentes', href: '/docentes', moduleCode: 'HONORARIOS' },
+      { icon: ReceiptText, label: 'Facturas Docentes', href: '/facturas-docentes', moduleCode: 'HONORARIOS' },
     ]
   },
   {
     icon: Users,
     label: 'Clientes y Proveedores',
     href: '/cliente-prov',
+    moduleCode: 'ENTIDADES',
     children: [
-      { icon: Users, label: 'Pers. Fisicas y Juridicas', href: '/entidades' },
-      { icon: Receipt, label: 'Documentos Proveedores', href: '/docprov' },
-      { icon: Receipt, label: 'Facturas Emitidas', href: '/doccli' },
+      { icon: Users, label: 'Pers. Fisicas y Juridicas', href: '/entidades', moduleCode: 'ENTIDADES' },
+      { icon: Receipt, label: 'Documentos Proveedores', href: '/docprov', moduleCode: 'ENTIDADES' },
+      { icon: Receipt, label: 'Facturas Emitidas', href: '/doccli', moduleCode: 'ENTIDADES' },
+    ]
+  },
+  {
+    icon: FileText,
+    label: 'Cursos y Cuponeras',
+    href: '/cursos',
+    moduleCode: 'CURSOS',
+    children: [
+      { icon: Users, label: 'Alumnos', href: '/alumnos', moduleCode: 'CURSOS' },
+      { icon: ListCheck, label: 'Cursos', href: '/list-cursos', moduleCode: 'CURSOS' },
+      { icon: ReceiptText, label: 'Cuponeras', href: '/cuponeras', moduleCode: 'CURSOS' },
     ]
   },
   { icon: Settings, label: 'Ajustes', href: '/settings' },
@@ -95,10 +111,10 @@ export function Sidebar() {
   };
 
   const filteredNavItems = navItems.map(item => {
-    const children = item.children?.filter(child => 
+    const children = item.children?.filter(child =>
       !child.moduleCode || activeModules.includes(child.moduleCode)
     );
-    
+
     // Si el item principal tiene moduleCode y no está activo, o si tenía hijos y ahora no tiene ninguno (y no es Dashboard/Empresas/Ajustes)
     // Pero en este caso, Contabilidad siempre tiene Ejercicios, así que no se filtrará completamente.
     return { ...item, children };
@@ -113,7 +129,7 @@ export function Sidebar() {
 
   return (
     <aside className={`bg-card border-r border-border flex flex-col h-screen sticky top-0 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-72'}`}>
-      {/* Toggle Button */}
+      {/* Botón de colapso */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="absolute -right-3 top-20 bg-card border border-border rounded-full p-1 shadow-sm hover:bg-muted transition-colors z-50 text-foreground"
@@ -121,7 +137,7 @@ export function Sidebar() {
         {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
       </button>
 
-      {/* Logo Section */}
+      {/* Sección del Logo */}
       <div className={`p-6 ${isCollapsed ? 'flex justify-center' : ''}`}>
         <div className="flex items-center gap-3">
           <div className="bg-primary flex items-center justify-center rounded-lg min-w-10 min-h-10 text-primary-foreground shadow-lg shadow-primary/20">
@@ -136,7 +152,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Navigation Links */}
+      {/* Enlaces de navegación */}
       <nav className={`flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar`}>
         {filteredNavItems.map((item) => {
           const hasChildren = item.children && item.children.length > 0;
@@ -208,7 +224,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User Profile Section */}
+      {/* Sección de perfil de usuario */}
       <div className={`p-4 mt-auto`}>
         <div className={`bg-muted rounded-2xl p-3 flex items-center border border-border ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
           <div className="relative shrink-0">
