@@ -46,10 +46,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const emptyStats: CategoryStats = { totalPagado: 0, totalPendiente: 0, countPagado: 0, countPendiente: 0 };
     return {
       proveedores: emptyStats,
-      facturasEmitidas: { 
-        ...emptyStats, 
-        totalFundacion: 0, 
-        totalDepartamentos: 0, 
+      facturasEmitidas: {
+        ...emptyStats,
+        totalFundacion: 0,
+        totalDepartamentos: 0,
         participacionesDepto: [],
         participacionesFundacion: []
       },
@@ -72,8 +72,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // 2. Facturas Emitidas (DocumentoClientes) + Participaciones
   const todasFacturas = await prisma.documentoClientes.findMany({
     where: { empresaId, ejercicioId },
-    select: { 
-      montoTotal: true, 
+    select: {
+      montoTotal: true,
       montoPagado: true,
       servicio: {
         select: {
@@ -96,7 +96,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const factStats = todasFacturas.reduce((acc, f) => {
     const total = Number(f.montoTotal || 0);
     const pagado = Number(f.montoPagado || 0);
-    
+
     // Estadísticas de pago
     if (pagado >= total && total > 0) {
       acc.totalPagado += total;
@@ -116,23 +116,23 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         acc.totalFundacion += montoFund;
         fundacionMap.set(servicioNombre, (fundacionMap.get(servicioNombre) || 0) + montoFund);
       }
-      
+
       if (f.servicio.participacionDepto && f.servicio.porcentajeDepto && pagadoParaParticipar > 0) {
         const montoDepto = (pagadoParaParticipar * Number(f.servicio.porcentajeDepto) / 100);
         acc.totalDepartamentos += montoDepto;
-        
+
         const deptoNombre = f.servicio.departamento?.nombre || "Sin Departamento";
         deptosMap.set(deptoNombre, (deptosMap.get(deptoNombre) || 0) + montoDepto);
       }
     }
 
     return acc;
-  }, { 
-    totalPagado: 0, 
-    totalPendiente: 0, 
-    countPagado: 0, 
-    countPendiente: 0, 
-    totalFundacion: 0, 
+  }, {
+    totalPagado: 0,
+    totalPendiente: 0,
+    countPagado: 0,
+    countPendiente: 0,
+    totalFundacion: 0,
     totalDepartamentos: 0,
     participacionesDepto: [] as DeptoParticipation[],
     participacionesFundacion: [] as ServiceParticipation[]
@@ -150,8 +150,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   // 3. Honorarios Docentes (FacturaDocente)
   const docentesPagados = await prisma.facturaDocente.aggregate({
-    where: { 
-      empresaId, 
+    where: {
+      empresaId,
       OR: [
         { asientoPagoId: { not: null } },
         { gestionPagoId: { not: null } },
@@ -162,8 +162,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     _sum: { importe: true }
   });
   const docentesPendientes = await prisma.facturaDocente.aggregate({
-    where: { 
-      empresaId, 
+    where: {
+      empresaId,
       asientoPagoId: null,
       gestionPagoId: null,
       estado: { not: "Pagado" }

@@ -51,7 +51,7 @@ export default function LandingPage() {
 
             <h1 className="text-6xl lg:text-8xl font-black text-slate-950 leading-[0.95] tracking-[-0.04em]">
               La contabilidad <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-br from-primary via-blue-600 to-indigo-700">
+              <span className="bg-clip-text text-transparent bg-linear-to-br from-primary via-blue-600 to-indigo-700">
                 del futuro
               </span>, hoy.
             </h1>
@@ -80,14 +80,14 @@ export default function LandingPage() {
           <div className="relative animate-in zoom-in-95 duration-700 group">
             <div className="absolute inset-0 bg-primary/30 blur-[120px] rounded-full scale-75 -z-10 group-hover:bg-primary/40 transition-colors duration-700"></div>
             <div className="relative bg-white/5 backdrop-blur-sm p-1.5 rounded-[2.5rem] shadow-2xl border border-white/10 rotate-2 hover:rotate-0 transition-all duration-700 hover:scale-[1.02]">
-              <img 
-                src="/hero-dashboard.png" 
-                alt="ContableNext Dashboard" 
+              <img
+                src="/hero-dashboard.png"
+                alt="ContableNext Dashboard"
                 className="w-full h-auto rounded-[2.2rem] shadow-inner object-cover"
               />
-              
+
               {/* Overlay glow */}
-              <div className="absolute inset-0 rounded-[2.2rem] bg-gradient-to-tr from-primary/10 to-transparent pointer-events-none"></div>
+              <div className="absolute inset-0 rounded-[2.2rem] bg-linear-to-tr from-primary/10 to-transparent pointer-events-none"></div>
             </div>
           </div>
         </div>
