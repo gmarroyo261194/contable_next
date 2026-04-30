@@ -318,6 +318,7 @@ export default function AsientosPage() {
                 const totalDebe = asiento.renglones.reduce((sum: number, r: any) => sum + r.debe, 0);
                 const totalHaber = asiento.renglones.reduce((sum: number, r: any) => sum + r.haber, 0);
                 const isAnulacion = !!asiento.anulaA;
+                const isAnulado = asiento.anulaciones?.length > 0;
 
                 return (
                   <tr
@@ -363,7 +364,7 @@ export default function AsientosPage() {
                     </td>
                     <td className="px-6 py-1">
                       <div className="flex items-center justify-center gap-1 opacity-100">
-                        {!isAnulacion ? (
+                        {!isAnulacion && !isAnulado ? (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -378,7 +379,7 @@ export default function AsientosPage() {
                           <button
                             disabled
                             className="p-2 text-slate-300 cursor-not-allowed"
-                            title="Ya anulado"
+                            title={isAnulacion ? "Es una anulación" : "Ya anulado"}
                           >
                             <XCircle className="w-4 h-4" />
                           </button>

@@ -302,10 +302,21 @@ export async function anularAsiento(asientoId: number) {
       // 1. Buscar el asiento original validando que pertenezca al ejercicio activo
       const original = await tx.asiento.findFirst({
         where: { id: asientoId, ejercicioId },
-        include: { renglones: true },
+        include: { 
+          renglones: true,
+          anulaciones: true 
+        },
       });
 
       if (!original) return { error: "Asiento no encontrado en el ejercicio activo." };
+
+      if (original.anulaciones.length > 0) {
+        return { error: "Este asiento ya ha sido anulado anteriormente." };
+      }
+
+      if (original.anulaAId) {
+        return { error: "No se puede anular un asiento de anulación." };
+      }
 
       // 2. Generar contra asiento
       const lastAsiento = await tx.asiento.findFirst({
