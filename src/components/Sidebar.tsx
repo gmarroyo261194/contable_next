@@ -74,7 +74,7 @@ const navItems = [
     moduleCode: 'CURSOS',
     children: [
       { icon: Users, label: 'Alumnos', href: '/alumnos', moduleCode: 'CURSOS' },
-      { icon: ListCheck, label: 'Cursos', href: '/list-cursos', moduleCode: 'CURSOS' },
+      { icon: ListCheck, label: 'Cursos', href: '/cursos', moduleCode: 'CURSOS' },
       { icon: ReceiptText, label: 'Cuponeras', href: '/cuponeras', moduleCode: 'CURSOS' },
     ]
   },

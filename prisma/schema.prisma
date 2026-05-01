@@ -34,6 +34,7 @@ model Empresa {
   pagos                 Pagos[]
   pedidosPagos          PedidosPagos[]
   serviciosConfig       ServicioConfig[]
+  cursos                Curso[]
 }
 
 model User {
@@ -628,6 +629,7 @@ model Rubro {
   updatedBy          String?
   documentosClientes DocumentoClientes[]
   servicios          Servicio[]
+  cursos             Curso[]
 
   @@map("rubros")
 }
@@ -663,6 +665,7 @@ model Servicio {
   configs                ServicioConfig[]
   departamento           Departamento?       @relation(fields: [departamentoId], references: [id])
   rubro                  Rubro               @relation(fields: [rubroId], references: [id])
+  cursos                 Curso[]
 
   @@map("servicios")
 }
@@ -729,4 +732,56 @@ model Modulo {
   updatedBy   String?
 
   @@map("modulos")
+}
+
+model Alumno {
+  id               Int           @id @default(autoincrement())
+  documento        String        @unique
+  apellido         String
+  nombre           String
+  email            String?
+  telefono         String?
+  celular          String?
+  fechaNacimiento  DateTime?
+  sexo             String?
+  inscripciones    Inscripcion[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  
+  @@map("alumnos")
+}
+
+model Curso {
+  id              Int           @id @default(autoincrement())
+  legacyId        Int?          @unique
+  nombre          String
+  anioAcademico   Int
+  fechaInicio     DateTime?
+  fechaFin        DateTime?
+  rubroId         Int
+  servicioId      Int
+  costo           Decimal       @db.Decimal(18, 2) @default(0)
+  estado          String?
+  empresaId       Int           @default(1)
+  empresa         Empresa       @relation(fields: [empresaId], references: [id])
+  rubro           Rubro         @relation(fields: [rubroId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  servicio        Servicio      @relation(fields: [servicioId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  inscripciones   Inscripcion[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("cursos")
+}
+
+model Inscripcion {
+  id               Int      @id @default(autoincrement())
+  cursoId          Int
+  alumnoId         Int
+  fechaInscripcion DateTime @default(now())
+  estado           String?
+  curso            Curso    @relation(fields: [cursoId], references: [id])
+  alumno           Alumno   @relation(fields: [alumnoId], references: [id])
+
+  @@unique([cursoId, alumnoId])
+  @@map("inscripciones")
 }

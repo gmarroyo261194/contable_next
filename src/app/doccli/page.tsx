@@ -19,6 +19,7 @@ import {
   Send,
   AlertCircle,
 } from "lucide-react";
+import { Pagination } from "@/components/Pagination";
 import RegistrarPagoModal from "@/components/asientos/RegistrarPagoModal";
 import { SyncFacturasModal } from "@/components/asientos/SyncFacturasModal";
 import ImportarFacturaPDFModal from "@/components/asientos/ImportarFacturaPDFModal";
@@ -646,77 +647,19 @@ export default function DocumentosClientesPage() {
             </div>
 
             {/* Pagination Controls */}
-            {total > 0 && (
-              <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Mostrando <span className="text-indigo-600">{documentos.length}</span> de <span className="text-indigo-600">{total}</span> facturas
-                  </p>
-                  <div className="flex items-center gap-2 ml-4 border-l border-slate-200 pl-4">
-                    <span className="text-[10px] font-black text-slate-400 uppercase">Ver:</span>
-                    <select
-                      value={pageSize}
-                      onChange={(e) => {
-                        setPageSize(Number(e.target.value));
-                        setPage(1);
-                      }}
-                      className="bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 py-1 px-2 outline-none focus:ring-2 focus:ring-indigo-100"
-                    >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1 || loading}
-                    className="p-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 
-                    disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.ceil(total / pageSize) }).map((_, i) => {
-                      const p = i + 1;
-                      // Mostrar solo algunas páginas si hay muchas
-                      if (
-                        p === 1 ||
-                        p === Math.ceil(total / pageSize) ||
-                        (p >= page - 1 && p <= page + 1)
-                      ) {
-                        return (
-                          <button
-                            key={p}
-                            onClick={() => setPage(p)}
-                            className={`w-10 h-10 rounded-xl text-sm font-black transition-all ${page === p
-                              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100"
-                              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                              }`}
-                          >
-                            {p}
-                          </button>
-                        );
-                      }
-                      if (p === page - 2 || p === page + 2) {
-                        return <span key={p} className="text-slate-400">...</span>;
-                      }
-                      return null;
-                    })}
-                  </div>
-                  <button
-                    onClick={() => setPage(p => Math.min(Math.ceil(total / pageSize), p + 1))}
-                    disabled={page === Math.ceil(total / pageSize) || loading}
-                    className="p-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 
-                    disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="p-4 bg-slate-50/50 border-t border-slate-100">
+              <Pagination 
+                total={total}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size as number);
+                  setPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100]}
+              />
+            </div>
           </div>
         </div>
 

@@ -24,6 +24,7 @@ import { anularPago } from '@/lib/actions/pago-actions';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { getModulos } from '@/lib/actions/module-actions';
+import { Pagination } from '@/components/Pagination';
 
 type SortOrder = 'asc' | 'desc';
 
@@ -238,23 +239,6 @@ export default function AsientosPage() {
 
       {/* Grid Header / Filters */}
       <div className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Mostrar</span>
-          <select
-            className="bg-white border border-slate-200 rounded-lg text-xs font-bold p-1 focus:ring-primary focus:border-primary outline-hidden"
-            value={pageSize}
-            onChange={(e) => {
-              const val = e.target.value;
-              updateFilters({ pageSize: val, page: 1 });
-            }}
-          >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value="all">Todos</option>
-          </select>
-        </div>
         <div className="flex items-center gap-4 flex-1 max-w-md ml-8">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -414,29 +398,16 @@ export default function AsientosPage() {
         </div>
 
         {/* Pagination Footer */}
-        {pageSize !== 'all' && totalPages > 1 && (
-          <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Página <span className="text-primary">{page}</span> de {totalPages}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page === 1}
-                onClick={() => updateFilters({ page: page - 1 })}
-                className="p-2 border border-slate-200 rounded-xl hover:bg-white disabled:opacity-30 transition-all font-bold text-slate-600 shadow-sm"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                disabled={page === totalPages}
-                onClick={() => updateFilters({ page: page + 1 })}
-                className="p-2 border border-slate-200 rounded-xl hover:bg-white disabled:opacity-30 transition-all font-bold text-slate-600 shadow-sm"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="p-4 bg-slate-50/50 border-t border-slate-100">
+          <Pagination 
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={(p) => updateFilters({ page: p })}
+            onPageSizeChange={(size) => updateFilters({ pageSize: size, page: 1 })}
+            pageSizeOptions={[5, 10, 25, 50]}
+          />
+        </div>
       </div>
 
       <Dialog

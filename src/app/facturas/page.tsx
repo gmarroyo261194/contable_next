@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Pagination } from '@/components/Pagination';
 
 interface Factura {
   id:                  number;
@@ -52,6 +53,7 @@ export default function FacturasPage() {
   const [desde, setDesde]         = useState('');
   const [hasta, setHasta]         = useState('');
   const [page, setPage]           = useState(1);
+  const [pageSize, setPageSize]   = useState(15);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const fetchFacturas = useCallback(async () => {
@@ -59,7 +61,7 @@ export default function FacturasPage() {
     try {
       const params = new URLSearchParams({
         page:     String(page),
-        pageSize: '15',
+        pageSize: String(pageSize),
         ...(search && { search }),
         ...(desde  && { desde  }),
         ...(hasta  && { hasta  }),
@@ -73,7 +75,7 @@ export default function FacturasPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, desde, hasta]);
+  }, [page, pageSize, search, desde, hasta]);
 
   useEffect(() => { 
     fetchFacturas(); 
@@ -300,45 +302,19 @@ export default function FacturasPage() {
           </div>
 
           {/* Pagination */}
-          {pagination && pagination.totalPages > 1 && (
-            <div className="px-6 py-5 border-t border-slate-50 bg-slate-50/30 flex items-center justify-between">
-              <div className="text-sm text-slate-500 font-medium">
-                Mostrando <span className="font-bold text-slate-900">{(pagination.page - 1) * pagination.pageSize + 1}</span> a <span className="font-bold text-slate-900">{Math.min(pagination.page * pagination.pageSize, pagination.total)}</span> de <span className="font-extrabold text-slate-900">{pagination.total}</span> resultados
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="p-2 border border-slate-200 rounded-xl disabled:opacity-30 hover:bg-white hover:shadow-sm transition-all"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <div className="flex items-center px-1">
-                  {[...Array(Math.min(5, pagination.totalPages))].map((_, i) => {
-                    const p = i + 1; // Simplificado para este ejemplo
-                    return (
-                      <button
-                        key={p}
-                        onClick={() => setPage(p)}
-                        className={`w-9 h-9 rounded-xl font-bold text-sm transition-all
-                          ${page === p ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'text-slate-500 hover:bg-slate-100'}`}
-                      >
-                        {p}
-                      </button>
-                    );
-                  })}
-                  {pagination.totalPages > 5 && <span className="px-2 text-slate-300">...</span>}
-                </div>
-                <button 
-                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-                  disabled={page === pagination.totalPages}
-                  className="p-2 border border-slate-200 rounded-xl disabled:opacity-30 hover:bg-white hover:shadow-sm transition-all"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="p-4 bg-slate-50/30 border-t border-slate-50">
+            <Pagination 
+              total={pagination?.total || 0}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size as number);
+                setPage(1);
+              }}
+              pageSizeOptions={[5, 10, 15, 20, 50]}
+            />
+          </div>
         </div>
       </div>
     </div>

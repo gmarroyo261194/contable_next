@@ -15,12 +15,14 @@ import {
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getAuditLogsAction } from "./audit-actions";
+import { Pagination } from "@/components/Pagination";
 
 export default function AuditLogsClient() {
   const [logs, setLogs] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   
   // Filtros
@@ -32,7 +34,7 @@ export default function AuditLogsClient() {
     try {
       const result = await getAuditLogsAction({ 
         page, 
-        pageSize: 20, 
+        pageSize, 
         entidad: entidad || undefined, 
         accion: (accion as any) || undefined 
       });
@@ -47,7 +49,7 @@ export default function AuditLogsClient() {
 
   useEffect(() => {
     fetchLogs();
-  }, [page, entidad, accion]);
+  }, [page, pageSize, entidad, accion]);
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
@@ -214,27 +216,19 @@ export default function AuditLogsClient() {
           </tbody>
         </table>
 
-        {/* Paginación simple */}
-        <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-200 flex items-center justify-between">
-          <span className="text-sm text-slate-500">
-            Mostrando {logs.length} de {total} registros
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1 || loading}
-              className="px-4 py-2 text-sm bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-all"
-            >
-              Anterior
-            </button>
-            <button
-              onClick={() => setPage(p => p + 1)}
-              disabled={logs.length < 20 || loading}
-              className="px-4 py-2 text-sm bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-all"
-            >
-              Siguiente
-            </button>
-          </div>
+        {/* Pagination Footer */}
+        <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-200">
+          <Pagination 
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size as number);
+              setPage(1);
+            }}
+            pageSizeOptions={[10, 20, 50, 100]}
+          />
         </div>
       </div>
     </div>
