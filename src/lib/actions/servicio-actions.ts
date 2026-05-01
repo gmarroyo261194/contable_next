@@ -7,16 +7,26 @@ import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 
 /**
  * Obtiene todos los servicios con su configuración para la empresa actual.
- * @param {number} empresaId - ID de la empresa activa.
+ * @param {number} [empresaId] - Opcional: ID de la empresa activa.
+ * @param {number} [rubroId] - Opcional: ID del rubro para filtrar.
  * @returns {Promise<any[]>} Listado de servicios con rubro, departamento y config.
  */
-export async function getServicios(empresaId: number) {
+export async function getServicios(empresaId?: number, rubroId?: number) {
+  const session = await auth();
+  const finalEmpresaId = empresaId || (session?.user as any)?.empresaId || 1;
+
+  const where: any = { activo: true };
+  if (rubroId) {
+    where.rubroId = rubroId;
+  }
+
   const servicios = await prisma.servicio.findMany({
+    where,
     include: {
       rubro: true,
       departamento: true,
       configs: {
-        where: { empresaId },
+        where: { empresaId: finalEmpresaId },
         include: {
           cuentaFundacionImputar: {
             select: { id: true, nombre: true, codigo: true, codigoCorto: true }

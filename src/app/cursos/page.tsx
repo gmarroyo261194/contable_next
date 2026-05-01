@@ -53,6 +53,7 @@ export default function CursosPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedCurso, setSelectedCurso] = useState<any>(null);
   const [cursoToDelete, setCursoToDelete] = useState<any>(null);
+  const [formRubroId, setFormRubroId] = useState<number | null>(null);
 
   const updateFilters = useCallback((newParams: Record<string, string | number | boolean | null>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -88,8 +89,17 @@ export default function CursosPage() {
   useEffect(() => {
     fetchCursos();
     getRubros().then(setRubros);
-    getServicios().then(setServicios);
   }, [fetchCursos]);
+
+  useEffect(() => {
+    if (formRubroId) {
+      getServicios(undefined, formRubroId).then(setServicios);
+    } else if (selectedCurso?.rubroId) {
+      getServicios(undefined, selectedCurso.rubroId).then(setServicios);
+    } else {
+      setServicios([]);
+    }
+  }, [formRubroId, selectedCurso?.rubroId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -128,6 +138,7 @@ export default function CursosPage() {
       rubroId: Number(formData.get('rubroId')),
       servicioId: Number(formData.get('servicioId')),
       costo: Number(formData.get('costo')),
+      cantidadCuotas: Number(formData.get('cantidadCuotas')),
       estado: formData.get('estado') as string,
     };
 
@@ -303,15 +314,27 @@ export default function CursosPage() {
             </div>
             <div>
               <label className="text-xs font-black text-slate-400 uppercase">Rubro</label>
-              <select name="rubroId" defaultValue={selectedCurso?.rubroId} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mt-1 outline-none appearance-none cursor-pointer">
+              <select 
+                name="rubroId" 
+                defaultValue={selectedCurso?.rubroId} 
+                onChange={(e) => setFormRubroId(Number(e.target.value))}
+                required
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mt-1 outline-none appearance-none cursor-pointer"
+              >
+                <option value="">Seleccione un rubro</option>
                 {rubros.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs font-black text-slate-400 uppercase">Servicio</label>
-              <select name="servicioId" defaultValue={selectedCurso?.servicioId} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mt-1 outline-none appearance-none cursor-pointer">
+              <select name="servicioId" defaultValue={selectedCurso?.servicioId} required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mt-1 outline-none appearance-none cursor-pointer">
+                <option value="">Seleccione un servicio</option>
                 {servicios.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
               </select>
+            </div>
+            <div>
+              <label className="text-xs font-black text-slate-400 uppercase">Cantidad de Cuotas</label>
+              <input type="number" name="cantidadCuotas" defaultValue={selectedCurso?.cantidadCuotas || 1} min={1} required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
             <div>
               <label className="text-xs font-black text-slate-400 uppercase">Fecha Inicio</label>
@@ -339,7 +362,9 @@ function CursoRow({ curso, onEdit, onOpenDialog, onDelete, onOpenConfirm }: any)
     <tr className="group hover:bg-slate-50/50 transition-colors">
       <td className="px-6 py-4">
         <div className="font-bold text-slate-900 group-hover:text-primary transition-colors">{curso.nombre}</div>
-        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">ID Legacy: {curso.legacyId || 'N/A'} • {curso.anioAcademico}</div>
+        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+          ID Legacy: {curso.legacyId || 'N/A'} • {curso.anioAcademico} • {curso.cantidadCuotas} Cuotas
+        </div>
       </td>
       <td className="px-6 py-4">
         <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">{curso.rubro?.nombre}</span>

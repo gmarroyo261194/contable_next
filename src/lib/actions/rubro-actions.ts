@@ -6,13 +6,36 @@ import { auth } from "@/auth";
 import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 
 /**
- * Obtiene todos los rubros.
- * @returns {Promise<any[]>} Listado de rubros.
+ * Obtiene los rubros habilitados para el usuario actual.
  */
 export async function getRubros() {
-  const rubros = await prisma.rubro.findMany({
-    orderBy: { nombre: 'asc' }
+  const session = await auth();
+  const userId = session?.user?.id;
+  const roles: string[] = (session?.user as any)?.roles || [];
+  const isAdmin = roles.some(role => 
+    role.toLowerCase() === 'admin' || 
+    role.toLowerCase() === 'superadmin' || 
+    role.toLowerCase() === 'administrador'
+  );
+
+  if (isAdmin) {
+    const rubros = await prisma.rubro.findMany({
+      where: { activo: true },
+      orderBy: { nombre: 'asc' }
+    });
+    return JSON.parse(JSON.stringify(rubros));
+  }
+
+  const userRubros = await prisma.userRubro.findMany({
+    where: { userId },
+    include: { rubro: true }
   });
+
+  const rubros = userRubros
+    .map(ur => ur.rubro)
+    .filter(r => r.activo)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+
   return JSON.parse(JSON.stringify(rubros));
 }
 

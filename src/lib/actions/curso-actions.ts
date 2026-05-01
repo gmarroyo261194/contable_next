@@ -19,14 +19,45 @@ export async function getCursos(params: {
   const skip = pageSize === 'all' ? 0 : (page - 1) * Number(pageSize);
   const take = pageSize === 'all' ? undefined : Number(pageSize);
 
+  const session = await auth();
+  const userId = session?.user?.id;
+  const roles: string[] = (session?.user as any)?.roles || [];
+  const isAdmin = roles.some(role => 
+    role.toLowerCase() === 'admin' || 
+    role.toLowerCase() === 'superadmin' || 
+    role.toLowerCase() === 'administrador'
+  );
+
   const where: any = {};
+
+  if (!isAdmin) {
+    const userRubros = await prisma.userRubro.findMany({
+      where: { userId },
+      select: { rubroId: true }
+    });
+    const rubroIds = userRubros.map(ur => ur.rubroId);
+    where.rubroId = { in: rubroIds };
+  }
+
   if (search) {
-    where.OR = [
-      { nombre: { contains: search } },
-      { estado: { contains: search } },
-      { rubro: { nombre: { contains: search } } },
-      { servicio: { nombre: { contains: search } } }
-    ];
+    const searchFilter = {
+      OR: [
+        { nombre: { contains: search } },
+        { estado: { contains: search } },
+        { rubro: { nombre: { contains: search } } },
+        { servicio: { nombre: { contains: search } } }
+      ]
+    };
+    
+    if (where.rubroId) {
+      where.AND = [
+        { rubroId: where.rubroId },
+        searchFilter
+      ];
+      delete where.rubroId;
+    } else {
+      Object.assign(where, searchFilter);
+    }
   }
 
   const orderBy: any = {};
@@ -88,6 +119,7 @@ export async function upsertCurso(data: {
   rubroId: number;
   servicioId: number;
   costo: number;
+  cantidadCuotas: number;
   estado?: string;
 }) {
   const session = await auth();
@@ -102,6 +134,7 @@ export async function upsertCurso(data: {
     rubroId: data.rubroId,
     servicioId: data.servicioId,
     costo: data.costo,
+    cantidadCuotas: data.cantidadCuotas,
     estado: data.estado,
     empresaId: empresaId,
   };
