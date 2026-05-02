@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Plus, Pencil, Trash2, Tags, Hash, Search, X } from 'lucide-react';
-import { DataGrid, Column } from "@/components/ui/DataGrid";
+import { Plus, Pencil, Trash2, Calendar, X } from 'lucide-react';
+import { DataGrid, GridConfig } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -90,32 +90,50 @@ export function CentrosCostoClient({
     }));
   };
 
-  const columns: Column<CentroCosto>[] = [
-    {
-      header: "Nombre",
-      accessor: "nombre",
-      cell: (item: any) => (
-        <span className="font-bold text-slate-800">{item.nombre}</span>
-      )
-    },
-    {
-      header: "Empresa",
-      cell: (item: any) => (
-        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
-          {item.empresa?.nombreFantasia || item.empresa?.razonSocial}
-        </span>
-      )
-    },
-    {
-      header: "Cuentas Asociadas",
-      accessor: "cuentas",
-      cell: (item: any) => (
-        <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg text-xs font-black">
-          {item.cuentas.length} cuentas
-        </span>
-      )
-    }
-  ];
+  const config: GridConfig<CentroCosto> = {
+    columns: [
+      {
+        key: "nombre",
+        header: "Nombre",
+        render: (item: any) => (
+          <span className="font-bold text-slate-800">{item.nombre}</span>
+        )
+      },
+      {
+        key: "id",
+        header: "Empresa",
+        render: (item: any) => (
+          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
+            {item.empresa?.nombreFantasia || item.empresa?.razonSocial}
+          </span>
+        )
+      },
+      {
+        key: "id",
+        header: "Cuentas Asociadas",
+        render: (item: any) => (
+          <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg text-xs font-black">
+            {item.cuentas.length} cuentas
+          </span>
+        )
+      },
+      { key: "actions", header: "Acciones", className: "text-right" }
+    ],
+    actions: [
+      {
+        label: "Editar",
+        icon: Pencil,
+        onClick: handleEdit,
+        variant: "info"
+      },
+      {
+        label: "Eliminar",
+        icon: Trash2,
+        onClick: (item) => handleDelete(item.id),
+        variant: "danger"
+      }
+    ]
+  };
 
   return (
     <div className="space-y-6">
@@ -136,25 +154,7 @@ export function CentrosCostoClient({
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <DataGrid
           data={initialCentros}
-          columns={columns}
-          actions={(item) => (
-            <>
-              <button
-                onClick={() => handleEdit(item)}
-                className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
-                title="Editar"
-              >
-                <Pencil className="size-4" />
-              </button>
-              <button
-                onClick={() => handleDelete(item.id)}
-                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                title="Eliminar"
-              >
-                <Trash2 className="size-4" />
-              </button>
-            </>
-          )}
+          config={config}
         />
       </div>
 

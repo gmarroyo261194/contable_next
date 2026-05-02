@@ -1,21 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Plus, 
-  Search, 
-  Loader2, 
-  Edit, 
-  Trash2, 
-  ChevronLeft, 
-  ChevronRight,
-  Calendar,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   Rows,
-  Layers,
-  Filter
+  Layers
 } from 'lucide-react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { getCursos, upsertCurso, deleteCurso } from '@/lib/actions/curso-actions';
@@ -24,8 +13,8 @@ import { getServicios } from '@/lib/actions/servicio-actions';
 import { toast } from 'sonner';
 import { Dialog } from '@/components/Dialog';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Pagination } from '@/components/Pagination';
+import { DataGrid } from '@/components/ui/DataGrid';
+import { cursoGridConfig } from '@/lib/configs/cursos.config';
 
 type SortOrder = 'asc' | 'desc';
 
@@ -42,7 +31,6 @@ export default function CursosPage() {
   const searchTerm = searchParams.get('search') || '';
   const groupByRubro = searchParams.get('groupByRubro') === 'true';
 
-  const [localSearch, setLocalSearch] = useState(searchTerm);
   const [cursos, setCursos] = useState<any[]>([]);
   const [rubros, setRubros] = useState<any[]>([]);
   const [servicios, setServicios] = useState<any[]>([]);
@@ -77,7 +65,14 @@ export default function CursosPage() {
         sortBy,
         sortOrder
       });
-      setCursos(result.data);
+      
+      // Añadimos rubroNombre para el agrupamiento interno de DataGrid
+      const mappedData = result.data.map((c: any) => ({
+        ...c,
+        rubroNombre: c.rubro?.nombre || 'Sin Rubro'
+      }));
+
+      setCursos(mappedData);
       setTotal(result.total);
     } catch (error) {
       toast.error("Error al cargar cursos.");
@@ -100,31 +95,6 @@ export default function CursosPage() {
       setServicios([]);
     }
   }, [formRubroId, selectedCurso?.rubroId]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (localSearch !== searchTerm) {
-        updateFilters({ search: localSearch, page: 1 });
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [localSearch, searchTerm, updateFilters]);
-
-  const handleSort = (field: string) => {
-    const newOrder = sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc';
-    updateFilters({ sortBy: field, sortOrder: newOrder, page: 1 });
-  };
-
-  const groupedCursos = useMemo(() => {
-    if (!groupByRubro) return null;
-    const groups: Record<string, any[]> = {};
-    cursos.forEach(curso => {
-      const rubroName = curso.rubro?.nombre || 'Sin Rubro';
-      if (!groups[rubroName]) groups[rubroName] = [];
-      groups[rubroName].push(curso);
-    });
-    return groups;
-  }, [cursos, groupByRubro]);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -169,10 +139,11 @@ export default function CursosPage() {
     }
   };
 
-  const SortIcon = ({ field }: { field: string }) => {
-    if (sortBy !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-20" />;
-    return sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1 text-primary" /> : <ArrowDown className="w-3 h-3 ml-1 text-primary" />;
-  };
+  const config = cursoGridConfig(
+    (c) => { setSelectedCurso(c); setIsDialogOpen(true); },
+    (c) => { setCursoToDelete(c); setIsConfirmOpen(true); },
+    groupByRubro
+  );
 
   return (
     <div className="p-8 space-y-6">
@@ -203,98 +174,22 @@ export default function CursosPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por curso, rubro o servicio..."
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-          />
-        </div>
-        <div className="flex items-center gap-6">
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            Total: <span className="text-slate-900">{total}</span> cursos
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100/50 transition-colors" onClick={() => handleSort('nombre')}>
-                  <div className="flex items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Nombre <SortIcon field="nombre" />
-                  </div>
-                </th>
-                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100/50 transition-colors" onClick={() => handleSort('rubro')}>
-                  <div className="flex items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Rubro <SortIcon field="rubro" />
-                  </div>
-                </th>
-                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100/50 transition-colors" onClick={() => handleSort('servicio')}>
-                  <div className="flex items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Servicio <SortIcon field="servicio" />
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-center">
-                  <div className="flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Periodo
-                  </div>
-                </th>
-                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100/50 transition-colors text-right" onClick={() => handleSort('costo')}>
-                  <div className="flex items-center justify-end text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Costo <SortIcon field="costo" />
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {loading ? (
-                <tr><td colSpan={6} className="px-6 py-10 text-center"><Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" /></td></tr>
-              ) : cursos.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-10 text-center font-bold text-slate-400 uppercase text-xs tracking-widest">No se encontraron registros</td></tr>
-              ) : groupByRubro ? (
-                Object.entries(groupedCursos!).map(([rubroName, items]) => (
-                  <React.Fragment key={rubroName}>
-                    <tr className="bg-slate-100/30">
-                      <td colSpan={6} className="px-6 py-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-primary" />
-                          <span className="text-xs font-black text-slate-600 uppercase tracking-widest">{rubroName}</span>
-                          <span className="text-[10px] font-bold text-slate-400">({items.length} cursos)</span>
-                        </div>
-                      </td>
-                    </tr>
-                    {items.map(curso => <CursoRow key={curso.id} curso={curso} onEdit={setSelectedCurso} onOpenDialog={setIsDialogOpen} onDelete={setCursoToDelete} onOpenConfirm={setIsConfirmOpen} />)}
-                  </React.Fragment>
-                ))
-              ) : (
-                cursos.map(curso => <CursoRow key={curso.id} curso={curso} onEdit={setSelectedCurso} onOpenDialog={setIsDialogOpen} onDelete={setCursoToDelete} onOpenConfirm={setIsConfirmOpen} />)
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Paginación */}
-        {!groupByRubro && (
-          <div className="p-4 bg-slate-50/50 border-t border-slate-100">
-            <Pagination 
-              total={total}
-              page={page}
-              pageSize={pageSize}
-              onPageChange={(p) => updateFilters({ page: p })}
-              onPageSizeChange={(size) => updateFilters({ pageSize: size, page: 1 })}
-              pageSizeOptions={[10, 25, 50, 100]}
-            />
-          </div>
-        )}
-      </div>
+      <DataGrid 
+        config={config}
+        data={cursos}
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={(p) => updateFilters({ page: p })}
+        onPageSizeChange={(s) => updateFilters({ pageSize: s, page: 1 })}
+        loading={loading}
+        searchTerm={searchTerm}
+        onSearchChange={(val) => updateFilters({ search: val, page: 1 })}
+        searchPlaceholder="Buscar por curso, rubro o servicio..."
+        sortBy={sortBy as any}
+        sortOrder={sortOrder}
+        onSortChange={(key, dir) => updateFilters({ sortBy: key as string, sortOrder: dir, page: 1 })}
+      />
 
       {/* Dialogs */}
       <Dialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} title={selectedCurso ? "Editar Curso" : "Nuevo Curso"} maxWidth="max-w-2xl">
@@ -354,53 +249,5 @@ export default function CursosPage() {
 
       <ConfirmDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleDelete} title="Confirmar Eliminación" description="¿Estás seguro de que deseas eliminar este curso? Esta acción es irreversible." variant="danger" />
     </div>
-  );
-}
-
-function CursoRow({ curso, onEdit, onOpenDialog, onDelete, onOpenConfirm }: any) {
-  return (
-    <tr className="group hover:bg-slate-50/50 transition-colors">
-      <td className="px-6 py-4">
-        <div className="font-bold text-slate-900 group-hover:text-primary transition-colors">{curso.nombre}</div>
-        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-          ID Legacy: {curso.legacyId || 'N/A'} • {curso.anioAcademico} • {curso.cantidadCuotas} Cuotas
-        </div>
-      </td>
-      <td className="px-6 py-4">
-        <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">{curso.rubro?.nombre}</span>
-      </td>
-      <td className="px-6 py-4">
-        <span className="text-xs font-medium text-slate-500">{curso.servicio?.nombre}</span>
-      </td>
-      <td className="px-6 py-4 text-center">
-        <div className="flex flex-col items-center gap-0.5">
-          <Calendar className="w-3 h-3 text-slate-300" />
-          <span className="text-[10px] font-black text-slate-600 uppercase">
-            {curso.fechaInicio ? new Date(curso.fechaInicio).toLocaleDateString() : '-'}
-          </span>
-        </div>
-      </td>
-      <td className="px-6 py-4 text-right">
-        <div className="font-black text-slate-900 tracking-tight">$ {Number(curso.costo).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</div>
-      </td>
-      <td className="px-6 py-4">
-        <div className="flex items-center justify-center gap-2">
-          <button 
-            onClick={() => { onEdit(curso); onOpenDialog(true); }}
-            className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
-            title="Editar"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={() => { onDelete(curso); onOpenConfirm(true); }}
-            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
-            title="Eliminar"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </td>
-    </tr>
   );
 }

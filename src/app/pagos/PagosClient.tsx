@@ -3,17 +3,13 @@
 import React, { useState } from "react";
 import { 
   CreditCard, 
-  Search, 
   RotateCcw, 
   CheckCircle, 
   XCircle, 
-  Receipt, 
   User, 
-  Calendar, 
-  FileText,
   AlertTriangle
 } from "lucide-react";
-import { DataGrid } from "@/components/ui/DataGrid";
+import { DataGrid, GridConfig } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
 import { anularPago } from "@/lib/actions/pago-actions";
 import { useRouter } from "next/navigation";
@@ -47,92 +43,109 @@ export function PagosClient({ initialData }: { initialData: any[] }) {
     }
   };
 
-  const columns = [
-    {
-      header: "Fecha",
-      accessor: "fecha",
-      cell: (p: any) => (
-        <div className="flex flex-col">
-          <span className="font-bold text-slate-800">{new Date(p.fecha).toLocaleDateString()}</span>
-          <span className="text-[10px] text-slate-400 font-medium">Ref: #{p.id}</span>
-        </div>
-      )
-    },
-    {
-      header: "Empresa / Ejercicio",
-      cell: (p: any) => (
-        <div className="flex flex-col">
-          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
-            {p.ejercicio?.empresa?.nombreFantasia || p.ejercicio?.empresa?.razonSocial}
-          </span>
-          <span className="text-[9px] font-bold text-slate-400">
-            Eje. {p.ejercicio?.numero}
-          </span>
-        </div>
-      )
-    },
-    {
-      header: "Beneficiario",
-      accessor: "entidad.nombre",
-      cell: (p: any) => (
-        <div className="flex items-center gap-2">
-          <div className="size-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
-            <User className="size-3.5" />
-          </div>
-          <span className="font-bold text-slate-700">{p.entidad.nombre}</span>
-        </div>
-      )
-    },
-    {
-      header: "Medio de Pago",
-      accessor: "medioPago.nombre",
-      cell: (p: any) => (
-        <div className="flex flex-col">
-          <span className="text-sm font-bold text-slate-600">{p.medioPago.nombre}</span>
-          <span className="text-[10px] text-slate-400 uppercase font-black">Asiento #{p.asientoId}</span>
-        </div>
-      )
-    },
-    {
-      header: "Documentos",
-      cell: (p: any) => (
-        <div className="flex flex-wrap gap-1">
-          {p.facturasDocentes?.map((f: any) => (
-            <span key={f.id} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold rounded border border-slate-200" title={`Importe: $ ${Number(f.importe).toFixed(2)}`}>
-              {f.puntoVenta}-{f.numero}
-            </span>
-          ))}
-        </div>
-      )
-    },
-    {
-      header: "Importe",
-      accessor: "importeTotal",
-      className: "text-right",
-      cell: (p: any) => (
-        <span className="font-black text-slate-900">
-          $ {Number(p.importeTotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-        </span>
-      )
-    },
-    {
-      header: "Estado",
-      cell: (p: any) => (
-        p.anulado ? (
+  const config: GridConfig<any> = {
+    columns: [
+      {
+        key: "fecha",
+        header: "Fecha",
+        sortable: true,
+        render: (p: any) => (
           <div className="flex flex-col">
-            <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black rounded-full uppercase border border-red-100 flex items-center gap-1 w-fit">
-              <XCircle className="size-3" /> Anulado
-            </span>
-            <span className="text-[9px] text-slate-400 mt-0.5">Rev: #{p.asientoAnulacionId}</span>
+            <span className="font-bold text-slate-800">{new Date(p.fecha).toLocaleDateString()}</span>
+            <span className="text-[10px] text-slate-400 font-medium">Ref: #{p.id}</span>
           </div>
-        ) : (
-          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase border border-emerald-100 flex items-center gap-1 w-fit">
-            <CheckCircle className="size-3" /> Aplicado
-          </span>
         )
-      )
-    }
-  ];
+      },
+      {
+        key: "id",
+        header: "Empresa / Ejercicio",
+        render: (p: any) => (
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
+              {p.ejercicio?.empresa?.nombreFantasia || p.ejercicio?.empresa?.razonSocial}
+            </span>
+            <span className="text-[9px] font-bold text-slate-400">
+              Eje. {p.ejercicio?.numero}
+            </span>
+          </div>
+        )
+      },
+      {
+        key: "id",
+        header: "Beneficiario",
+        render: (p: any) => (
+          <div className="flex items-center gap-2">
+            <div className="size-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+              <User className="size-3.5" />
+            </div>
+            <span className="font-bold text-slate-700">{p.entidad.nombre}</span>
+          </div>
+        )
+      },
+      {
+        key: "id",
+        header: "Medio de Pago",
+        render: (p: any) => (
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-slate-600">{p.medioPago.nombre}</span>
+            <span className="text-[10px] text-slate-400 uppercase font-black">Asiento #{p.asientoId}</span>
+          </div>
+        )
+      },
+      {
+        key: "id",
+        header: "Documentos",
+        render: (p: any) => (
+          <div className="flex flex-wrap gap-1">
+            {p.facturasDocentes?.map((f: any) => (
+              <span key={f.id} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold rounded border border-slate-200" title={`Importe: $ ${Number(f.importe).toFixed(2)}`}>
+                {f.puntoVenta}-{f.numero}
+              </span>
+            ))}
+          </div>
+        )
+      },
+      {
+        key: "importeTotal",
+        header: "Importe",
+        type: "currency",
+        className: "text-right",
+        sortable: true
+      },
+      {
+        key: "anulado",
+        header: "Estado",
+        sortable: true,
+        render: (p: any) => (
+          p.anulado ? (
+            <div className="flex flex-col">
+              <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black rounded-full uppercase border border-red-100 flex items-center gap-1 w-fit">
+                <XCircle className="size-3" /> Anulado
+              </span>
+              <span className="text-[9px] text-slate-400 mt-0.5">Rev: #{p.asientoAnulacionId}</span>
+            </div>
+          ) : (
+            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase border border-emerald-100 flex items-center gap-1 w-fit">
+              <CheckCircle className="size-3" /> Aplicado
+            </span>
+          )
+        )
+      },
+      { key: "actions", header: "Acciones", className: "text-right" }
+    ],
+    actions: [
+      {
+        label: "Anular Pago",
+        icon: RotateCcw,
+        onClick: (p) => {
+          setPagoToAnular(p);
+          setIsAnularDialogOpen(true);
+        },
+        variant: "danger",
+        showIf: (p) => !p.anulado
+      }
+    ]
+  };
 
   return (
     <div className="space-y-8">
@@ -148,21 +161,7 @@ export function PagosClient({ initialData }: { initialData: any[] }) {
 
       <DataGrid
         data={initialData}
-        columns={columns as any}
-        actions={(p) => (
-          !p.anulado && (
-            <button
-              onClick={() => {
-                setPagoToAnular(p);
-                setIsAnularDialogOpen(true);
-              }}
-              className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-all border border-red-100 shadow-sm"
-              title="Anular Pago"
-            >
-              <RotateCcw className="size-4" />
-            </button>
-          )
-        )}
+        config={config}
       />
 
       <Dialog

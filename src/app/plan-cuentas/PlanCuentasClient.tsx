@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Plus, Pencil, Trash2, FileSpreadsheet, Search, GitGraph, Tag, AlertCircle, Layers, ListTree, Download } from "lucide-react";
+import { Plus, FileSpreadsheet, GitGraph, Layers, ListTree, Download, AlertCircle } from "lucide-react";
 import { DataGrid } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
 import { CuentaForm } from "@/components/plan-cuentas/CuentaForm";
@@ -9,6 +9,8 @@ import { ImportModal } from "@/components/plan-cuentas/ImportModal";
 import { deleteCuenta } from "@/app/plan-cuentas/actions";
 import { useRouter } from "next/navigation";
 import XLSX from 'xlsx-js-style';
+import { planCuentasGridConfig } from "@/lib/configs/plan-cuentas.config";
+import { toast } from "sonner";
 
 export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] }) {
   const [isFormOpen, setIsFormOpen] = React.useState(false);
@@ -34,41 +36,29 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
     if (confirm("¿Está seguro de que desea eliminar esta cuenta?")) {
       try {
         await deleteCuenta(id);
+        toast.success("Cuenta eliminada");
         router.refresh();
       } catch (error: any) {
-        alert(error.message || "Error al eliminar la cuenta.");
+        toast.error(error.message || "Error al eliminar la cuenta.");
       }
     }
   };
 
-  // Funciones para Jerarquía
   const buildTree = (cuentas: any[]) => {
-    // Si no hay datos, retornar vacío
     if (!cuentas || cuentas.length === 0) return [];
-
-    // Copiamos para no mutar y ordenamos por longitud de código para procesar padres antes que hijos
     const rawCuentas = [...cuentas].sort((a, b) => a.codigo.length - b.codigo.length || a.codigo.localeCompare(b.codigo));
-    
     const map: { [key: number]: any } = {};
     const roots: any[] = [];
-
-    // 1. Poblar el mapa con todos los nodos inicializados
     rawCuentas.forEach(c => {
       map[c.id] = { ...c, children: [] };
     });
-
-    // 2. Construir la estructura de árbol
     rawCuentas.forEach(c => {
       let actualPadreId = c.padreId;
-      
-      // Fallback: Si no tiene padreId configurado en DB, detectamos por prefijo de código
       if (!actualPadreId) {
-        const cClean = c.codigo.replace(/0+$/, ''); // Eliminar ceros al final para comparar jerarquía
+        const cClean = c.codigo.replace(/0+$/, '');
         let longestPrefix = "";
-        
         rawCuentas.forEach(p => {
           const pClean = p.codigo.replace(/0+$/, '');
-          // Si el código de p es prefijo de c y p es más corto
           if (cClean.startsWith(pClean) && cClean !== pClean) {
             if (pClean.length > longestPrefix.length) {
               longestPrefix = pClean;
@@ -77,9 +67,8 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
           }
         });
       }
-
       const node = map[c.id];
-      if (node) { // Verificación de seguridad
+      if (node) {
         if (actualPadreId && map[actualPadreId]) {
           map[actualPadreId].children.push(node);
         } else {
@@ -87,15 +76,12 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
         }
       }
     });
-
     return roots;
   };
 
   const flattenTree = (tree: any[], level = 0): any[] => {
     let result: any[] = [];
-    // Ordenar por código dentro de cada nivel
     const sortedNodes = [...tree].sort((a, b) => a.codigo.localeCompare(b.codigo));
-
     sortedNodes.forEach(node => {
       result.push({ ...node, level });
       if (node.children.length > 0) {
@@ -106,10 +92,8 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
   };
 
   const exportToExcel = (data: any[], filename: string) => {
-    // Preparar los datos tabulares simples
     const worksheetDataRaw = data.map(c => {
       const nameValue = c.imputable ? c.nombre : c.nombre.toUpperCase();
-      
       return {
         "Código": c.codigo,
         "Nombre": nameValue,
@@ -118,42 +102,27 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
         "Imputable": c.imputable ? 'SI' : 'NO'
       };
     });
-
     const worksheet = XLSX.utils.json_to_sheet(worksheetDataRaw);
-    
-    // Aplicar estilos (colores)
     data.forEach((c, idx) => {
-      const rowIndex = idx + 2; // +1 encabezado, +1 base 1
+      const rowIndex = idx + 2;
       const nameCell = `B${rowIndex}`;
-      
       if (worksheet[nameCell]) {
-        let color = "000000"; // Negro por defecto
-        
+        let color = "000000";
         if (c.imputable) {
-          if (c.tipo === 'ACTIVO') color = "0000FF"; // Azul para activos imputables
-          else if (c.tipo === 'PASIVO') color = "FF0000"; // Rojo para pasivos imputables
-          else if (c.tipo === 'RESULTADO') color = "008000"; // Verde para resultados
+          if (c.tipo === 'ACTIVO') color = "0000FF";
+          else if (c.tipo === 'PASIVO') color = "FF0000";
+          else if (c.tipo === 'RESULTADO') color = "008000";
         }
-
         worksheet[nameCell].s = {
           font: { 
             color: { rgb: color },
-            bold: !c.imputable // Negrita para grupos (para mayor claridad)
+            bold: !c.imputable
           }
         };
       }
     });
-
-    // Ajustar anchos de columna
-    const wscols = [
-      { wch: 18 }, // Código
-      { wch: 50 }, // Nombre
-      { wch: 12 }, // Código Corto
-      { wch: 15 }, // Tipo
-      { wch: 10 }  // Imputable
-    ];
+    const wscols = [{ wch: 18 }, { wch: 50 }, { wch: 12 }, { wch: 15 }, { wch: 10 }];
     worksheet['!cols'] = wscols;
-
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Plan de Cuentas");
     XLSX.writeFile(workbook, `${filename}.xlsx`);
@@ -171,122 +140,34 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
     return flattenTree(tree);
   }, [initialCuentas, isTreeView]);
 
-  const filteredCuentas = treeData.filter(c =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.codigo.includes(searchTerm)
-  );
-
-  const columns = [
-    {
-      header: "Código",
-      accessor: "codigo",
-      className: "w-40",
-      cell: (c: any) => (
-        <span className={`font-mono text-xs ${c.imputable ? 'text-slate-600' : 'font-black text-slate-900'}`}>
-          {c.codigo}
-        </span>
-      )
-    },
-    {
-      header: "Empresa / Ejercicio",
-      cell: (c: any) => (
-        <div className="flex flex-col">
-          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
-            {c.ejercicio?.empresa?.nombreFantasia || c.ejercicio?.empresa?.razonSocial}
-          </span>
-          <span className="text-[9px] font-bold text-slate-400">
-            Eje. {c.ejercicio?.numero}
-          </span>
-        </div>
-      )
-    },
-    {
-      header: "Nombre / Cuenta",
-      accessor: "nombre",
-      cell: (c: any) => (
-        <div 
-          className="flex flex-col relative py-1"
-          style={{ 
-            paddingLeft: isTreeView ? `${(c.level || 0) * 64}px` : '0px',
-            transition: 'padding 0.2s'
-          }}
-        >
-          {/* Guía visual para niveles con mayor contraste */}
-          {isTreeView && (c.level || 0) > 0 && (
-            <div 
-              className="absolute top-0 bottom-0 flex items-center" 
-              style={{ left: `${((c.level || 0) - 1) * 64 + 28}px` }}
-            >
-              <div className="w-px h-full bg-slate-300" />
-              <div className="w-8 h-px bg-slate-300" />
-            </div>
-          )}
-          
-          <div className="flex items-center gap-4">
-            {isTreeView && (c.level || 0) > 0 && (
-              <div className="size-1.5 bg-primary/40 rounded-full flex-shrink-0" />
-            )}
-            <span className={`text-sm tracking-tight ${c.imputable ? 'text-slate-600 font-medium' : 'font-black text-slate-900 uppercase'}`}>
-              {c.nombre}
-            </span>
-          </div>
-        </div>
-      )
-    },
-    {
-      header: "Tipo",
-      accessor: "tipo",
-      className: "w-32",
-      cell: (c: any) => (
-        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase ${c.tipo === 'ACTIVO' ? 'bg-green-50 text-green-600' :
-          c.tipo === 'PASIVO' ? 'bg-red-50 text-red-600' :
-            c.tipo === 'RESULTADO' ? 'bg-amber-50 text-amber-600' :
-              'bg-slate-50 text-slate-600'
-          }`}>
-          {c.tipo}
-        </span>
-      )
-    },
-    {
-      header: "Imputable",
-      accessor: "imputable",
-      className: "w-24",
-      cell: (c: any) => (
-        <span className={`text-[10px] font-black uppercase ${c.imputable ? 'text-blue-600' : 'text-slate-300'}`}>
-          {c.imputable ? 'Si' : 'No'}
-        </span>
-      )
-    },
-  ];
+  const config = React.useMemo(() => {
+    const baseConfig = planCuentasGridConfig(handleEdit, handleDelete, isTreeView);
+    if (groupByTipo) {
+      baseConfig.groupBy = "tipo";
+    }
+    return baseConfig;
+  }, [isTreeView, groupByTipo]);
 
   return (
     <div className="space-y-6">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 font-display">Plan de Cuentas</h2>
-          <p className="text-slate-500 text-sm">Gestiona el catálogo de cuentas contables</p>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Plan de Cuentas</h2>
+          <p className="text-slate-500 font-medium italic">Gestión del catálogo contable</p>
         </div>
 
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <button
             onClick={() => setIsImportOpen(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl font-bold text-sm text-slate-700 transition-all font-display"
-            title="Importar Excel"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-700 transition-all"
           >
             <FileSpreadsheet className="w-4 h-4 text-green-600" />
             <span className="hidden lg:inline">Importar</span>
           </button>
 
           <button
-            onClick={() => {
-              if (isTreeView) {
-                handleExportTree();
-              } else {
-                exportToExcel(filteredCuentas, "Plan_Cuentas");
-              }
-            }}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl font-bold text-sm text-slate-700 transition-all font-display"
-            title="Exportar Excel"
+            onClick={() => isTreeView ? handleExportTree() : exportToExcel(treeData, "Plan_Cuentas")}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-700 transition-all"
           >
             <Download className="w-4 h-4 text-primary" />
             <span className="hidden lg:inline">Exportar</span>
@@ -294,7 +175,7 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
 
           <button
             onClick={handleCreate}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary px-6 py-2.5 rounded-xl font-bold text-sm text-white hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-display"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary px-6 py-2.5 rounded-xl font-bold text-sm text-white hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all"
           >
             <Plus className="w-4 h-4" />
             Nueva Cuenta
@@ -357,55 +238,23 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
         </div>
       ) : (
         <DataGrid
+          config={config}
           data={treeData}
-          columns={columns}
           pageSize={isTreeView ? 1000 : 25}
-          groupBy={groupByTipo ? "tipo" : undefined}
-          actions={(item) => (
-            <>
-              <button
-                onClick={() => handleEdit(item)}
-                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                title="Editar cuenta"
-              >
-                <Pencil className="size-4" />
-              </button>
-              <button
-                onClick={() => handleDelete(item.id)}
-                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                title="Eliminar cuenta"
-              >
-                <Trash2 className="size-4" />
-              </button>
-            </>
-          )}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Buscar por nombre o código..."
         />
       )}
 
       {/* Form Dialog */}
-      <Dialog
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        title={editingCuenta ? "Editar Cuenta" : "Nueva Cuenta Contable"}
-      >
-        <CuentaForm
-          initialData={editingCuenta}
-          cuentas={initialCuentas}
-          onClose={() => setIsFormOpen(false)}
-          onSuccess={() => router.refresh()}
-        />
+      <Dialog isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={editingCuenta ? "Editar Cuenta" : "Nueva Cuenta Contable"}>
+        <CuentaForm initialData={editingCuenta} cuentas={initialCuentas} onClose={() => setIsFormOpen(false)} onSuccess={() => router.refresh()} />
       </Dialog>
 
       {/* Import Dialog */}
-      <Dialog
-        isOpen={isImportOpen}
-        onClose={() => setIsImportOpen(false)}
-        title="Importar Plan de Cuentas"
-      >
-        <ImportModal
-          onClose={() => setIsImportOpen(false)}
-          onSuccess={() => router.refresh()}
-        />
+      <Dialog isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} title="Importar Plan de Cuentas">
+        <ImportModal onClose={() => setIsImportOpen(false)} onSuccess={() => router.refresh()} />
       </Dialog>
     </div>
   );

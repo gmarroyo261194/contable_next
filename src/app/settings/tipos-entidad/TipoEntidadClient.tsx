@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Plus, Pencil, Trash2, Tag, ArrowLeft } from "lucide-react";
-import { DataGrid } from "@/components/ui/DataGrid";
+import { DataGrid, GridConfig } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
 import { TipoEntidadForm } from "@/components/settings/tipos-entidad/TipoEntidadForm";
 import { deleteTipoEntidad } from "@/app/settings/tipos-entidad/actions";
@@ -35,21 +35,38 @@ export function TipoEntidadClient({ initialTipos }: { initialTipos: any[] }) {
     }
   };
 
-  const columns = [
-    { 
-      header: "Nombre del Tipo", 
-      accessor: "nombre",
-      cell: (t: any) => (
-        <div className="flex items-center gap-3">
-          <div className="size-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
-            <Tag className="size-4" />
+  const config: GridConfig<any> = {
+    columns: [
+      { 
+        key: "nombre",
+        header: "Nombre del Tipo", 
+        render: (t: any) => (
+          <div className="flex items-center gap-3">
+            <div className="size-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+              <Tag className="size-4" />
+            </div>
+            <span className="font-bold text-slate-800">{t.nombre}</span>
           </div>
-          <span className="font-bold text-slate-800">{t.nombre}</span>
-        </div>
-      )
-    },
-    { header: "ID", accessor: "id", className: "text-slate-400 font-mono text-xs" },
-  ];
+        )
+      },
+      { key: "id", header: "ID", className: "text-slate-400 font-mono text-xs" },
+      { key: "actions", header: "Acciones", className: "text-right" }
+    ],
+    actions: [
+      {
+        label: "Editar",
+        icon: Pencil,
+        onClick: handleEdit,
+        variant: "info"
+      },
+      {
+        label: "Eliminar",
+        icon: Trash2,
+        onClick: (t) => handleDelete(t.id),
+        variant: "danger"
+      }
+    ]
+  };
 
   return (
     <div className="space-y-8">
@@ -77,23 +94,7 @@ export function TipoEntidadClient({ initialTipos }: { initialTipos: any[] }) {
 
       <DataGrid
         data={initialTipos}
-        columns={columns}
-        actions={(item) => (
-          <>
-            <button 
-              onClick={() => handleEdit(item)}
-              className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
-            >
-              <Pencil className="size-4" />
-            </button>
-            <button 
-              onClick={() => handleDelete(item.id)}
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <Trash2 className="size-4" />
-            </button>
-          </>
-        )}
+        config={config}
       />
 
       <Dialog 

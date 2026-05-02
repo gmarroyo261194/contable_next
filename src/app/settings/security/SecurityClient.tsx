@@ -2,12 +2,12 @@
 
 import React from "react";
 import { Plus, Pencil, Trash2, Shield, Users, Key, ArrowLeft, Building2 } from "lucide-react";
-import { DataGrid } from "@/components/ui/DataGrid";
+import { DataGrid, GridConfig } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
 import { UserForm } from "@/components/security/UserForm";
 import { RoleForm } from "@/components/security/RoleForm";
 import { PermissionForm } from "@/components/security/PermissionForm";
-import { deleteUser, deleteRole, deletePermission, unassignUserFromEmpresa } from "@/app/settings/security/actions";
+import { deleteUser, deleteRole, deletePermission } from "@/app/settings/security/actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -47,90 +47,156 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
     { id: "permissions", label: "Permisos", icon: Key },
   ];
 
-  const userColumns = [
-    { 
-      header: "Nombre", 
-      accessor: "name",
-      cell: (u: any) => (
-        <div className="flex items-center gap-3">
-          <div className="size-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 uppercase">
-            {u.name?.slice(0, 2)}
-          </div>
-          <span className="font-bold text-slate-800">{u.name}</span>
-        </div>
-      )
-    },
-    { header: "Email", accessor: "email" },
-    { 
-      header: "Empresas", 
-      cell: (u: any) => (
-        <div className="flex flex-wrap gap-1">
-          {u.empresas.map((ue: any) => (
-            <span key={ue.empresaId} className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full uppercase border border-blue-100">
-              {ue.empresa.nombre}
-            </span>
-          ))}
-          {u.empresas.length === 0 && <span className="text-[10px] text-slate-400 font-medium">Sin asignar</span>}
-        </div>
-      )
-    },
-    { 
-      header: "Roles", 
-      cell: (u: any) => (
-        <div className="flex flex-wrap gap-1">
-          {u.roles.map((ur: any) => (
-            <span key={ur.roleId} className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full uppercase">
-              {ur.role.name}
-            </span>
-          ))}
-        </div>
-      )
-    },
-  ];
-
-  const assignmentColumns = [
-    { 
-      header: "Empresa", 
-      accessor: "nombre",
-      cell: (e: any) => <span className="font-bold text-slate-800">{e.nombre}</span> 
-    },
-    { header: "CUIT", accessor: "cuit" },
-    { 
-      header: "Usuarios Asociados", 
-      cell: (e: any) => (
-        <div className="flex -space-x-2 overflow-hidden">
-          {e.usuarios.map((ue: any) => (
-            <div 
-              key={ue.userId} 
-              title={ue.user.name}
-              className="inline-block size-7 rounded-full ring-2 ring-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 uppercase cursor-help shadow-sm"
-            >
-              {ue.user.name?.slice(0, 2)}
+  const userConfig: GridConfig<any> = {
+    columns: [
+      { 
+        key: "name",
+        header: "Nombre", 
+        render: (u: any) => (
+          <div className="flex items-center gap-3">
+            <div className="size-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 uppercase">
+              {u.name?.slice(0, 2)}
             </div>
-          ))}
-          {e.usuarios.length === 0 && <span className="text-xs text-slate-400 font-medium ml-2">Sin usuarios</span>}
-        </div>
-      )
-    },
-  ];
+            <span className="font-bold text-slate-800">{u.name}</span>
+          </div>
+        )
+      },
+      { key: "email", header: "Email" },
+      { 
+        key: "id", // Using id as placeholder for custom render
+        header: "Empresas", 
+        render: (u: any) => (
+          <div className="flex flex-wrap gap-1">
+            {u.empresas.map((ue: any) => (
+              <span key={ue.empresaId} className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full uppercase border border-blue-100">
+                {ue.empresa.nombre}
+              </span>
+            ))}
+            {u.empresas.length === 0 && <span className="text-[10px] text-slate-400 font-medium">Sin asignar</span>}
+          </div>
+        )
+      },
+      { 
+        key: "id",
+        header: "Roles", 
+        render: (u: any) => (
+          <div className="flex flex-wrap gap-1">
+            {u.roles.map((ur: any) => (
+              <span key={ur.roleId} className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full uppercase">
+                {ur.role.name}
+              </span>
+            ))}
+          </div>
+        )
+      },
+      { key: "actions", header: "Acciones", className: "text-right" }
+    ],
+    actions: [
+      {
+        label: "Editar",
+        icon: Pencil,
+        onClick: handleEdit,
+        variant: "info"
+      },
+      {
+        label: "Eliminar",
+        icon: Trash2,
+        onClick: (u) => handleDelete(u.id),
+        variant: "danger"
+      }
+    ]
+  };
 
-  const roleColumns = [
-    { header: "Nombre", accessor: "name", className: "font-bold text-slate-800" },
-    { header: "Descripción", accessor: "description" },
-    { 
-      header: "Permisos", 
-      cell: (r: any) => (
-        <span className="text-xs font-medium text-slate-500">
-          {r.permissions.length} permisos asignados
-        </span>
-      )
-    },
-  ];
+  const assignmentConfig: GridConfig<any> = {
+    columns: [
+      { 
+        key: "nombre",
+        header: "Empresa", 
+        render: (e: any) => <span className="font-bold text-slate-800">{e.nombre}</span> 
+      },
+      { key: "cuit", header: "CUIT" },
+      { 
+        key: "id",
+        header: "Usuarios Asociados", 
+        render: (e: any) => (
+          <div className="flex -space-x-2 overflow-hidden">
+            {e.usuarios.map((ue: any) => (
+              <div 
+                key={ue.userId} 
+                title={ue.user.name}
+                className="inline-block size-7 rounded-full ring-2 ring-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 uppercase cursor-help shadow-sm"
+              >
+                {ue.user.name?.slice(0, 2)}
+              </div>
+            ))}
+            {e.usuarios.length === 0 && <span className="text-xs text-slate-400 font-medium ml-2">Sin usuarios</span>}
+          </div>
+        )
+      },
+      { key: "actions", header: "Acciones", className: "text-right" }
+    ],
+    actions: [
+      {
+        label: "Ver Empresa",
+        icon: Building2,
+        onClick: (e) => router.push(`/empresas`),
+        variant: "info"
+      }
+    ]
+  };
 
-  const permissionColumns = [
-    { header: "Identificador", accessor: "name", className: "font-mono text-xs font-bold text-primary" },
-    { header: "Descripción", accessor: "description" },
-  ];
+  const roleConfig: GridConfig<any> = {
+    columns: [
+      { key: "name", header: "Nombre", className: "font-bold text-slate-800" },
+      { key: "description", header: "Descripción" },
+      { 
+        key: "id",
+        header: "Permisos", 
+        render: (r: any) => (
+          <span className="text-xs font-medium text-slate-500">
+            {r.permissions.length} permisos asignados
+          </span>
+        )
+      },
+      { key: "actions", header: "Acciones", className: "text-right" }
+    ],
+    actions: [
+      {
+        label: "Editar",
+        icon: Pencil,
+        onClick: handleEdit,
+        variant: "info"
+      },
+      {
+        label: "Eliminar",
+        icon: Trash2,
+        onClick: (r) => handleDelete(r.id),
+        variant: "danger"
+      }
+    ]
+  };
+
+  const permissionConfig: GridConfig<any> = {
+    columns: [
+      { key: "name", header: "Identificador", className: "font-mono text-xs font-bold text-primary" },
+      { key: "description", header: "Descripción" },
+      { key: "actions", header: "Acciones", className: "text-right" }
+    ],
+    actions: [
+      {
+        label: "Editar",
+        icon: Pencil,
+        onClick: handleEdit,
+        variant: "info"
+      },
+      {
+        label: "Eliminar",
+        icon: Trash2,
+        onClick: (p) => handleDelete(p.id),
+        variant: "danger"
+      }
+    ]
+  };
 
   return (
     <div className="space-y-8">
@@ -169,19 +235,9 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
             title="Listado de Usuarios"
             description="Usuarios con acceso al sistema y sus empresas/roles asignados"
             data={users}
-            columns={userColumns as any[]}
+            config={userConfig}
             onCreate={handleCreate}
             createLabel="Nuevo Usuario"
-            actions={(item) => (
-              <>
-                <button onClick={() => handleEdit(item)} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" title="Editar / Asignar Empresas">
-                  <Pencil className="size-4" />
-                </button>
-                <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                  <Trash2 className="size-4" />
-                </button>
-              </>
-            )}
           />
         )}
 
@@ -190,14 +246,7 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
             title="Asignación por Empresa"
             description="Visualiza y gestiona qué usuarios pertenecen a cada empresa"
             data={empresas}
-            columns={assignmentColumns as any[]}
-            actions={(item) => (
-              <div className="flex gap-2">
-                <Link href={`/empresas`} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" title="Ver Empresa">
-                   <Building2 className="size-4" />
-                </Link>
-              </div>
-            )}
+            config={assignmentConfig}
           />
         )}
 
@@ -206,19 +255,9 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
             title="Roles de Usuario"
             description="Define grupos de permisos para asignar a los usuarios"
             data={roles}
-            columns={roleColumns as any[]}
+            config={roleConfig}
             onCreate={handleCreate}
             createLabel="Nuevo Rol"
-            actions={(item) => (
-              <>
-                <button onClick={() => handleEdit(item)} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
-                  <Pencil className="size-4" />
-                </button>
-                <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                  <Trash2 className="size-4" />
-                </button>
-              </>
-            )}
           />
         )}
 
@@ -227,19 +266,9 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
             title="Permisos del Sistema"
             description="Permisos granulares que pueden ser asignados a los roles"
             data={permissions}
-            columns={permissionColumns as any[]}
+            config={permissionConfig}
             onCreate={handleCreate}
             createLabel="Nuevo Permiso"
-            actions={(item) => (
-              <>
-                <button onClick={() => handleEdit(item)} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
-                  <Pencil className="size-4" />
-                </button>
-                <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                  <Trash2 className="size-4" />
-                </button>
-              </>
-            )}
           />
         )}
       </div>

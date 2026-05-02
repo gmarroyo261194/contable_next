@@ -8,9 +8,11 @@ import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 export async function getAlumnos(params: {
   page?: number,
   pageSize?: number | 'all',
-  search?: string
+  search?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
 } = {}) {
-  const { page = 1, pageSize = 10, search = '' } = params;
+  const { page = 1, pageSize = 10, search = '', sortBy = 'apellido', sortOrder = 'asc' } = params;
   const skip = pageSize === 'all' ? 0 : (page - 1) * Number(pageSize);
   const take = pageSize === 'all' ? undefined : Number(pageSize);
 
@@ -27,7 +29,7 @@ export async function getAlumnos(params: {
   const [data, total] = await Promise.all([
     prisma.alumno.findMany({
       where,
-      orderBy: { apellido: 'asc' },
+      orderBy: { [sortBy]: sortOrder },
       skip,
       take,
     }),

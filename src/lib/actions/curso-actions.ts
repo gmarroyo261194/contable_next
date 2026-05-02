@@ -79,7 +79,7 @@ export async function getCursos(params: {
           select: { inscripciones: true }
         }
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       skip,
       take,
     }),

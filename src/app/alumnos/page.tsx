@@ -1,25 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Plus,
-  Search,
-  Loader2,
-  Edit,
-  Trash2,
-  User,
-  Mail,
-  Phone,
-  FileText,
-  GraduationCap,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { getAlumnos, upsertAlumno, deleteAlumno } from '@/lib/actions/alumno-actions';
 import { toast } from 'sonner';
 import { Dialog } from '@/components/Dialog';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { Pagination } from '@/components/Pagination';
+import { DataGrid } from '@/components/ui/DataGrid';
+import { alumnoGridConfig } from '@/lib/configs/alumnos.config';
 
 export default function AlumnosPage() {
   const [alumnos, setAlumnos] = useState<any[]>([]);
@@ -28,6 +16,8 @@ export default function AlumnosPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<any>('apellido');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -37,7 +27,7 @@ export default function AlumnosPage() {
   const fetchAlumnos = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await getAlumnos({ page, pageSize, search });
+      const result = await getAlumnos({ page, pageSize, search, sortBy, sortOrder });
       setAlumnos(result.data);
       setTotal(result.total);
     } catch (error) {
@@ -45,7 +35,7 @@ export default function AlumnosPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, search]);
+  }, [page, pageSize, search, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchAlumnos();
@@ -93,12 +83,17 @@ export default function AlumnosPage() {
     }
   };
 
+  const config = alumnoGridConfig(
+    (a) => { setSelectedAlumno(a); setIsDialogOpen(true); },
+    (a) => { setAlumnoToDelete(a); setIsConfirmOpen(true); }
+  );
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tight">Gestión de Alumnos</h2>
-          {/* <p className="text-slate-500 font-medium italic">Base de datos de clientes académicos</p> */}
+          <p className="text-slate-500 font-medium italic">Base de datos de clientes académicos</p>
         </div>
         <button
           onClick={() => { setSelectedAlumno(null); setIsDialogOpen(true); }}
@@ -109,84 +104,23 @@ export default function AlumnosPage() {
         </button>
       </div>
 
-      <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, apellido, DNI o email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-          />
-        </div>
-        <div className="text-xs font-black text-slate-400 uppercase tracking-widest">
-          Total: <span className="text-slate-900">{total}</span> alumnos
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-slate-50/50 border-b border-slate-100">
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Documento</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Apellido y Nombre</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Contacto</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {loading ? (
-              <tr><td colSpan={4} className="px-6 py-10 text-center"><Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" /></td></tr>
-            ) : alumnos.length === 0 ? (
-              <tr><td colSpan={4} className="px-6 py-10 text-center font-bold text-slate-400">No se encontraron alumnos.</td></tr>
-            ) : alumnos.map(alumno => (
-              <tr key={alumno.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <div className="font-bold text-slate-900 uppercase">{alumno.documento}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="space-y-1">
-                    <div className="font-bold text-slate-900 uppercase">{alumno.apellido}, {alumno.nombre}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                      <Mail className="w-3 h-3 text-slate-400" />
-                      {alumno.email || 'Sin email'}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                      <Phone className="w-3 h-3 text-slate-400" />
-                      {alumno.celular || alumno.telefono || 'Sin teléfono'}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center justify-center gap-2">
-                    <button onClick={() => { setSelectedAlumno(alumno); setIsDialogOpen(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit className="w-4 h-4" /></button>
-                    <button onClick={() => { setAlumnoToDelete(alumno); setIsConfirmOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Paginación */}
-      <Pagination 
+      <DataGrid 
+        config={config}
+        data={alumnos}
         total={total}
         page={page}
         pageSize={pageSize}
         onPageChange={setPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size as number);
-          setPage(1);
+        onPageSizeChange={setPageSize}
+        loading={loading}
+        searchTerm={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar por nombre, apellido, DNI o email..."
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSortChange={(key, dir) => {
+          setSortBy(key);
+          setSortOrder(dir);
         }}
       />
 

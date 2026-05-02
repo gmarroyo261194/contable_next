@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Plus, Pencil, Trash2, Calendar, Lock, Unlock, CheckCircle2, AlertCircle } from "lucide-react";
-import { DataGrid } from "@/components/ui/DataGrid";
+import { Plus, Pencil, Trash2, Calendar, Lock, Unlock } from "lucide-react";
+import { DataGrid, GridConfig } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
 import { EjercicioForm } from "@/components/ejercicios/EjercicioForm";
 import { deleteEjercicio, toggleCerrarEjercicio } from "@/app/ejercicios/actions";
@@ -54,49 +54,82 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
     return format(normalized, "dd MMM yyyy", { locale: es });
   };
 
-  const columns = [
-    {
-      header: "Período",
-      accessor: "numero",
-      cell: (e: any) => (
-        <div className="flex items-center gap-3">
-          <div className={`size-8 rounded-lg flex items-center justify-center ${e.cerrado ? 'bg-slate-100 text-slate-400' : 'bg-green-50 text-green-600'}`}>
-            <Calendar className="size-4" />
+  const config: GridConfig<any> = {
+    columns: [
+      {
+        key: "numero",
+        header: "Período",
+        sortable: true,
+        render: (e: any) => (
+          <div className="flex items-center gap-3">
+            <div className={`size-8 rounded-lg flex items-center justify-center ${e.cerrado ? 'bg-slate-100 text-slate-400' : 'bg-green-50 text-green-600'}`}>
+              <Calendar className="size-4" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-slate-800">
+                Ejercicio {e.numero}
+              </span>
+              <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider">
+                {formatDate(e.inicio)} - {formatDate(e.fin)}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-slate-800">
-              Ejercicio {e.numero}
-            </span>
-            <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider">
-              {formatDate(e.inicio)} - {formatDate(e.fin)}
-            </span>
-          </div>
-        </div>
-      )
-    },
-    {
-      header: "Estado",
-      accessor: "cerrado",
-      cell: (e: any) => (
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${e.cerrado ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
-          }`}>
-          {e.cerrado ? <Lock className="size-3" /> : <Unlock className="size-3" />}
-          {e.cerrado ? 'Cerrado' : 'Abierto'}
-        </span>
-      )
-    },
-    {
-      header: "Asientos",
-      cell: (e: any) => {
-        const count = e._count?.asientos || 0;
-        return (
-          <span className={`text-xs font-bold ${count > 0 ? 'text-primary' : 'text-slate-400'}`}>
-            {count > 0 ? `${count} asientos registrados` : 'Sin asientos'}
+        )
+      },
+      {
+        key: "cerrado",
+        header: "Estado",
+        sortable: true,
+        render: (e: any) => (
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${e.cerrado ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+            {e.cerrado ? <Lock className="size-3" /> : <Unlock className="size-3" />}
+            {e.cerrado ? 'Cerrado' : 'Abierto'}
           </span>
-        );
+        )
+      },
+      {
+        key: "id",
+        header: "Asientos",
+        render: (e: any) => {
+          const count = e._count?.asientos || 0;
+          return (
+            <span className={`text-xs font-bold ${count > 0 ? 'text-primary' : 'text-slate-400'}`}>
+              {count > 0 ? `${count} asientos registrados` : 'Sin asientos'}
+            </span>
+          );
+        }
+      },
+      { key: "actions", header: "Acciones", className: "text-right" }
+    ],
+    actions: [
+      {
+        label: "Estado",
+        icon: Unlock, // Default icon, will be overridden by custom logic if needed, but actions don't support dynamic icons yet easily in this simple way, I'll just use what's there
+        onClick: handleToggleStatus,
+        variant: "info",
+        showIf: (e) => e.cerrado
+      },
+      {
+        label: "Estado",
+        icon: Lock,
+        onClick: handleToggleStatus,
+        variant: "danger",
+        showIf: (e) => !e.cerrado
+      },
+      {
+        label: "Editar",
+        icon: Pencil,
+        onClick: handleEdit,
+        variant: "info"
+      },
+      {
+        label: "Eliminar",
+        icon: Trash2,
+        onClick: (e) => handleDelete(e.id),
+        variant: "danger"
       }
-    },
-  ];
+    ]
+  };
 
   return (
     <div className="space-y-8">
@@ -116,33 +149,7 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
 
       <DataGrid
         data={initialEjercicios}
-        columns={columns}
-        actions={(item) => (
-          <>
-            <button
-              onClick={() => handleToggleStatus(item)}
-              title={item.cerrado ? "Reabrir ejercicio" : "Cerrar ejercicio"}
-              className={`p-2 rounded-lg transition-colors ${item.cerrado
-                ? 'text-slate-400 hover:text-green-600 hover:bg-green-50'
-                : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
-                }`}
-            >
-              {item.cerrado ? <Unlock className="size-4" /> : <Lock className="size-4" />}
-            </button>
-            <button
-              onClick={() => handleEdit(item)}
-              className="p-2 text-primary rounded-lg"
-            >
-              <Pencil className="size-4" />
-            </button>
-            <button
-              onClick={() => handleDelete(item.id)}
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <Trash2 className="size-4" />
-            </button>
-          </>
-        )}
+        config={config}
       />
 
       <Dialog

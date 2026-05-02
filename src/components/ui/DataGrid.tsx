@@ -3,80 +3,146 @@
 import React from "react";
 import { Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Plus } from "lucide-react";
 
-export interface Column<T> {
+export type ColumnConfig<T> = {
+  key: keyof T | "actions";
   header: string;
-  accessor?: keyof T;
-  cell?: (item: T) => React.ReactNode;
+  type?: "text" | "number" | "date" | "boolean" | "custom" | "currency";
   sortable?: boolean;
+  filterable?: boolean;
+  width?: string;
+  render?: (row: T) => React.ReactNode;
   className?: string;
+};
+
+export type GridFeatures = {
+  pagination?: boolean;
+  sorting?: boolean;
+  filtering?: boolean;
+  selection?: boolean;
+};
+
+export type GridAction<T> = {
+  label: string;
+  icon?: React.ElementType;
+  onClick: (row: T) => void;
+  variant?: "primary" | "danger" | "warning" | "info";
+  showIf?: (row: T) => boolean;
+};
+
+export interface GridConfig<T> {
+  columns: ColumnConfig<T>[];
+  features?: GridFeatures;
+  actions?: GridAction<T>[];
+  groupBy?: keyof T;
 }
 
 export interface DataGridProps<T> {
+  config: GridConfig<T>;
   data: T[];
-  columns: Column<T>[];
-  actions?: (item: T) => React.ReactNode;
+  total?: number;
+  page?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  loading?: boolean;
   searchPlaceholder?: string;
-  onSearch?: (term: string) => void;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
   title?: string;
   description?: string;
   onCreate?: () => void;
   createLabel?: string;
-  pageSize?: number;
-  groupBy?: keyof T;
+  extraActions?: React.ReactNode;
+  onRowClick?: (item: T) => void;
+  onRowDoubleClick?: (item: T) => void;
+  selectedIds?: any[];
+  onSelectionChange?: (ids: any[]) => void;
+  sortBy?: keyof T;
+  sortOrder?: 'asc' | 'desc';
+  onSortChange?: (key: keyof T, direction: 'asc' | 'desc') => void;
 }
 
 export function DataGrid<T extends { id: any }>({ 
+  config,
   data, 
-  columns, 
-  actions, 
+  total,
+  page = 1,
+  pageSize = 10,
+  onPageChange,
+  onPageSizeChange,
+  loading = false,
   searchPlaceholder = "Buscar...",
-  onSearch,
+  searchTerm = "",
+  onSearchChange,
   title,
   description,
   onCreate,
   createLabel = "Nuevo",
-  pageSize = 10,
-  groupBy
+  extraActions,
+  onRowClick,
+  onRowDoubleClick,
+  selectedIds = [],
+  onSelectionChange,
+  sortBy,
+  sortOrder,
+  onSortChange
 }: DataGridProps<T>) {
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [sortConfig, setSortConfig] = React.useState<{ key: keyof T | null; direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
-  const [currentPage, setCurrentPage] = React.useState(1);
+  const [localSearch, setLocalSearch] = React.useState(searchTerm);
+  const [sortConfig, setSortConfig] = React.useState<{ key: keyof T | null; direction: 'asc' | 'desc' }>({ 
+    key: (sortBy as keyof T) || null, 
+    direction: sortOrder || 'asc' 
+  });
+  const [localPage, setLocalPage] = React.useState(1);
 
-  // 1. Filtrado
+  // Determinar si es paginación de servidor o local
+  const isServerSide = total !== undefined;
+  
+  // 1. Filtrado Local (si no es server side)
   const filteredData = React.useMemo(() => {
-    if (!searchTerm) return data;
+    if (isServerSide || !localSearch) return data;
     
     return data.filter(item => {
-      return columns.some(col => {
-        if (!col.accessor) return false;
-        const val = item[col.accessor];
-        return String(val).toLowerCase().includes(searchTerm.toLowerCase());
+      return config.columns.some(col => {
+        if (col.key === "actions") return false;
+        const val = item[col.key as keyof T];
+        return String(val).toLowerCase().includes(localSearch.toLowerCase());
       });
     });
-  }, [data, searchTerm, columns]);
+  }, [data, localSearch, config.columns, isServerSide]);
 
-  // 2. Ordenamiento
+  // 2. Ordenamiento Local (si no es server side)
   const sortedData = React.useMemo(() => {
+    if (isServerSide) return filteredData;
+
     let sortableItems = [...filteredData];
     
-    // Si hay agrupamiento, primero ordenamos por el campo de agrupamiento
-    if (groupBy) {
+    if (config.groupBy) {
       sortableItems.sort((a, b) => {
-        const aVal = String(a[groupBy]);
-        const bVal = String(b[groupBy]);
-        const compare = aVal.localeCompare(bVal);
-        if (compare !== 0) return compare;
+        const aVal = String(a[config.groupBy!] || '');
+        const bVal = String(b[config.groupBy!] || '');
+        const groupComp = aVal.localeCompare(bVal);
         
-        // Si son del mismo grupo, mantenemos el orden por código si existe
-        if ((a as any).codigo && (b as any).codigo) {
-           return (a as any).codigo.localeCompare((b as any).codigo);
+        if (groupComp !== 0) return groupComp;
+        
+        if (sortConfig.key !== null && sortConfig.key !== "actions") {
+          let aSub = a[sortConfig.key!];
+          let bSub = b[sortConfig.key!];
+
+          if (typeof aSub === 'object' && aSub !== null) aSub = (aSub as any).nombre || (aSub as any).descripcion || String(aSub);
+          if (typeof bSub === 'object' && bSub !== null) bSub = (bSub as any).nombre || (bSub as any).descripcion || String(bSub);
+
+          if (aSub < bSub) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aSub > bSub) return sortConfig.direction === 'asc' ? 1 : -1;
         }
         return 0;
       });
-    } else if (sortConfig.key !== null) {
+    } else if (sortConfig.key !== null && sortConfig.key !== "actions") {
       sortableItems.sort((a, b) => {
-        const aVal = a[sortConfig.key!];
-        const bVal = b[sortConfig.key!];
+        let aVal: any = a[sortConfig.key!];
+        let bVal: any = b[sortConfig.key!];
+
+        if (typeof aVal === 'object' && aVal !== null) aVal = (aVal as any).nombre || (aVal as any).descripcion || String(aVal);
+        if (typeof bVal === 'object' && bVal !== null) bVal = (bVal as any).nombre || (bVal as any).descripcion || String(bVal);
         
         if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -84,17 +150,23 @@ export function DataGrid<T extends { id: any }>({
       });
     }
     return sortableItems;
-  }, [filteredData, sortConfig, groupBy]);
+  }, [filteredData, sortConfig, config.groupBy, isServerSide]);
 
-  // 3. Paginación
-  const totalPages = Math.ceil(sortedData.length / pageSize);
-  const paginatedData = sortedData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  // 3. Paginación Local vs Servidor
+  const finalTotal = isServerSide ? total : sortedData.length;
+  const finalPage = isServerSide ? page : localPage;
+  const totalPages = Math.ceil(finalTotal / pageSize);
+  
+  const displayData = React.useMemo(() => {
+    if (isServerSide) return sortedData;
+    return sortedData.slice((localPage - 1) * pageSize, localPage * pageSize);
+  }, [sortedData, localPage, pageSize, isServerSide]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    setSearchTerm(val);
-    setCurrentPage(1);
-    if (onSearch) onSearch(val);
+    setLocalSearch(val);
+    if (onSearchChange) onSearchChange(val);
+    if (!isServerSide) setLocalPage(1);
   };
 
   const handleSort = (key: keyof T) => {
@@ -103,18 +175,45 @@ export function DataGrid<T extends { id: any }>({
       direction = 'desc';
     }
     setSortConfig({ key, direction });
+    if (onSortChange) onSortChange(key, direction);
   };
 
-  // Lógica para detectar cambio de grupo
+  const changePage = (p: number) => {
+    if (isServerSide && onPageChange) {
+      onPageChange(p);
+    } else {
+      setLocalPage(p);
+    }
+  };
+
   let lastGroup: any = null;
+
+  const renderCell = (item: T, col: ColumnConfig<T>) => {
+    if (col.render) return col.render(item);
+    
+    const value = col.key !== "actions" ? item[col.key as keyof T] : null;
+
+    switch (col.type) {
+      case "currency":
+        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(Number(value || 0));
+      case "date":
+        return value ? new Date(value as any).toLocaleDateString() : '-';
+      case "boolean":
+        return value ? 'Sí' : 'No';
+      case "number":
+        return String(value);
+      default:
+        return String(value ?? '');
+    }
+  };
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
-      {(title || onCreate || true) && (
+      {(title || onCreate || onSearchChange || extraActions) && (
         <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            {title && <h3 className="text-lg font-bold text-slate-800 font-display">{title}</h3>}
-            {description && <p className="text-slate-500 text-xs mt-1">{description}</p>}
+            {title && <h3 className="text-xl font-black text-slate-800 tracking-tight">{title}</h3>}
+            {description && <p className="text-slate-500 text-xs mt-1 font-medium italic">{description}</p>}
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -123,14 +222,15 @@ export function DataGrid<T extends { id: any }>({
                 type="text"
                 placeholder={searchPlaceholder}
                 className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all w-64 uppercase placeholder:normal-case font-medium"
-                value={searchTerm}
+                value={localSearch}
                 onChange={handleSearch}
               />
             </div>
+            {extraActions}
             {onCreate && (
               <button
                 onClick={onCreate}
-                className="bg-primary text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition-all shadow-md shadow-primary/10 flex items-center gap-2"
+                className="bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/90 transition-all shadow-md shadow-primary/10 flex items-center gap-2"
               >
                 <Plus className="size-4" />
                 {createLabel}
@@ -140,20 +240,40 @@ export function DataGrid<T extends { id: any }>({
         </div>
       )}
 
-      <div className="overflow-x-auto flex-1">
+      <div className="overflow-x-auto flex-1 relative min-h-[200px]">
+        {loading && (
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center z-10">
+            <div className="size-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50/50 border-b border-slate-100">
-              {columns.map((col, i) => (
+              {config.features?.selection && (
+                <th className="px-6 py-4 w-10">
+                  <input 
+                    type="checkbox"
+                    className="size-4 rounded border-slate-300 text-primary focus:ring-primary"
+                    checked={data.length > 0 && selectedIds.length === data.length}
+                    onChange={(e) => {
+                      if (onSelectionChange) {
+                        onSelectionChange(e.target.checked ? data.map(i => i.id) : []);
+                      }
+                    }}
+                  />
+                </th>
+              )}
+              {config.columns.map((col, i) => (
                 <th 
                   key={i} 
-                  className={`px-6 py-4 text-[10px] uppercase font-black text-slate-400 tracking-widest ${col.sortable !== false && col.accessor ? 'cursor-pointer hover:text-primary transition-colors' : ''} ${col.className}`}
-                  onClick={() => col.sortable !== false && col.accessor && handleSort(col.accessor)}
+                  className={`px-6 py-4 text-[10px] uppercase font-black text-slate-400 tracking-widest ${col.sortable !== false && col.key !== "actions" ? 'cursor-pointer hover:text-primary transition-colors' : ''} ${col.className}`}
+                  onClick={() => col.sortable !== false && col.key !== "actions" && handleSort(col.key as keyof T)}
+                  style={{ width: col.width }}
                 >
-                  <div className={`flex items-center gap-2 ${col.className?.includes('text-right') ? 'justify-end' : ''}`}>
+                  <div className={`flex items-center gap-2 ${col.className?.includes('text-right') ? 'justify-end' : ''} ${col.className?.includes('text-center') ? 'justify-center' : ''}`}>
                     {col.header}
-                    {col.sortable !== false && col.accessor && (
-                      sortConfig.key === col.accessor ? (
+                    {col.sortable !== false && col.key !== "actions" && (
+                      sortConfig.key === col.key ? (
                         sortConfig.direction === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
                       ) : (
                         <ArrowUpDown className="size-3 opacity-30" />
@@ -162,45 +282,85 @@ export function DataGrid<T extends { id: any }>({
                   </div>
                 </th>
               ))}
-              {actions && <th className="px-6 py-4 text-[10px] uppercase font-black text-slate-400 tracking-widest text-right">Acciones</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {paginatedData.map((item) => {
-              const showGroupHeader = groupBy && item[groupBy] !== lastGroup;
-              if (showGroupHeader) lastGroup = item[groupBy];
+            {displayData.map((item) => {
+              const showGroupHeader = config.groupBy && item[config.groupBy!] !== lastGroup;
+              if (showGroupHeader) lastGroup = item[config.groupBy!];
 
               return (
                 <React.Fragment key={item.id}>
                   {showGroupHeader && (
                     <tr className="bg-slate-50/80">
-                      <td colSpan={columns.length + (actions ? 1 : 0)} className="px-6 py-1.5 text-[10px] font-black text-primary uppercase tracking-widest border-y border-slate-100 italic">
-                        {String(item[groupBy!])}
+                      <td colSpan={config.columns.length} className="px-6 py-2 text-[10px] font-black text-primary uppercase tracking-widest border-y border-slate-100 italic">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          {String(item[config.groupBy!])}
+                        </div>
                       </td>
                     </tr>
                   )}
-                  <tr className="hover:bg-slate-50/30 transition-colors group">
-                    {columns.map((col, i) => (
-                      <td key={i} className={`px-6 py-4 text-sm text-slate-600 ${col.className}`}>
-                        {col.cell 
-                          ? col.cell(item) 
-                          : col.accessor ? (item[col.accessor] as React.ReactNode) : null}
-                      </td>
-                    ))}
-                    {actions && (
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-1">
-                          {actions(item)}
-                        </div>
+                  <tr 
+                    className={`hover:bg-slate-50/30 transition-colors group ${onRowClick || onRowDoubleClick ? 'cursor-pointer' : ''} ${selectedIds.includes(item.id) ? 'bg-primary/5' : ''}`}
+                    onClick={() => onRowClick?.(item)}
+                    onDoubleClick={() => onRowDoubleClick?.(item)}
+                  >
+                    {config.features?.selection && (
+                      <td className="px-6 py-4 w-10">
+                        <input 
+                          type="checkbox"
+                          className="size-4 rounded border-slate-300 text-primary focus:ring-primary"
+                          checked={selectedIds.includes(item.id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            if (onSelectionChange) {
+                              const newSelection = selectedIds.includes(item.id)
+                                ? selectedIds.filter(id => id !== item.id)
+                                : [...selectedIds, item.id];
+                              onSelectionChange(newSelection);
+                            }
+                          }}
+                        />
                       </td>
                     )}
+                    {config.columns.map((col, i) => (
+                      <td key={i} className={`px-6 py-4 text-sm text-slate-600 ${col.className}`}>
+                        {col.key === "actions" ? (
+                          <div className="flex items-center justify-end gap-1">
+                            {config.actions?.map((action, actionIdx) => {
+                              if (action.showIf && !action.showIf(item)) return null;
+                              const Icon = action.icon;
+                              return (
+                                <button
+                                  key={actionIdx}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    action.onClick(item);
+                                  }}
+                                  className={`p-2 rounded-lg transition-all ${
+                                    action.variant === 'danger' ? 'text-red-500 hover:bg-red-50' : 
+                                    action.variant === 'warning' ? 'text-amber-500 hover:bg-amber-50' :
+                                    action.variant === 'info' ? 'text-blue-500 hover:bg-blue-50' :
+                                    'text-slate-400 hover:text-primary hover:bg-slate-100'
+                                  }`}
+                                  title={action.label}
+                                >
+                                  {Icon ? <Icon className="size-4" /> : action.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : renderCell(item, col)}
+                      </td>
+                    ))}
                   </tr>
                 </React.Fragment>
               );
             })}
-            {paginatedData.length === 0 && (
+            {displayData.length === 0 && !loading && (
               <tr>
-                <td colSpan={columns.length + (actions ? 1 : 0)} className="px-6 py-12 text-center text-slate-400 italic text-sm font-medium">
+                <td colSpan={config.columns.length} className="px-6 py-12 text-center text-slate-400 italic text-sm font-medium">
                   No se encontraron resultados
                 </td>
               </tr>
@@ -213,43 +373,42 @@ export function DataGrid<T extends { id: any }>({
       {totalPages > 0 && (
         <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/30 flex items-center justify-between">
           <p className="text-xs text-slate-500 font-bold uppercase tracking-tighter">
-            Mostrando <span className="text-slate-800">{(currentPage - 1) * pageSize + 1}</span> a <span className="text-slate-800">{Math.min(currentPage * pageSize, sortedData.length)}</span> de <span className="text-slate-800">{sortedData.length}</span> resultados
+            Mostrando <span className="text-slate-800">{finalTotal === 0 ? 0 : (finalPage - 1) * pageSize + 1}</span> a <span className="text-slate-800">{Math.min(finalPage * pageSize, finalTotal)}</span> de <span className="text-slate-800">{finalTotal}</span> resultados
           </p>
           
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
+              onClick={() => changePage(finalPage - 1)}
+              disabled={finalPage === 1}
               className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
             >
               <ChevronLeft className="size-4" />
             </button>
             <div className="flex items-center gap-1">
               {[...Array(totalPages)].map((_, i) => {
-                const page = i + 1;
-                // Mostrar solo algunas páginas si hay muchas
-                if (totalPages > 7 && page > 2 && page < totalPages - 1 && Math.abs(page - currentPage) > 1) {
-                  if (page === 3 || page === totalPages - 2) return <span key={page} className="px-2 text-slate-400">...</span>;
+                const p = i + 1;
+                if (totalPages > 7 && p > 2 && p < totalPages - 1 && Math.abs(p - finalPage) > 1) {
+                  if (p === 3 || p === totalPages - 2) return <span key={p} className="px-2 text-slate-400">...</span>;
                   return null;
                 }
                 return (
                   <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
+                    key={p}
+                    onClick={() => changePage(p)}
                     className={`size-8 rounded-lg text-xs font-black transition-all ${
-                      currentPage === page 
+                      finalPage === p 
                         ? "bg-primary text-white shadow-md shadow-primary/20" 
                         : "hover:bg-white border border-transparent hover:border-slate-200 text-slate-500"
                     }`}
                   >
-                    {page}
+                    {p}
                   </button>
                 );
               })}
             </div>
             <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
+              onClick={() => changePage(finalPage + 1)}
+              disabled={finalPage === totalPages}
               className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
             >
               <ChevronRight className="size-4" />
