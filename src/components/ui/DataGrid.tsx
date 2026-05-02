@@ -410,7 +410,10 @@ export function DataGrid<T extends { id: any }>({
               return (
                 <React.Fragment key={item.id}>
                   {showGroupHeader && (
-                    <tr className="bg-slate-50/80">
+                    <tr 
+                      className="bg-slate-50/80 cursor-pointer hover:bg-slate-100/50 transition-colors"
+                      onDoubleClick={() => onRowDoubleClick?.(item)}
+                    >
                       <td colSpan={config.columns.length + (config.features?.selection ? 1 : 0)} className="px-6 py-2 text-[10px] font-black text-primary uppercase tracking-widest border-y border-slate-100 italic">
                         <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-primary" />

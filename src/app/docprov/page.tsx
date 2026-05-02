@@ -226,7 +226,7 @@ export default function DocumentosProveedoresPage() {
 
       {/* Authorization Modal */}
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-500 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -257,7 +257,7 @@ export default function DocumentosProveedoresPage() {
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setIsAuthModalOpen(false)} className="flex-1 py-3.5 text-xs font-black text-slate-500 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all">CANCELAR</button>
-                <button onClick={handleAutorizar} className="flex-[2] py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition-all active:scale-95">
+                <button onClick={handleAutorizar} className="flex-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition-all active:scale-95">
                   <ShieldCheck className="w-4 h-4" />
                   AUTORIZAR
                 </button>
@@ -269,7 +269,7 @@ export default function DocumentosProveedoresPage() {
 
       {/* Payment Modal */}
       {isPaymentModalOpen && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-500 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 flex flex-col animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
               <div className="flex items-center gap-3">
@@ -318,7 +318,7 @@ export default function DocumentosProveedoresPage() {
               </div>
               <div className="flex gap-4">
                 <button onClick={() => setIsPaymentModalOpen(false)} className="flex-1 py-4 text-xs font-black text-slate-500 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all active:scale-95">CANCELAR</button>
-                <button onClick={handlePagar} disabled={!selectedPayingAccount} className="flex-[2] py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:grayscale text-white rounded-2xl font-black text-xs shadow-xl shadow-emerald-100 flex items-center justify-center gap-2 transition-all active:scale-95">
+                <button onClick={handlePagar} disabled={!selectedPayingAccount} className="flex-2 py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:grayscale text-white rounded-2xl font-black text-xs shadow-xl shadow-emerald-100 flex items-center justify-center gap-2 transition-all active:scale-95">
                   <CheckCircle2 className="w-4 h-4" />
                   CONFIRMAR
                 </button>

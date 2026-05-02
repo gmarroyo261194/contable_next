@@ -86,9 +86,14 @@ export async function upsertAlumno(data: {
 
   const existing = data.id ? await prisma.alumno.findUnique({ where: { id: data.id } }) : null;
 
-  const result = data.id
+  const result = existing
     ? await prisma.alumno.update({ where: { id: data.id }, data: payload })
-    : await prisma.alumno.create({ data: payload });
+    : await prisma.alumno.create({ 
+        data: { 
+          ...payload, 
+          ...(data.id ? { id: data.id } : {}) 
+        } 
+      });
 
   if (empresaId) {
     if (data.id && existing) {
