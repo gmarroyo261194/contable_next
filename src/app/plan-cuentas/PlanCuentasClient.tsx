@@ -6,16 +6,22 @@ import { DataGrid } from "@/components/ui/DataGrid";
 import { Dialog } from "@/components/Dialog";
 import { CuentaForm } from "@/components/plan-cuentas/CuentaForm";
 import { ImportModal } from "@/components/plan-cuentas/ImportModal";
-import { deleteCuenta } from "@/app/plan-cuentas/actions";
+import { deleteCuenta, getCuentas } from "@/app/plan-cuentas/actions";
 import { useRouter } from "next/navigation";
 import XLSX from 'xlsx-js-style';
 import { planCuentasGridConfig } from "@/lib/configs/plan-cuentas.config";
 import { toast } from "sonner";
+import { Cuenta } from "@/types/cuenta";
 
-export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] }) {
+/**
+ * Componente principal para la gestión del Plan de Cuentas.
+ * 
+ * @param initialCuentas - Lista inicial de cuentas.
+ */
+export function PlanCuentasClient({ initialCuentas }: { initialCuentas: Cuenta[] }) {
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isImportOpen, setIsImportOpen] = React.useState(false);
-  const [editingCuenta, setEditingCuenta] = React.useState<any>(null);
+  const [editingCuenta, setEditingCuenta] = React.useState<Cuenta | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [groupByTipo, setGroupByTipo] = React.useState(false);
   const [isTreeView, setIsTreeView] = React.useState(false);
@@ -27,7 +33,8 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
     setIsFormOpen(true);
   };
 
-  const handleEdit = (cuenta: any) => {
+  /** Abre el formulario para edición. */
+  const handleEdit = (cuenta: Cuenta) => {
     setEditingCuenta(cuenta);
     setIsFormOpen(true);
   };
@@ -44,54 +51,13 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
     }
   };
 
-  const buildTree = (cuentas: any[]) => {
-    if (!cuentas || cuentas.length === 0) return [];
-    const rawCuentas = [...cuentas].sort((a, b) => a.codigo.length - b.codigo.length || a.codigo.localeCompare(b.codigo));
-    const map: { [key: number]: any } = {};
-    const roots: any[] = [];
-    rawCuentas.forEach(c => {
-      map[c.id] = { ...c, children: [] };
-    });
-    rawCuentas.forEach(c => {
-      let actualPadreId = c.padreId;
-      if (!actualPadreId) {
-        const cClean = c.codigo.replace(/0+$/, '');
-        let longestPrefix = "";
-        rawCuentas.forEach(p => {
-          const pClean = p.codigo.replace(/0+$/, '');
-          if (cClean.startsWith(pClean) && cClean !== pClean) {
-            if (pClean.length > longestPrefix.length) {
-              longestPrefix = pClean;
-              actualPadreId = p.id;
-            }
-          }
-        });
-      }
-      const node = map[c.id];
-      if (node) {
-        if (actualPadreId && map[actualPadreId]) {
-          map[actualPadreId].children.push(node);
-        } else {
-          roots.push(node);
-        }
-      }
-    });
-    return roots;
+  /** Carga hijos en modo jerárquico. */
+  const handleLoadChildren = async (parentId: number): Promise<Cuenta[]> => {
+    return await getCuentas(parentId);
   };
 
-  const flattenTree = (tree: any[], level = 0): any[] => {
-    let result: any[] = [];
-    const sortedNodes = [...tree].sort((a, b) => a.codigo.localeCompare(b.codigo));
-    sortedNodes.forEach(node => {
-      result.push({ ...node, level });
-      if (node.children.length > 0) {
-        result = result.concat(flattenTree(node.children, level + 1));
-      }
-    });
-    return result;
-  };
-
-  const exportToExcel = (data: any[], filename: string) => {
+  /** Exportación a Excel con estilos. */
+  const exportToExcel = (data: Cuenta[], filename: string) => {
     const worksheetDataRaw = data.map(c => {
       const nameValue = c.imputable ? c.nombre : c.nombre.toUpperCase();
       return {
@@ -128,16 +94,12 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
     XLSX.writeFile(workbook, `${filename}.xlsx`);
   };
 
-  const handleExportTree = () => {
-    const tree = buildTree(initialCuentas);
-    const flatTree = flattenTree(tree);
-    exportToExcel(flatTree, "Plan_Cuentas_Jerarquico");
-  };
-
-  const treeData = React.useMemo(() => {
-    if (!isTreeView) return initialCuentas;
-    const tree = buildTree(initialCuentas);
-    return flattenTree(tree);
+  const filteredData = React.useMemo(() => {
+    if (isTreeView) {
+      // En modo jerárquico, solo mostramos las raíces al inicio
+      return initialCuentas.filter(c => !c.padreId);
+    }
+    return initialCuentas;
   }, [initialCuentas, isTreeView]);
 
   const config = React.useMemo(() => {
@@ -166,7 +128,7 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
           </button>
 
           <button
-            onClick={() => isTreeView ? handleExportTree() : exportToExcel(treeData, "Plan_Cuentas")}
+            onClick={() => exportToExcel(initialCuentas, "Plan_Cuentas")}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-700 transition-all"
           >
             <Download className="w-4 h-4 text-primary" />
@@ -239,11 +201,12 @@ export function PlanCuentasClient({ initialCuentas }: { initialCuentas: any[] })
       ) : (
         <DataGrid
           config={config}
-          data={treeData}
+          data={filteredData}
           pageSize={isTreeView ? 1000 : 25}
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           searchPlaceholder="Buscar por nombre o código..."
+          onLoadChildren={isTreeView ? handleLoadChildren : undefined}
         />
       )}
 

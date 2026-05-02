@@ -4,74 +4,124 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
+import { Cuenta, ImportResult } from "@/types/cuenta";
 
 /**
  * Obtiene las cuentas del plan de cuentas para la empresa y ejercicio activo en la sesión.
- * @returns Lista de cuentas del ejercicio activo, ordenadas por código.
+ * Soporta filtrado por padre para carga diferida en modo jerárquico.
+ * 
+ * @param parentId - ID de la cuenta padre (null para raíces, undefined para todas).
+ * @returns Lista de cuentas ordenadas por código.
  */
-export async function getCuentas() {
+export async function getCuentas(parentId?: number | null): Promise<Cuenta[]> {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
   const ejercicioId = (session?.user as any)?.ejercicioId;
 
   if (!empresaId || !ejercicioId) return [];
 
-  return await prisma.cuenta.findMany({
+  const results = await prisma.cuenta.findMany({
     where: {
       empresaId: parseInt(empresaId),
       ejercicioId: parseInt(ejercicioId),
+      padreId: parentId === undefined ? undefined : parentId,
     },
     include: {
       padre: true,
-      ejercicio: {
-        include: { empresa: true }
-      }
     },
     orderBy: {
       codigo: "asc",
     },
   });
+
+  return results as unknown as Cuenta[];
 }
 
 /**
- * Crea una nueva cuenta contable en el ejercicio activo de la sesión.
- * @param data - Datos de la cuenta a crear.
- * @returns La cuenta creada.
+ * Resuelve automáticamente el ID del padre basándose en el código de la cuenta.
+ * Busca la cuenta no imputable más cercana cuyo código sea un prefijo del código dado.
+ */
+async function resolveParentId(codigo: string, empresaId: number, ejercicioId: number): Promise<number | null> {
+  // Obtenemos todas las cuentas no imputables del ejercicio
+  const nonImputableCuentas = await prisma.cuenta.findMany({
+    where: { empresaId, ejercicioId, imputable: false },
+    select: { id: true, codigo: true }
+  });
+
+  // Ordenar por longitud de código descendente para encontrar el prefijo más largo (padre más cercano)
+  const sortedParents = nonImputableCuentas
+    .filter(c => codigo.startsWith(c.codigo) && c.codigo !== codigo)
+    .sort((a, b) => b.codigo.length - a.codigo.length);
+
+  return sortedParents[0]?.id || null;
+}
+
+/**
+ * Crea una nueva cuenta contable, calculando automáticamente su jerarquía.
  */
 export async function createCuenta(data: {
   codigo: string;
-  codigoCorto?: number;
+  codigoCorto?: number | null;
   nombre: string;
   tipo: string;
   imputable: boolean;
-  padreId?: number;
-}) {
+  padreId?: number | null;
+}): Promise<Cuenta> {
   const session = await auth();
-  const empresaId = (session?.user as any)?.empresaId;
-  const ejercicioId = (session?.user as any)?.ejercicioId;
+  const empresaId = parseInt((session?.user as any)?.empresaId);
+  const ejercicioId = parseInt((session?.user as any)?.ejercicioId);
 
   if (!empresaId || !ejercicioId) throw new Error("No hay contexto de empresa/ejercicio.");
+
+  // Resolución automática del padre si no se provee o para asegurar consistencia
+  const autoPadreId = await resolveParentId(data.codigo, empresaId, ejercicioId);
+  const finalPadreId = data.padreId || autoPadreId;
+
+  // Obtener info del padre para heredar path y level
+  let parentPath = "/";
+  let parentLevel = 0;
+
+  if (finalPadreId) {
+    const parent = await prisma.cuenta.findUnique({ where: { id: finalPadreId } });
+    if (parent) {
+      if (parent.imputable) throw new Error(`La cuenta padre ${parent.codigo} es imputable.`);
+      parentPath = parent.path || "/";
+      parentLevel = parent.level || 0;
+      
+      await prisma.cuenta.update({
+        where: { id: finalPadreId },
+        data: { hasChildren: true }
+      });
+    }
+  }
 
   const cuenta = await prisma.cuenta.create({
     data: {
       ...data,
-      empresaId: parseInt(empresaId),
-      ejercicioId: parseInt(ejercicioId),
+      padreId: finalPadreId,
+      empresaId,
+      ejercicioId,
+      level: parentLevel + 1,
     },
   });
 
-  // Registrar creación en el log de auditoría
-  await auditCreate("Cuenta", cuenta.id, cuenta, session?.user?.email, parseInt(empresaId));
+  const finalPath = `${parentPath}${cuenta.id}/`;
+  const updatedCuenta = await prisma.cuenta.update({
+    where: { id: cuenta.id },
+    data: { path: finalPath }
+  });
 
+  await auditCreate("Cuenta", cuenta.id, updatedCuenta, session?.user?.email, empresaId);
   revalidatePath("/plan-cuentas");
-  return cuenta;
+  return updatedCuenta as unknown as Cuenta;
 }
 
 /**
- * Actualiza una cuenta contable, validando que pertenezca al ejercicio activo.
- * Esto garantiza que no se puedan modificar cuentas de ejercicios pasados (cerrados).
+ * Actualiza una cuenta contable, validando pertenencia al ejercicio activo.
+ * Si el padreId cambia, se recalcula recursivamente la jerarquía de toda la rama.
+ * 
  * @param id - ID de la cuenta a actualizar.
- * @param data - Campos a actualizar (nombre, tipo, imputable, etc.).
+ * @param data - Campos a modificar.
  * @returns La cuenta actualizada.
  */
 export async function updateCuenta(id: number, data: {
@@ -81,50 +131,98 @@ export async function updateCuenta(id: number, data: {
   tipo?: string;
   imputable?: boolean;
   padreId?: number | null;
-}) {
+}): Promise<Cuenta> {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
   const ejercicioId = (session?.user as any)?.ejercicioId;
 
   if (!empresaId || !ejercicioId) throw new Error("No hay contexto de empresa/ejercicio.");
 
-  // Validar que la cuenta pertenece al ejercicio y empresa activos en sesión
   const cuentaExistente = await prisma.cuenta.findFirst({
-    where: {
-      id,
-      empresaId: parseInt(empresaId),
-      ejercicioId: parseInt(ejercicioId),
-    },
+    where: { id, empresaId: parseInt(empresaId), ejercicioId: parseInt(ejercicioId) },
   });
 
-  if (!cuentaExistente) {
-    throw new Error(
-      "No se puede modificar esta cuenta. No pertenece al ejercicio activo o no tiene permisos."
-    );
-  }
+  if (!cuentaExistente) throw new Error("Cuenta no encontrada o sin permisos.");
 
-  // Verificar que el ejercicio no esté cerrado
+  // Validar si el ejercicio está cerrado
   const ejercicio = await prisma.ejercicio.findUnique({
     where: { id: parseInt(ejercicioId) },
     select: { cerrado: true, numero: true },
   });
+  if (ejercicio?.cerrado) throw new Error(`El ejercicio ${ejercicio.numero} está cerrado.`);
 
-  if (ejercicio?.cerrado) {
-    throw new Error(
-      `El ejercicio ${ejercicio.numero} está cerrado. No se puede modificar su plan de cuentas.`
-    );
+  // Si cambia el código o el padre, recalcular automáticamente
+  let finalPadreId = data.padreId;
+  if (data.codigo && data.codigo !== cuentaExistente.codigo) {
+    finalPadreId = await resolveParentId(data.codigo, parseInt(empresaId), parseInt(ejercicioId));
+  }
+
+  let needsHierarchyUpdate = false;
+  const oldPadreId = cuentaExistente.padreId;
+  const newPadreId = finalPadreId !== undefined ? finalPadreId : oldPadreId;
+
+  if (newPadreId !== oldPadreId) {
+    if (newPadreId === id) throw new Error("Una cuenta no puede ser su propio padre.");
+    
+    // Validar circularidad
+    if (newPadreId) {
+      const nuevoPadre = await prisma.cuenta.findUnique({ where: { id: newPadreId } });
+      if (nuevoPadre?.path?.includes(`/${id}/`)) {
+        throw new Error("Movimiento inválido: El nuevo padre es un descendiente de esta cuenta.");
+      }
+    }
+    needsHierarchyUpdate = true;
   }
 
   const cuenta = await prisma.cuenta.update({
     where: { id },
-    data,
+    data: {
+      ...data,
+      padreId: finalPadreId
+    },
   });
 
-  // Registrar modificación con snapshot de valores anteriores y nuevos
-  await auditUpdate("Cuenta", id, cuentaExistente, cuenta, session?.user?.email, parseInt(empresaId));
+  if (needsHierarchyUpdate) {
+    await updateBranchHierarchy(id);
+  }
 
+  await auditUpdate("Cuenta", id, cuentaExistente, cuenta, session?.user?.email, parseInt(empresaId));
   revalidatePath("/plan-cuentas");
-  return cuenta;
+  return cuenta as unknown as Cuenta;
+}
+
+/**
+ * Helper interno para actualizar recursivamente path y level de una rama del árbol.
+ * Se utiliza cuando una cuenta cambia de padre.
+ */
+async function updateBranchHierarchy(id: number) {
+  const node = await prisma.cuenta.findUnique({ 
+    where: { id },
+    include: { padre: true }
+  });
+  
+  if (!node) return;
+
+  const parentPath = node.padre?.path || "/";
+  const parentLevel = node.padre?.level || 0;
+  const currentPath = `${parentPath}${node.id}/`;
+  const currentLevel = parentLevel + 1;
+
+  const children = await prisma.cuenta.findMany({ where: { padreId: id } });
+
+  await prisma.cuenta.update({
+    where: { id },
+    data: {
+      path: currentPath,
+      level: currentLevel,
+      hasChildren: children.length > 0
+    }
+  });
+
+  // Recursividad
+  for (const child of children) {
+    await updateBranchHierarchy(child.id);
+  }
 }
 
 /**
@@ -195,12 +293,13 @@ export async function deleteCuenta(id: number) {
 }
 
 /**
- * Importa un conjunto de cuentas desde filas crudas (típicamente de un Excel).
- * Las cuentas se crean o actualizan en el ejercicio activo de la sesión.
- * @param rawRows - Filas con los datos de las cuentas a importar.
- * @returns Resultado de la importación con el conteo de cuentas procesadas.
+ * Importa un conjunto de cuentas desde filas de un archivo Excel.
+ * Reconstruye la jerarquía basándose en los prefijos de los códigos.
+ * 
+ * @param rawRows - Filas provenientes del Excel.
+ * @returns Resultado con el conteo de registros procesados.
  */
-export async function importCuentas(rawRows: any[]) {
+export async function importCuentas(rawRows: any[]): Promise<ImportResult> {
   const session = await auth();
   const empresaId = parseInt((session?.user as any)?.empresaId);
   const ejercicioId = parseInt((session?.user as any)?.ejercicioId);
@@ -224,7 +323,7 @@ export async function importCuentas(rawRows: any[]) {
     "4": "CUENTAS TRANSITORIAS"
   };
 
-  const codeToId: { [code: string]: number } = {};
+  const codeToId: { [code: string]: { id: number, imputable: boolean } } = {};
   let count = 0;
 
   // Validate IDs
@@ -255,15 +354,33 @@ export async function importCuentas(rawRows: any[]) {
 
     for (const existingCode of Object.keys(codeToId)) {
       if (codigo.startsWith(existingCode) && existingCode !== codigo) {
-        if (existingCode.length > longestPrefix.length) {
-          longestPrefix = existingCode;
-          padreId = codeToId[existingCode];
+        // Solo puede ser padre si no es imputable
+        if (!codeToId[existingCode].imputable) {
+          if (existingCode.length > longestPrefix.length) {
+            longestPrefix = existingCode;
+            padreId = codeToId[existingCode].id;
+          }
         }
       }
     }
 
     // Upsert to handle existing
     try {
+      // Info del padre (ya procesado por el sort)
+      let parentPath = "/";
+      let parentLevel = 0;
+      if (padreId) {
+        const parent = await prisma.cuenta.findUnique({ where: { id: padreId } });
+        if (parent) {
+          parentPath = parent.path || "/";
+          parentLevel = parent.level || 0;
+          
+          if (!parent.hasChildren) {
+            await prisma.cuenta.update({ where: { id: padreId }, data: { hasChildren: true } });
+          }
+        }
+      }
+
       const account = await prisma.cuenta.upsert({
         where: {
           codigo_ejercicioId: {
@@ -276,7 +393,8 @@ export async function importCuentas(rawRows: any[]) {
           tipo,
           imputable,
           codigoCorto,
-          padreId: padreId
+          padreId: padreId,
+          level: parentLevel + 1
         },
         create: {
           codigo,
@@ -286,10 +404,19 @@ export async function importCuentas(rawRows: any[]) {
           codigoCorto,
           padreId,
           empresaId,
-          ejercicioId
+          ejercicioId,
+          level: parentLevel + 1
         }
       });
-      codeToId[codigo] = account.id;
+
+      // Update path
+      const finalPath = `${parentPath}${account.id}/`;
+      const finalAccount = await prisma.cuenta.update({
+        where: { id: account.id },
+        data: { path: finalPath }
+      });
+
+      codeToId[codigo] = { id: account.id, imputable: account.imputable };
       count++;
     } catch (err: any) {
       console.error(`Error upserting account ${codigo}:`, {
@@ -354,4 +481,16 @@ export async function importCuentasLegacy() {
     console.error("Legacy Import Error:", error);
     throw new Error(error.message || "Error al importar el plan de cuentas legacy.");
   }
+}
+
+import { recalculateHierarchy } from "@/lib/scripts/hierarchy-utils";
+
+export async function fixHierarchyAction() {
+  const session = await auth();
+  const isAdmin = (session?.user as any)?.roles?.includes("ADMIN");
+  if (!isAdmin) throw new Error("No tiene permisos.");
+  
+  await recalculateHierarchy();
+  revalidatePath("/plan-cuentas");
+  return { success: true };
 }

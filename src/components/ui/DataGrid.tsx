@@ -34,6 +34,12 @@ export interface GridConfig<T> {
   features?: GridFeatures;
   actions?: GridAction<T>[];
   groupBy?: keyof T;
+  tree?: {
+    enabled: boolean;
+    parentField: keyof T;
+    hasChildrenField: keyof T;
+    levelField?: keyof T;
+  };
 }
 
 export interface DataGridProps<T> {
@@ -60,6 +66,7 @@ export interface DataGridProps<T> {
   sortBy?: keyof T;
   sortOrder?: 'asc' | 'desc';
   onSortChange?: (key: keyof T, direction: 'asc' | 'desc') => void;
+  onLoadChildren?: (parentId: any) => Promise<T[]>;
 }
 
 export function DataGrid<T extends { id: any }>({ 
@@ -85,7 +92,8 @@ export function DataGrid<T extends { id: any }>({
   onSelectionChange,
   sortBy,
   sortOrder,
-  onSortChange
+  onSortChange,
+  onLoadChildren
 }: DataGridProps<T>) {
   const [localSearch, setLocalSearch] = React.useState(searchTerm);
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof T | null; direction: 'asc' | 'desc' }>({ 
@@ -93,6 +101,9 @@ export function DataGrid<T extends { id: any }>({
     direction: sortOrder || 'asc' 
   });
   const [localPage, setLocalPage] = React.useState(1);
+  const [expandedRows, setExpandedRows] = React.useState<Record<string, boolean>>({});
+  const [childData, setChildData] = React.useState<Record<string, T[]>>({});
+  const [loadingChildren, setLoadingChildren] = React.useState<Record<string, boolean>>({});
 
   // Determinar si es paginación de servidor o local
   const isServerSide = total !== undefined;
@@ -176,6 +187,22 @@ export function DataGrid<T extends { id: any }>({
     }
     setSortConfig({ key, direction });
     if (onSortChange) onSortChange(key, direction);
+  };
+
+  const toggleExpand = async (item: T) => {
+    const isExpanded = expandedRows[item.id];
+    if (!isExpanded && !childData[item.id] && onLoadChildren) {
+      setLoadingChildren(prev => ({ ...prev, [item.id]: true }));
+      try {
+        const children = await onLoadChildren(item.id);
+        setChildData(prev => ({ ...prev, [item.id]: children }));
+      } catch (error) {
+        console.error("Error loading children:", error);
+      } finally {
+        setLoadingChildren(prev => ({ ...prev, [item.id]: false }));
+      }
+    }
+    setExpandedRows(prev => ({ ...prev, [item.id]: !isExpanded }));
   };
 
   const changePage = (p: number) => {
@@ -289,11 +316,102 @@ export function DataGrid<T extends { id: any }>({
               const showGroupHeader = config.groupBy && item[config.groupBy!] !== lastGroup;
               if (showGroupHeader) lastGroup = item[config.groupBy!];
 
+              const renderRow = (row: T, isChild: boolean = false) => {
+                const isExpanded = expandedRows[row.id];
+                const isLoading = loadingChildren[row.id];
+                const hasChildren = row[config.tree?.hasChildrenField as keyof T];
+                const level = Number(row[config.tree?.levelField as keyof T] || 0);
+
+                return (
+                  <React.Fragment key={row.id}>
+                    <tr 
+                      className={`hover:bg-slate-50/30 transition-colors group ${onRowClick || onRowDoubleClick ? 'cursor-pointer' : ''} ${selectedIds.includes(row.id) ? 'bg-primary/5' : ''} ${isChild ? 'bg-slate-50/20' : ''}`}
+                      onClick={() => onRowClick?.(row)}
+                      onDoubleClick={() => onRowDoubleClick?.(row)}
+                    >
+                      {config.features?.selection && (
+                        <td className="px-6 py-4 w-10">
+                          <input 
+                            type="checkbox"
+                            className="size-4 rounded border-slate-300 text-primary focus:ring-primary"
+                            checked={selectedIds.includes(row.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              if (onSelectionChange) {
+                                const newSelection = selectedIds.includes(row.id)
+                                  ? selectedIds.filter(id => id !== row.id)
+                                  : [...selectedIds, row.id];
+                                onSelectionChange(newSelection);
+                              }
+                            }}
+                          />
+                        </td>
+                      )}
+                      {config.columns.map((col, i) => (
+                        <td key={i} className={`px-6 py-4 text-sm text-slate-600 ${col.className}`}>
+                          <div className="flex items-center gap-2">
+                            {i === 0 && config.tree?.enabled && (
+                              <>
+                                <div style={{ width: `${(level - 1) * 24}px` }} />
+                                {hasChildren ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleExpand(row);
+                                    }}
+                                    className="p-1 hover:bg-slate-200 rounded transition-colors"
+                                  >
+                                    {isLoading ? (
+                                      <div className="size-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      isExpanded ? <ChevronRight className="size-3 rotate-90 transition-transform" /> : <ChevronRight className="size-3 transition-transform" />
+                                    )}
+                                  </button>
+                                ) : (
+                                  <div className="size-5" />
+                                )}
+                              </>
+                            )}
+                            {col.key === "actions" ? (
+                              <div className="flex items-center justify-end gap-1 w-full">
+                                {config.actions?.map((action, actionIdx) => {
+                                  if (action.showIf && !action.showIf(row)) return null;
+                                  const Icon = action.icon;
+                                  return (
+                                    <button
+                                      key={actionIdx}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        action.onClick(row);
+                                      }}
+                                      className={`p-2 rounded-lg transition-all ${
+                                        action.variant === 'danger' ? 'text-red-500 hover:bg-red-50' : 
+                                        action.variant === 'warning' ? 'text-amber-500 hover:bg-amber-50' :
+                                        action.variant === 'info' ? 'text-blue-500 hover:bg-blue-50' :
+                                        'text-slate-400 hover:text-primary hover:bg-slate-100'
+                                      }`}
+                                      title={action.label}
+                                    >
+                                      {Icon ? <Icon className="size-4" /> : action.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : renderCell(row, col)}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                    {isExpanded && childData[row.id]?.map(child => renderRow(child, true))}
+                  </React.Fragment>
+                );
+              };
+
               return (
                 <React.Fragment key={item.id}>
                   {showGroupHeader && (
                     <tr className="bg-slate-50/80">
-                      <td colSpan={config.columns.length} className="px-6 py-2 text-[10px] font-black text-primary uppercase tracking-widest border-y border-slate-100 italic">
+                      <td colSpan={config.columns.length + (config.features?.selection ? 1 : 0)} className="px-6 py-2 text-[10px] font-black text-primary uppercase tracking-widest border-y border-slate-100 italic">
                         <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                           {String(item[config.groupBy!])}
@@ -301,60 +419,7 @@ export function DataGrid<T extends { id: any }>({
                       </td>
                     </tr>
                   )}
-                  <tr 
-                    className={`hover:bg-slate-50/30 transition-colors group ${onRowClick || onRowDoubleClick ? 'cursor-pointer' : ''} ${selectedIds.includes(item.id) ? 'bg-primary/5' : ''}`}
-                    onClick={() => onRowClick?.(item)}
-                    onDoubleClick={() => onRowDoubleClick?.(item)}
-                  >
-                    {config.features?.selection && (
-                      <td className="px-6 py-4 w-10">
-                        <input 
-                          type="checkbox"
-                          className="size-4 rounded border-slate-300 text-primary focus:ring-primary"
-                          checked={selectedIds.includes(item.id)}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            if (onSelectionChange) {
-                              const newSelection = selectedIds.includes(item.id)
-                                ? selectedIds.filter(id => id !== item.id)
-                                : [...selectedIds, item.id];
-                              onSelectionChange(newSelection);
-                            }
-                          }}
-                        />
-                      </td>
-                    )}
-                    {config.columns.map((col, i) => (
-                      <td key={i} className={`px-6 py-4 text-sm text-slate-600 ${col.className}`}>
-                        {col.key === "actions" ? (
-                          <div className="flex items-center justify-end gap-1">
-                            {config.actions?.map((action, actionIdx) => {
-                              if (action.showIf && !action.showIf(item)) return null;
-                              const Icon = action.icon;
-                              return (
-                                <button
-                                  key={actionIdx}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    action.onClick(item);
-                                  }}
-                                  className={`p-2 rounded-lg transition-all ${
-                                    action.variant === 'danger' ? 'text-red-500 hover:bg-red-50' : 
-                                    action.variant === 'warning' ? 'text-amber-500 hover:bg-amber-50' :
-                                    action.variant === 'info' ? 'text-blue-500 hover:bg-blue-50' :
-                                    'text-slate-400 hover:text-primary hover:bg-slate-100'
-                                  }`}
-                                  title={action.label}
-                                >
-                                  {Icon ? <Icon className="size-4" /> : action.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        ) : renderCell(item, col)}
-                      </td>
-                    ))}
-                  </tr>
+                  {renderRow(item)}
                 </React.Fragment>
               );
             })}

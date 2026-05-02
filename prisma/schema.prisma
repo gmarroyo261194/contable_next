@@ -173,6 +173,12 @@ model Cuenta {
   empresaId             Int
   ejercicioId           Int
   imputable             Boolean             @default(true)
+  
+  // Optimizaciones para jerarquía (Workflow config-cuentas-contables)
+  path                  String?             @db.NVarChar(500) // Ej: /1/5/23/
+  level                 Int                 @default(0)
+  hasChildren           Boolean             @default(false)
+
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
   createdBy             String?
@@ -193,6 +199,7 @@ model Cuenta {
   serviciosIngresos     ServicioConfig[]    @relation("CuentaIngresos")
 
   @@unique([codigo, ejercicioId])
+  @@index([path])
 }
 
 model Asiento {

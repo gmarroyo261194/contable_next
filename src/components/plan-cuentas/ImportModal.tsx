@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import { Upload, FileSpreadsheet, AlertCircle, Loader2, Check, Database } from "lucide-react";
 import { importCuentas, importCuentasLegacy } from "@/app/plan-cuentas/actions";
+import { ImportResult } from "@/types/cuenta";
 
 interface ImportModalProps {
   onClose: () => void;
@@ -23,6 +24,9 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
     }
   };
 
+  /**
+   * Procesa la importación desde un archivo Excel local.
+   */
   const handleImport = async () => {
     if (!file) return;
     setLoading(true);
@@ -66,6 +70,9 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
     }
   };
 
+  /**
+   * Dispara la sincronización desde la base de datos legacy.
+   */
   const handleLegacyImport = async () => {
     if (!confirm("Se importarán todas las cuentas desde la base de datos Fundación para el ejercicio actual. ¿Desea continuar?")) return;
     

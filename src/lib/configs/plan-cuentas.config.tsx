@@ -1,11 +1,19 @@
 import { GridConfig } from "@/components/ui/DataGrid";
 import { Pencil, Trash2 } from "lucide-react";
+import { Cuenta } from "@/types/cuenta";
 
+/**
+ * Genera la configuración del DataGrid para el Plan de Cuentas.
+ * 
+ * @param onEdit - Callback para editar cuenta.
+ * @param onDelete - Callback para eliminar cuenta.
+ * @param isTreeView - Indica si se debe habilitar el modo jerárquico.
+ */
 export const planCuentasGridConfig = (
-  onEdit: (cuenta: any) => void,
+  onEdit: (cuenta: Cuenta) => void,
   onDelete: (id: number) => void,
   isTreeView: boolean
-): GridConfig<any> => ({
+): GridConfig<Cuenta> => ({
   columns: [
     {
       key: "codigo",
@@ -18,49 +26,12 @@ export const planCuentasGridConfig = (
       )
     },
     {
-      key: "empresa",
-      header: "Empresa / Ejercicio",
-      render: (c) => (
-        <div className="flex flex-col">
-          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter truncate max-w-[150px]">
-            {c.ejercicio?.empresa?.nombreFantasia || c.ejercicio?.empresa?.razonSocial}
-          </span>
-          <span className="text-[9px] font-bold text-slate-400">
-            Eje. {c.ejercicio?.numero}
-          </span>
-        </div>
-      )
-    },
-    {
       key: "nombre",
-      header: "Nombre / Cuenta",
+      header: "Cuenta Contable",
       render: (c) => (
-        <div 
-          className="flex flex-col relative py-1"
-          style={{ 
-            paddingLeft: isTreeView ? `${(c.level || 0) * 32}px` : '0px',
-            transition: 'padding 0.2s'
-          }}
-        >
-          {isTreeView && (c.level || 0) > 0 && (
-            <div 
-              className="absolute top-0 bottom-0 flex items-center" 
-              style={{ left: `${((c.level || 0) - 1) * 32 + 12}px` }}
-            >
-              <div className="w-px h-full bg-slate-200" />
-              <div className="w-4 h-px bg-slate-200" />
-            </div>
-          )}
-          
-          <div className="flex items-center gap-2">
-            {isTreeView && (c.level || 0) > 0 && (
-              <div className="size-1 bg-primary/40 rounded-full flex-shrink-0" />
-            )}
-            <span className={`text-sm tracking-tight ${c.imputable ? 'text-slate-600 font-medium' : 'font-black text-slate-900 uppercase'}`}>
-              {c.nombre}
-            </span>
-          </div>
-        </div>
+        <span className={`text-sm tracking-tight ${c.imputable ? 'text-slate-600 font-medium' : 'font-black text-slate-900 uppercase'}`}>
+          {c.nombre}
+        </span>
       )
     },
     {
@@ -94,6 +65,12 @@ export const planCuentasGridConfig = (
       className: "text-right"
     }
   ],
+  tree: isTreeView ? {
+    enabled: true,
+    parentField: "padreId",
+    hasChildrenField: "hasChildren",
+    levelField: "level"
+  } : undefined,
   actions: [
     {
       label: "Editar",

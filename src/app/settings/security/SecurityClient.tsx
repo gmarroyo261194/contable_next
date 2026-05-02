@@ -29,7 +29,7 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
 
   const handleDelete = async (id: string) => {
     if (!confirm("¿Está seguro de que desea eliminar este elemento?")) return;
-    
+
     try {
       if (activeTab === "users") await deleteUser(id);
       else if (activeTab === "roles") await deleteRole(id);
@@ -49,9 +49,9 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
 
   const userConfig: GridConfig<any> = {
     columns: [
-      { 
+      {
         key: "name",
-        header: "Nombre", 
+        header: "Nombre",
         render: (u: any) => (
           <div className="flex items-center gap-3">
             <div className="size-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 uppercase">
@@ -62,9 +62,9 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
         )
       },
       { key: "email", header: "Email" },
-      { 
+      {
         key: "id", // Using id as placeholder for custom render
-        header: "Empresas", 
+        header: "Empresas",
         render: (u: any) => (
           <div className="flex flex-wrap gap-1">
             {u.empresas.map((ue: any) => (
@@ -76,9 +76,9 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
           </div>
         )
       },
-      { 
+      {
         key: "id",
-        header: "Roles", 
+        header: "Roles",
         render: (u: any) => (
           <div className="flex flex-wrap gap-1">
             {u.roles.map((ur: any) => (
@@ -109,22 +109,22 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
 
   const assignmentConfig: GridConfig<any> = {
     columns: [
-      { 
+      {
         key: "nombre",
-        header: "Empresa", 
-        render: (e: any) => <span className="font-bold text-slate-800">{e.nombre}</span> 
+        header: "Empresa",
+        render: (e: any) => <span className="font-bold text-slate-800">{e.nombre}</span>
       },
       { key: "cuit", header: "CUIT" },
-      { 
+      {
         key: "id",
-        header: "Usuarios Asociados", 
+        header: "Usuarios Asociados",
         render: (e: any) => (
           <div className="flex -space-x-2 overflow-hidden">
             {e.usuarios.map((ue: any) => (
-              <div 
-                key={ue.userId} 
+              <div
+                key={ue.userId}
                 title={ue.user.name}
-                className="inline-block size-7 rounded-full ring-2 ring-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 uppercase cursor-help shadow-sm"
+                className="inline-block size-7 rounded-full ring-2 ring-white bg-slate-100 items-center justify-center text-[10px] font-bold text-slate-500 uppercase cursor-help shadow-sm"
               >
                 {ue.user.name?.slice(0, 2)}
               </div>
@@ -149,9 +149,9 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
     columns: [
       { key: "name", header: "Nombre", className: "font-bold text-slate-800" },
       { key: "description", header: "Descripción" },
-      { 
+      {
         key: "id",
-        header: "Permisos", 
+        header: "Permisos",
         render: (r: any) => (
           <span className="text-xs font-medium text-slate-500">
             {r.permissions.length} permisos asignados
@@ -217,11 +217,10 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              activeTab === tab.id 
-                ? "bg-white text-primary shadow-sm" 
-                : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
-            }`}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
+              ? "bg-white text-primary shadow-sm"
+              : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+              }`}
           >
             <tab.icon className="size-4" />
             {tab.label}
@@ -273,33 +272,33 @@ export function SecurityClient({ users, roles, permissions, empresas }: any) {
         )}
       </div>
 
-      <Dialog 
-        isOpen={isDialogOpen} 
+      <Dialog
+        isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         title={editingItem ? "Editar" : "Nuevo"}
       >
         {activeTab === "users" && (
-          <UserForm 
-            initialData={editingItem} 
-            availableRoles={roles} 
+          <UserForm
+            initialData={editingItem}
+            availableRoles={roles}
             availableEmpresas={empresas}
-            onClose={() => setIsDialogOpen(false)} 
-            onSuccess={() => router.refresh()} 
+            onClose={() => setIsDialogOpen(false)}
+            onSuccess={() => router.refresh()}
           />
         )}
         {activeTab === "roles" && (
-          <RoleForm 
-            initialData={editingItem} 
-            availablePermissions={permissions} 
-            onClose={() => setIsDialogOpen(false)} 
-            onSuccess={() => router.refresh()} 
+          <RoleForm
+            initialData={editingItem}
+            availablePermissions={permissions}
+            onClose={() => setIsDialogOpen(false)}
+            onSuccess={() => router.refresh()}
           />
         )}
         {activeTab === "permissions" && (
-          <PermissionForm 
-            initialData={editingItem} 
-            onClose={() => setIsDialogOpen(false)} 
-            onSuccess={() => router.refresh()} 
+          <PermissionForm
+            initialData={editingItem}
+            onClose={() => setIsDialogOpen(false)}
+            onSuccess={() => router.refresh()}
           />
         )}
       </Dialog>

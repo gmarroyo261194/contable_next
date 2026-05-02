@@ -4,10 +4,11 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { Hash, Type, Tags, CheckSquare, Loader2, GitBranch } from "lucide-react";
 import { createCuenta, updateCuenta } from "@/app/plan-cuentas/actions";
+import { Cuenta } from "@/types/cuenta";
 
 interface CuentaFormProps {
-  initialData?: any;
-  cuentas?: any[];
+  initialData?: Cuenta | null;
+  cuentas?: Cuenta[];
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -34,7 +35,7 @@ export function CuentaForm({ initialData, cuentas, onClose, onSuccess }: CuentaF
   });
 
   const isImputable = watch("imputable");
-  const isImputableVal = isImputable === "true" || isImputable === true;
+  const isImputableVal = String(isImputable) === "true";
 
   const onSubmit = async (data: any) => {
     setLoading(true);
@@ -120,19 +121,27 @@ export function CuentaForm({ initialData, cuentas, onClose, onSuccess }: CuentaF
 
         {/* Padre */}
         <div className="space-y-2">
-          <label className="text-sm font-bold text-slate-700">Cuenta Padre</label>
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-bold text-slate-700">Cuenta Padre</label>
+            <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold uppercase border border-blue-100">
+              Cálculo Automático
+            </span>
+          </div>
           <div className="relative group">
             <GitBranch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary transition-colors" />
             <select
               {...register("padreId")}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm appearance-none"
             >
-              <option value="">Ninguna (Nivel 1)</option>
-              {cuentas?.filter(c => !c.imputable).map(c => (
+              <option value="">Detectar por código (Recomendado)</option>
+              {cuentas?.filter(c => !c.imputable && c.id !== initialData?.id).map(c => (
                 <option key={c.id} value={c.id}>{c.codigo} - {c.nombre}</option>
               ))}
             </select>
           </div>
+          <p className="text-[10px] text-slate-400 italic">
+            Si se deja en blanco, el sistema asociará el padre no imputable más cercano según el código.
+          </p>
         </div>
 
         {/* Imputable */}
