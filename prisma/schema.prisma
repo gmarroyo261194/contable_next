@@ -802,9 +802,11 @@ model Inscripcion {
   cursoId          Int
   alumnoId         Int
   fechaInscripcion DateTime @default(now())
-  estado           String?
+  estado           String   @default("Activa")
+  observaciones    String?  @db.NVarChar(500)
   alumno           Alumno   @relation(fields: [alumnoId], references: [id])
   curso            Curso    @relation(fields: [cursoId], references: [id])
+  cuotas           Cuota[]
 
   createdAt        DateTime? @default(now())
   createdBy        String?
@@ -812,4 +814,25 @@ model Inscripcion {
   updatedBy        String?
   @@unique([cursoId, alumnoId])
   @@map("inscripciones")
+}
+
+/// Cuota generada para una inscripción de alumno en un curso.
+model Cuota {
+  id              Int          @id @default(autoincrement())
+  inscripcionId   Int
+  numeroCuota     Int
+  importe         Decimal      @db.Decimal(18, 2)
+  fechaVencimiento DateTime   @db.Date
+  fechaPago       DateTime?    @db.Date
+  estado          String       @default("Pendiente") @db.NVarChar(20) // Pendiente | Pagada | Vencida
+  observaciones   String?      @db.NVarChar(500)
+  inscripcion     Inscripcion  @relation(fields: [inscripcionId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime     @default(now())
+  createdBy       String?
+  updatedAt       DateTime     @updatedAt
+  updatedBy       String?
+
+  @@unique([inscripcionId, numeroCuota])
+  @@map("cuotas")
 }

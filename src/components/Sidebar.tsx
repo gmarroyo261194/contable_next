@@ -22,7 +22,8 @@ import {
   BookOpen,
   GraduationCap,
   FileText,
-  ListCheck
+  ListCheck,
+  ClipboardList
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -75,6 +76,7 @@ const navItems = [
     children: [
       { icon: Users, label: 'Alumnos', href: '/alumnos', moduleCode: 'CURSOS' },
       { icon: ListCheck, label: 'Cursos', href: '/cursos', moduleCode: 'CURSOS' },
+      { icon: ClipboardList, label: 'Inscripciones', href: '/inscripciones', moduleCode: 'CURSOS' },
       { icon: ReceiptText, label: 'Cuponeras', href: '/cuponeras', moduleCode: 'CURSOS' },
     ]
   },
