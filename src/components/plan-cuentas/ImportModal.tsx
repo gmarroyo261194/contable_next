@@ -16,6 +16,7 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [anioOrigen, setAnioOrigen] = useState<number>(new Date().getFullYear());
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -74,12 +75,17 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
    * Dispara la sincronización desde la base de datos legacy.
    */
   const handleLegacyImport = async () => {
-    if (!confirm("Se importarán todas las cuentas desde la base de datos Fundación para el ejercicio actual. ¿Desea continuar?")) return;
+    if (!anioOrigen || anioOrigen < 1900 || anioOrigen > 2100) {
+      setError("Por favor, ingrese un año válido.");
+      return;
+    }
+
+    if (!confirm(`Se importarán las cuentas desde la base de datos Fundación para el ejercicio ${anioOrigen}. Si el ejercicio no existe en el sistema actual, se creará automáticamente. ¿Desea continuar?`)) return;
     
     setLoading(true);
     setError(null);
     try {
-      const result = await importCuentasLegacy();
+      const result = await importCuentasLegacy(anioOrigen);
       if (result.success) {
         setSuccess(true);
         onSuccess();
@@ -133,21 +139,47 @@ export function ImportModal({ onClose, onSuccess }: ImportModalProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 py-4 px-2 border-t border-slate-100">
-        <div className="size-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
-          <Database className="size-5 text-amber-500" />
+      <div className="flex flex-col gap-4 py-6 px-4 bg-amber-50/30 border border-amber-100 rounded-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+          <Database className="size-24 rotate-12" />
         </div>
-        <div className="flex-1">
-          <p className="text-sm font-bold text-slate-800">Conexión Legacy (ContableFundacion)</p>
-          <p className="text-[11px] text-slate-500">Importar directamente desde la base de datos anterior</p>
+        
+        <div className="flex items-start gap-4">
+          <div className="size-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 shadow-sm shadow-amber-200/50">
+            <Database className="size-5 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-black text-slate-800">Sincronización con Legacy</p>
+            <p className="text-[11px] text-slate-500 font-medium">Conexión directa con la base ContableFundacion</p>
+          </div>
         </div>
-        <button 
-          onClick={handleLegacyImport}
-          disabled={loading || success}
-          className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-200 disabled:opacity-50"
-        >
-          {loading ? "Procesando..." : "Sincronizar ahora"}
-        </button>
+
+        <div className="flex items-end gap-3 pt-2">
+          <div className="flex-1 space-y-1.5">
+            <label className="text-[10px] font-black text-amber-700 uppercase tracking-wider ml-1">Ejercicio de Origen</label>
+            <input 
+              type="number"
+              value={anioOrigen}
+              onChange={(e) => setAnioOrigen(parseInt(e.target.value))}
+              placeholder="Ej: 2024"
+              className="w-full bg-white border border-amber-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all"
+            />
+          </div>
+          <button 
+            onClick={handleLegacyImport}
+            disabled={loading || success}
+            className="h-[42px] px-6 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black transition-all shadow-lg shadow-amber-200 disabled:opacity-50 flex items-center gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="size-3 animate-spin" />
+                Sincronizando...
+              </>
+            ) : (
+              "Sincronizar ahora"
+            )}
+          </button>
+        </div>
       </div>
 
       {error && (

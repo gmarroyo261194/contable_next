@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
+import { queryLegacy } from "@/lib/legacy-db";
 
 export async function getEjercicios() {
   const session = await auth();
@@ -169,7 +170,7 @@ export async function migrateAsientosLegacy(ejercicioId: number, anio: number) {
   try {
     return await prisma.$transaction(async (tx) => {
       // 3. Obtener encabezados de la base vieja (incluyendo campos de anulación)
-      const encabezados: any[] = await tx.$queryRawUnsafe(`
+      const encabezados = await queryLegacy(`
         SELECT AsientoID, AsientoNro, FechaAsiento, LeyendaGral, EsContraAsiento, AsientoOriginalNro
         FROM [ContableFundacion].[dbo].[AsientoEncabezado]
         WHERE Ejercicio = ${anio}
@@ -180,7 +181,7 @@ export async function migrateAsientosLegacy(ejercicioId: number, anio: number) {
       }
 
       // 3b. Obtener TODOS los detalles del ejercicio de una vez para evitar N+1
-      const todosLosDetalles: any[] = await tx.$queryRawUnsafe(`
+      const todosLosDetalles = await queryLegacy(`
         SELECT AsientoID, CodigoLargo, LineaLeyenda, CuentaColumna, LineaImporte
         FROM [ContableFundacion].[dbo].[AsientoDetalle]
         WHERE Ejercicio = ${anio}

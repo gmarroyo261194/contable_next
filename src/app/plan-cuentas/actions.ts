@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 import { Cuenta, ImportResult } from "@/types/cuenta";
+import { queryLegacy } from "@/lib/legacy-db";
 
 /**
  * Obtiene las cuentas del plan de cuentas para la empresa y ejercicio activo en la sesión.
@@ -297,12 +298,15 @@ export async function deleteCuenta(id: number) {
  * Reconstruye la jerarquía basándose en los prefijos de los códigos.
  * 
  * @param rawRows - Filas provenientes del Excel.
+ * @param targetEjercicioId - ID del ejercicio de destino (opcional, usa el de la sesión si no se provee).
  * @returns Resultado con el conteo de registros procesados.
  */
-export async function importCuentas(rawRows: any[]): Promise<ImportResult> {
+export async function importCuentas(rawRows: any[], targetEjercicioId?: number): Promise<ImportResult> {
   const session = await auth();
   const empresaId = parseInt((session?.user as any)?.empresaId);
-  const ejercicioId = parseInt((session?.user as any)?.ejercicioId);
+  const sessionEjercicioId = parseInt((session?.user as any)?.ejercicioId);
+  
+  const ejercicioId = targetEjercicioId || sessionEjercicioId;
 
   if (!empresaId || !ejercicioId) throw new Error("Contexto no configurado.");
 
@@ -438,44 +442,63 @@ export async function importCuentas(rawRows: any[]): Promise<ImportResult> {
 
 /**
  * Importa el plan de cuentas desde la base de datos legacy (ContableFundacion)
- * para el ejercicio activo en la sesión.
+ * para el año de origen especificado.
+ * Si el ejercicio no existe en el sistema actual, lo crea automáticamente.
+ * 
+ * @param anioOrigen - El año del ejercicio a importar desde legacy.
  * @returns Resultado de la importación.
  */
-export async function importCuentasLegacy() {
+export async function importCuentasLegacy(anioOrigen: number) {
   const session = await auth();
-  const empresaId = (session?.user as any)?.empresaId;
-  const ejercicioId = (session?.user as any)?.ejercicioId;
+  const empresaId = parseInt((session?.user as any)?.empresaId);
 
-  if (!empresaId || !ejercicioId) throw new Error("Contexto no configurado.");
+  if (!empresaId) throw new Error("Contexto de empresa no configurado.");
 
   try {
-    // 0. Obtener el número de ejercicio actual
-    const ejercicioActual = await prisma.ejercicio.findUnique({
-      where: { id: parseInt(ejercicioId) },
-      select: { numero: true }
+    // 1. Buscar o Crear el Ejercicio en el sistema actual basado en el año de origen
+    let ejercicioDestino = await prisma.ejercicio.findUnique({
+      where: {
+        numero_empresaId: {
+          numero: anioOrigen,
+          empresaId: empresaId
+        }
+      }
     });
 
-    if (!ejercicioActual) throw new Error("Ejercicio no encontrado.");
-    const anio = ejercicioActual.numero;
+    if (!ejercicioDestino) {
+      console.log(`Creando ejercicio ${anioOrigen} automáticamente...`);
+      ejercicioDestino = await prisma.ejercicio.create({
+        data: {
+          numero: anioOrigen,
+          inicio: new Date(anioOrigen, 0, 1),
+          fin: new Date(anioOrigen, 11, 31),
+          empresaId: empresaId,
+          cerrado: false,
+          createdBy: session?.user?.email
+        }
+      });
+      await auditCreate("Ejercicio", ejercicioDestino.id, ejercicioDestino, session?.user?.email, empresaId);
+    }
 
-    // 1. Obtener cuentas de la base vieja
-    const rawRows: any[] = await prisma.$queryRawUnsafe(`
+    // 2. Obtener cuentas de la base vieja
+    const rawRows = await queryLegacy(`
       SELECT codigoCta, nombreCta, codigoAlt, capitulo, imputable
       FROM [ContableFundacion].[dbo].[PlanCtaEjercicio]
-      WHERE ejercicio = ${anio}
+      WHERE ejercicio = ${anioOrigen}
     `);
 
     if (rawRows.length === 0) {
-      return { success: false, message: `No se encontró un plan de cuentas para el ejercicio ${anio} en la base legacy.` };
+      return { success: false, message: `No se encontró un plan de cuentas para el ejercicio ${anioOrigen} en la base legacy.` };
     }
 
-    // 2. Usar la lógica de importación existente
+    // 3. Procesar las filas para que coincidan con el formato esperado
     const processedRows = rawRows.map(row => ({
       ...row,
       imputable: String(row.imputable) === "-1" ? "-1" : "0"
     }));
 
-    return await importCuentas(processedRows);
+    // 4. Ejecutar la importación asociándola al ejercicio detectado/creado
+    return await importCuentas(processedRows, ejercicioDestino.id);
 
   } catch (error: any) {
     console.error("Legacy Import Error:", error);

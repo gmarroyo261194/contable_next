@@ -4,7 +4,8 @@ import { db } from "./db";
 export const prisma = db.$extends({
   query: {
     $allModels: {
-      async create({ args, query }) {
+      async create({ model, args, query }) {
+        if (model === 'AuditLog') return query(args);
         let userId = 'system';
         try {
           const session = await auth();
@@ -20,7 +21,8 @@ export const prisma = db.$extends({
         };
         return query(args);
       },
-      async update({ args, query }) {
+      async update({ model, args, query }) {
+        if (model === 'AuditLog') return query(args);
         let userId = 'system';
         try {
           const session = await auth();
@@ -35,7 +37,8 @@ export const prisma = db.$extends({
         };
         return query(args);
       },
-      async updateMany({ args, query }) {
+      async updateMany({ model, args, query }) {
+        if (model === 'AuditLog') return query(args);
         let userId = 'system';
         try {
           const session = await auth();
@@ -52,7 +55,8 @@ export const prisma = db.$extends({
         }
         return query(args);
       },
-      async upsert({ args, query }) {
+      async upsert({ model, args, query }) {
+        if (model === 'AuditLog') return query(args);
         let userId = 'system';
         try {
           const session = await auth();
