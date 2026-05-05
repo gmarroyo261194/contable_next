@@ -181,6 +181,29 @@ export const docProvGridConfig = (
       )
     },
     {
+      key: "exigible",
+      header: "Exigible",
+      className: "text-center",
+      render: (doc) => {
+        const esExigible = doc.ejercicioExigibleId !== null && doc.ejercicioExigibleId !== undefined;
+        const origenNum = doc.ejercicioOrigen?.numero ?? doc.ejercicio?.numero;
+        const destNum = doc.ejercicioExigible?.numero;
+        if (!esExigible) return <span className="text-slate-300 text-[10px] font-bold">—</span>;
+        return (
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-600 rounded-full border border-orange-200">
+              <span className="text-[10px] font-black uppercase tracking-tighter">Exigible</span>
+            </div>
+            {origenNum && (
+              <span className="text-[9px] font-bold text-slate-400">
+                Orig. Ej.{origenNum} → Ej.{destNum ?? "?"}
+              </span>
+            )}
+          </div>
+        );
+      }
+    },
+    {
       key: "actions",
       header: "Acciones",
       className: "text-right"

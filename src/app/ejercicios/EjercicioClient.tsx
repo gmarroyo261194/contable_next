@@ -37,13 +37,39 @@ export function EjercicioClient({ initialEjercicios }: { initialEjercicios: any[
   };
 
   const handleToggleStatus = async (ejercicio: any) => {
-    const accion = ejercicio.cerrado ? "reabrir" : "cerrar";
-    if (confirm(`¿Está seguro de que desea ${accion} este ejercicio?`)) {
-      try {
-        await toggleCerrarEjercicio(ejercicio.id, !ejercicio.cerrado);
-        router.refresh();
-      } catch (error: any) {
-        alert("Error al cambiar el estado del ejercicio.");
+    if (ejercicio.cerrado) {
+      // Reapertura simple
+      if (confirm(`¿Está seguro de que desea reabrir el ejercicio ${ejercicio.numero}?\n\nNOTA: Los documentos que ya fueron marcados como exigibles NO se revertirán.`)) {
+        try {
+          await toggleCerrarEjercicio(ejercicio.id, false);
+          router.refresh();
+        } catch (error: any) {
+          alert(error.message || "Error al reabrir el ejercicio.");
+        }
+      }
+    } else {
+      // Cierre: confirmar y mostrar resultado
+      if (confirm(
+        `¿Está seguro de que desea CERRAR el ejercicio ${ejercicio.numero}?\n\n` +
+        `Todos los documentos de proveedores y facturas de docentes que estén IMPAGAS ` +
+        `serán marcados automáticamente como EXIGIBLES y se trasladarán al ejercicio ${ejercicio.numero + 1}.\n\n` +
+        `Esta acción requiere que el ejercicio ${ejercicio.numero + 1} ya exista.`
+      )) {
+        try {
+          const result = await toggleCerrarEjercicio(ejercicio.id, true);
+          const totalTransferidos = (result?.docProvTransferidos ?? 0) + (result?.facturasTransferidas ?? 0);
+          if (totalTransferidos > 0) {
+            alert(
+              `✅ Ejercicio ${ejercicio.numero} cerrado correctamente.\n\n` +
+              `📋 Exigibles transferidos al ejercicio ${ejercicio.numero + 1}:\n` +
+              `• Facturas de proveedores: ${result?.docProvTransferidos ?? 0}\n` +
+              `• Facturas de docentes: ${result?.facturasTransferidas ?? 0}`
+            );
+          }
+          router.refresh();
+        } catch (error: any) {
+          alert(error.message || "Error al cerrar el ejercicio.");
+        }
       }
     }
   };

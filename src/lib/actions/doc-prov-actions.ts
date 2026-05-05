@@ -7,15 +7,31 @@ import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 import { isModuleEnabled } from "./module-actions";
 
 /**
- * Obtiene todos los documentos de proveedores para la empresa actual.
+ * Obtiene los documentos de proveedores visibles en el ejercicio activo.
+ * Regla de exigibles:
+ *   1. Docs normales del ejercicio activo (sin ejercicioExigibleId)
+ *   2. Docs que nacieron en este ejercicio y ya fueron marcados como exigibles (visible en su origen)
+ *   3. Docs transferidos a este ejercicio como exigibles desde un ejercicio anterior
  */
 export async function getDocumentosProveedores() {
   const session = await auth();
   const empresaId = parseInt((session?.user as any)?.empresaId);
+  const ejercicioId = parseInt((session?.user as any)?.ejercicioId);
   if (!empresaId) return [];
 
   const docs = await prisma.documentoProveedores.findMany({
-    where: { empresaId },
+    where: {
+      empresaId,
+      OR: [
+        // 1. Doc normal del ejercicio activo (nunca fue marcado exigible)
+        { ejercicioId, ejercicioExigibleId: null },
+        // 2. Doc que nació en este ejercicio y fue transferido como exigible
+        //    (visible en su ejercicio de origen)
+        { ejercicioId, ejercicioExigibleId: { not: null } },
+        // 3. Doc transferido A este ejercicio como exigible (desde otro anterior)
+        { ejercicioExigibleId: ejercicioId },
+      ],
+    },
     include: {
       entidad: true,
       asiento: {
@@ -26,7 +42,9 @@ export async function getDocumentosProveedores() {
       },
       ejercicio: {
         include: { empresa: true }
-      }
+      },
+      ejercicioOrigen: { select: { numero: true } },
+      ejercicioExigible: { select: { numero: true } },
     },
     orderBy: { fecha: 'desc' }
   });
@@ -104,7 +122,14 @@ export async function upsertDocumentoProveedor(data: {
             include: { asiento: true }
           })
         : await tx.documentoProveedores.create({
-            data: { ...docData, empresaId, ejercicioId, createdBy: userEmail }
+            data: {
+              ...docData,
+              empresaId,
+              ejercicioId,
+              // Al crear, siempre registrar el ejercicio de origen
+              ejercicioOrigenId: ejercicioId,
+              createdBy: userEmail
+            }
           });
 
       // 3. Obtener nombre del proveedor para el concepto del asiento

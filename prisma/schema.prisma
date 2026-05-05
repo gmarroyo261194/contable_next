@@ -160,6 +160,15 @@ model Ejercicio {
   pagos          Pagos[]
   pedidosPagos   PedidosPagos[]
 
+  /// DocProv cuyo ejercicio de origen es este
+  docProvOrigen         DocumentoProveedores[] @relation("DocProvEjercicioOrigen")
+  /// DocProv que fueron transferidos a este ejercicio como exigibles
+  docProvExigibles      DocumentoProveedores[] @relation("DocProvEjercicioExigible")
+  /// FacturasDocente cuyo ejercicio de origen es este
+  factDocentesOrigen    FacturaDocente[]       @relation("FactDocenteEjercicioOrigen")
+  /// FacturasDocente que fueron transferidas a este ejercicio como exigibles
+  factDocentesExigibles FacturaDocente[]       @relation("FactDocenteEjercicioExigible")
+
   @@unique([numero, empresaId])
 }
 
@@ -301,11 +310,18 @@ model DocumentoProveedores {
   montoPagado           Decimal   @default(0) @db.Decimal(18, 2)
   pagado                Boolean   @default(false)
   asientoPagoId         Int?
-  asiento               Asiento?  @relation("AsientoADocumentoProv", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  asientoPago           Asiento?  @relation("AsientoPagoADocumentoProv", fields: [asientoPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ejercicio             Ejercicio @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
-  empresa               Empresa   @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
-  entidad               Entidad   @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
+  /// ID del ejercicio donde NACIO este documento (siempre = ejercicioId al crear)
+  ejercicioOrigenId     Int?
+  /// ID del ejercicio al que fue transferido como exigible al cerrar el ejercicio origen.
+  /// Si es NOT NULL, el documento ES exigible. Siempre apunta a un ejercicio de numero mayor.
+  ejercicioExigibleId   Int?
+  asiento               Asiento?   @relation("AsientoADocumentoProv", fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  asientoPago           Asiento?   @relation("AsientoPagoADocumentoProv", fields: [asientoPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ejercicio             Ejercicio  @relation(fields: [ejercicioId], references: [id], onUpdate: NoAction)
+  empresa               Empresa    @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
+  entidad               Entidad    @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
+  ejercicioOrigen       Ejercicio? @relation("DocProvEjercicioOrigen", fields: [ejercicioOrigenId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ejercicioExigible     Ejercicio? @relation("DocProvEjercicioExigible", fields: [ejercicioExigibleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model DocumentoClientes {
@@ -554,11 +570,18 @@ model FacturaDocente {
   usuarioAutorizado     String?      @db.NVarChar(100)
   fechaHabilitacionPago DateTime?    @db.Date
   gestionPagoId         Int?
+  /// Ejercicio al que pertenece esta factura (ejercicio activo al momento de crearla)
+  ejercicioId           Int
+  /// ID del ejercicio al que fue transferida como exigible al cerrar el ejercicio origen.
+  /// Si es NOT NULL, la factura ES exigible. Siempre apunta a un ejercicio de numero mayor.
+  ejercicioExigibleId   Int?
   asientoPago           Asiento?     @relation(fields: [asientoPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   cuentaGastos          Cuenta       @relation(fields: [cuentaGastosId], references: [id], onUpdate: NoAction)
   empresa               Empresa      @relation(fields: [empresaId], references: [id], onUpdate: NoAction)
   entidad               Entidad      @relation(fields: [entidadId], references: [id], onUpdate: NoAction)
   gestionPago           GestionPago? @relation(fields: [gestionPagoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ejercicio             Ejercicio    @relation("FactDocenteEjercicioOrigen", fields: [ejercicioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ejercicioExigible     Ejercicio?   @relation("FactDocenteEjercicioExigible", fields: [ejercicioExigibleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([entidadId, puntoVenta, numero], name: "UQ_DocenteFactura")
 }

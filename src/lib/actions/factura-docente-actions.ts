@@ -6,21 +6,40 @@ import { revalidatePath } from "next/cache";
 import { auditCreate, auditUpdate, auditDelete } from "@/lib/audit/auditLogger";
 import { parseFacturaPDF } from "@/lib/facturas/facturaParser";
 
+/**
+ * Obtiene las facturas de docentes visibles en el ejercicio activo.
+ * Regla de exigibles:
+ *   1. Facturas normales del ejercicio activo (sin ejercicioExigibleId)
+ *   2. Facturas que nacieron en este ejercicio y ya fueron marcadas como exigibles (visible en su origen)
+ *   3. Facturas transferidas a este ejercicio como exigibles desde un ejercicio anterior
+ */
 export async function getFacturasDocentes() {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
+  const ejercicioId = parseInt((session?.user as any)?.ejercicioId);
 
-  if (!empresaId) return [];
+  if (!empresaId || !ejercicioId) return [];
 
   const facturas = await db.facturaDocente.findMany({
     where: {
       empresaId: parseInt(empresaId),
+      OR: [
+        // 1. Factura normal del ejercicio activo (nunca fue marcada exigible)
+        { ejercicioId, ejercicioExigibleId: null },
+        // 2. Factura que nació en este ejercicio y fue transferida como exigible
+        //    (visible en su ejercicio de origen)
+        { ejercicioId, ejercicioExigibleId: { not: null } },
+        // 3. Factura transferida A este ejercicio como exigible (desde otro anterior)
+        { ejercicioExigibleId: ejercicioId },
+      ],
     },
     include: {
       entidad: true,
       cuentaGastos: true,
       asientoPago: true,
       empresa: true,
+      ejercicio: { select: { numero: true } },
+      ejercicioExigible: { select: { numero: true } },
       gestionPago: {
         include: {
           medioPago: {
@@ -58,6 +77,10 @@ export async function getDocentes() {
   });
 }
 
+/**
+ * @param data Datos de la factura docente a crear
+ * @returns Resultado con la factura creada o un mensaje de error
+ */
 export async function createFacturaDocente(data: {
   entidadId: number;
   puntoVenta: string;
@@ -71,10 +94,24 @@ export async function createFacturaDocente(data: {
 }) {
   const session = await auth();
   const empresaId = parseInt((session?.user as any)?.empresaId);
+  const ejercicioId = parseInt((session?.user as any)?.ejercicioId);
   const userEmail = session?.user?.email;
 
   if (!empresaId) {
     return { error: "No hay una empresa activa seleccionada." };
+  }
+
+  if (!ejercicioId) {
+    return { error: "No hay un ejercicio activo seleccionado." };
+  }
+
+  // Validar ejercicio activo no cerrado
+  const ejercicio = await db.ejercicio.findUnique({
+    where: { id: ejercicioId },
+    select: { cerrado: true }
+  });
+  if (ejercicio?.cerrado) {
+    return { error: "El ejercicio contable está cerrado. No se pueden registrar nuevas facturas." };
   }
 
   if (data.importe <= 0) {
@@ -111,6 +148,8 @@ export async function createFacturaDocente(data: {
         cuentaGastosId: data.cuentaGastosId,
         observaciones: data.observaciones,
         empresaId: empresaId,
+        // Siempre asociar al ejercicio activo al crear
+        ejercicioId: ejercicioId,
         createdBy: userEmail,
       },
     });

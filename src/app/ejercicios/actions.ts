@@ -118,9 +118,24 @@ export async function deleteEjercicio(id: number) {
   revalidatePath("/ejercicios");
 }
 
+/**
+ * Cierra o reabre un ejercicio contable.
+ *
+ * Al CERRAR: transfiere automáticamente todos los documentos de proveedores
+ * y facturas de docentes impagas como "exigibles" al próximo ejercicio.
+ * Requiere que el próximo ejercicio (numero + 1) ya exista.
+ *
+ * Al REABRIR: solo marca el ejercicio como abierto. NO revierte los exigibles
+ * ya transferidos (operación de solo avance).
+ *
+ * @param id ID del ejercicio a modificar
+ * @param cerrado true = cerrar, false = reabrir
+ * @returns Conteo de documentos transferidos como exigibles (al cerrar)
+ */
 export async function toggleCerrarEjercicio(id: number, cerrado: boolean) {
   const session = await auth();
   const empresaId = (session?.user as any)?.empresaId;
+  const userEmail = session?.user?.email;
 
   if (!empresaId) throw new Error("No hay una empresa activa seleccionada.");
 
@@ -133,15 +148,119 @@ export async function toggleCerrarEjercicio(id: number, cerrado: boolean) {
     throw new Error("No se puede modificar este ejercicio. No pertenece a la empresa activa.");
   }
 
-  const ejercicio = await prisma.ejercicio.update({
-    where: { id },
-    data: { cerrado },
+  // ----- REAPERTURA (solo-avance, no revierte exigibles) -----
+  if (!cerrado) {
+    const ejercicio = await prisma.ejercicio.update({
+      where: { id },
+      data: { cerrado: false, updatedBy: userEmail },
+    });
+    await auditUpdate("Ejercicio", id, ejercicioExistente, ejercicio, userEmail, parseInt(empresaId));
+    revalidatePath("/ejercicios");
+    return { docProvTransferidos: 0, facturasTransferidas: 0 };
+  }
+
+  // ----- CIERRE: pasaje de exigibles -----
+
+  // 1. Verificar que existe el próximo ejercicio
+  const proximoEjercicio = await prisma.ejercicio.findFirst({
+    where: {
+      empresaId: parseInt(empresaId),
+      numero: ejercicioExistente.numero + 1,
+    },
   });
 
-  await auditUpdate("Ejercicio", id, ejercicioExistente, ejercicio, session?.user?.email, parseInt(empresaId));
+  if (!proximoEjercicio) {
+    throw new Error(
+      `No se puede cerrar el ejercicio ${ejercicioExistente.numero}. ` +
+      `Debe crear primero el ejercicio ${ejercicioExistente.numero + 1} antes de cerrar este.`
+    );
+  }
 
-  revalidatePath("/ejercicios");
+  return await prisma.$transaction(async (tx) => {
+    // 2. Transferir DocumentoProveedores impagas como exigibles al próximo ejercicio.
+    //    Incluye: docs normales impagas de este ejercicio + docs que ya eran exigibles
+    //    de un ejercicio anterior y siguen sin pagar en este.
+    const docProvImpagas = await tx.documentoProveedores.findMany({
+      where: {
+        empresaId: parseInt(empresaId),
+        pagado: false,
+        anulado: false,
+        OR: [
+          // Docs normales de este ejercicio, nunca transferidos
+          { ejercicioId: id, ejercicioExigibleId: null },
+          // Docs ya exigibles que llegaron a este ejercicio y siguen impagas
+          { ejercicioExigibleId: id },
+        ],
+      },
+      select: { id: true, ejercicioOrigenId: true, ejercicioId: true },
+    });
+
+    if (docProvImpagas.length > 0) {
+      for (const doc of docProvImpagas) {
+        await tx.documentoProveedores.update({
+          where: { id: doc.id },
+          data: {
+            ejercicioExigibleId: proximoEjercicio.id,
+            // Si aun no tiene origen registrado, lo seteamos ahora
+            ejercicioOrigenId: doc.ejercicioOrigenId ?? doc.ejercicioId,
+            updatedBy: userEmail,
+          },
+        });
+      }
+    }
+
+    // 3. Transferir FacturasDocente impagas como exigibles al próximo ejercicio.
+    const facturasImpagas = await tx.facturaDocente.findMany({
+      where: {
+        empresaId: parseInt(empresaId),
+        asientoPagoId: null,
+        gestionPagoId: null,
+        OR: [
+          // Facturas normales de este ejercicio, nunca transferidas
+          { ejercicioId: id, ejercicioExigibleId: null },
+          // Facturas ya exigibles que llegaron a este ejercicio y siguen impagas
+          { ejercicioExigibleId: id },
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (facturasImpagas.length > 0) {
+      await tx.facturaDocente.updateMany({
+        where: { id: { in: facturasImpagas.map((f) => f.id) } },
+        data: {
+          ejercicioExigibleId: proximoEjercicio.id,
+          updatedBy: userEmail,
+        },
+      });
+    }
+
+    // 4. Cerrar el ejercicio
+    const ejercicioCerrado = await tx.ejercicio.update({
+      where: { id },
+      data: { cerrado: true, updatedBy: userEmail },
+    });
+
+    await auditUpdate(
+      "Ejercicio",
+      id,
+      ejercicioExistente,
+      ejercicioCerrado,
+      userEmail,
+      parseInt(empresaId)
+    );
+
+    revalidatePath("/ejercicios");
+    revalidatePath("/docprov");
+    revalidatePath("/facturas-docentes");
+
+    return {
+      docProvTransferidos: docProvImpagas.length,
+      facturasTransferidas: facturasImpagas.length,
+    };
+  });
 }
+
 
 export async function migrateAsientosLegacy(ejercicioId: number, anio: number) {
   const session = await auth();
